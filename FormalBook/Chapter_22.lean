@@ -84,7 +84,7 @@ noncomputable def triangle_area (T : Triangle) : ℝ :=
 def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
   (X = ⋃ (T ∈ S), closed_triangle T) ∧
   (Set.PairwiseDisjoint S open_triangle) ∧
-  ∀ {T₁ T₂}, T₁ ∈ S → T₂ ∈ S → triangle_area T₁ = triangle_area T₂
+  ∀ T₁ T₂, T₁ ∈ S → T₂ ∈ S → triangle_area T₁ = triangle_area T₂
 
 def unit_square : Set ℝ² := {x : ℝ² | 0 ≤ x 0 ∧ x 0 ≤ 1 ∧ 0 ≤ x 1 ∧ x 1 ≤ 1}
 
