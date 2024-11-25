@@ -548,11 +548,13 @@ def boundary_unit_square : Set ℝ² := unit_square \ open_unit_square
 
 lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit_square S)
     (hArea : ∀ Δ, Δ ∈ S → det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
+    (hInt: ∀ Δ, Δ ∈ S → (open_hull Δ) ∩ (closed_hull L) = ∅)
     (hLunit : open_hull L ⊆ open_unit_square) (hv : ∀ Δ, ∀ i, Δ ∈ S → Δ i ∉ open_hull L )
   : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 2 := sorry
 
 lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover unit_square S)
     (hArea : ∀ Δ, Δ ∈ S → det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
+    (hInt: ∀ Δ, Δ ∈ S → (open_hull Δ) ∩ (closed_hull L) = ∅)
     (hLunit : open_hull L ⊆ boundary_unit_square) (hv : ∀ Δ, ∀ i, Δ ∈ S → Δ i ∉ open_hull L )
   : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 1 := sorry
 
