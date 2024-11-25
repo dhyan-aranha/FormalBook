@@ -32,7 +32,18 @@ def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
   is_cover X S ∧
   (∃ (area : ℝ), ∀ T, (T ∈ S) → triangle_area T = area)
 
-def unit_square : Set ℝ² := {x : ℝ² | 0 ≤ x 0 ∧ x 0 ≤ 1 ∧ 0 ≤ x 1 ∧ x 1 ≤ 1}
+
+
+def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
+
+
+
+def unit_square : Set ℝ²
+  := closed_hull ((fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1) : Fin 4 → ℝ²)
+
+def open_unit_square : Set ℝ²
+  := open_hull ((fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1) : Fin 4 → ℝ²)
+
 
 theorem Monsky (n : ℕ):
     (∃ (S : Finset Triangle), is_equal_area_cover unit_square S ∧ S.card = n)
@@ -41,8 +52,6 @@ theorem Monsky (n : ℕ):
 
 
 
-
-def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
 @[simp]
 lemma v₀_val {x y : ℝ} : (v x y) 0 = x := rfl
@@ -531,6 +540,24 @@ lemma open_triangle_iff (T : Triangle) (hdet : det T ≠ 0) (v : ℝ²) :
       apply PiLp.ext
       intro i
       fin_cases i <;> (simp; ring)
+
+
+
+
+def boundary_unit_square : Set ℝ² := unit_square \ open_unit_square
+
+lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit_square S)
+    (hArea : ∀ Δ, Δ ∈ S → det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
+    (hLunit : open_hull L ⊆ open_unit_square)
+  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 2 := sorry
+
+lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover unit_square S)
+    (hArea : ∀ Δ, Δ ∈ S → det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
+    (hLunit : open_hull L ⊆ boundary_unit_square)
+  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 1 := sorry
+
+
+
 
 
 /-
