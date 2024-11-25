@@ -8,20 +8,29 @@ open Algebra
 -- Any maximal subring of ℝ not containing 1/2 is a valuation ring.
 lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 (h2 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C) : ∃(D : ValuationSubring ℝ), D.toSubring = B := by
+  -- We assume that B is not a valuationring
   by_contra no_vr
   have alpha_existence : ∃(α : ℝ), (α ∉ B ∧ α⁻¹ ∉ B) := by
+  -- This is true, because B is not a valuationring
     by_contra H
     rw[← not_forall_not, not_not] at H
     simp_rw[← or_iff_not_and_not] at H
-    -- def D : ValuationSubring ℝ :=
-    --   { B with
-    --     mem_or_inv_mem' := H}
-    sorry
+    let D : ValuationSubring ℝ :=
+      { B with
+        mem_or_inv_mem' := H}
+    have for_contra : ∃ (D : ValuationSubring ℝ), D.toSubring = B := by
+      use D
+    tauto
   cases' alpha_existence with α H
+  -- We consider B[α], B[α⁻¹], 2B[α], 2B[α⁻¹]
   let Balpha := adjoin B {a : ℝ | a = α}
   let Balpha' := adjoin B {a : ℝ | a = α⁻¹}
   let twoBalpha := {b : ℝ | ∃c ∈ Balpha, b = 2*c}
   let twoBalpha' := {b : ℝ | ∃c ∈ Balpha', b = 2*c}
+  have B_contains_half : 1/2 ∈ Balpha := by
+  -- otherwise there is a contradiction with maximality
+
+    sorry
   have rings_equal : twoBalpha = Balpha ∧ twoBalpha' = Balpha' := by
 
     sorry
@@ -59,7 +68,6 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
 
 lemma non_archimedean (Γ₀ : Type) [LinearOrderedCommGroupWithZero Γ₀] (K : Type) [Field K] (v : Valuation K Γ₀) :
   (∀(x y : K), v x ≠ v y → v (x + y) = max (v x) (v y)) := by
-  intro x y h
   sorry
 
 
