@@ -31,7 +31,16 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   -- otherwise there is a contradiction with maximality
 
     sorry
-  have rings_equal : twoBalpha = Balpha ∧ twoBalpha' = Balpha' := by
+  have B_contains_half' : 1/2 ∈ Balpha' := by
+  -- This should be essentially the same proof as above
+
+    sorry
+  have rings_equal : twoBalpha = Balpha := by
+  -- uses 'B_contains_half'
+
+    sorry
+  have rings_equal' :  twoBalpha' = Balpha' := by
+  -- uses 'B_contains_half''
 
     sorry
   sorry
