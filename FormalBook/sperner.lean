@@ -696,6 +696,8 @@ def B := {  L : X | basis_segment X L }
 /-
   For any triangle in the dissection, the number of purple segments on its boundary
   is odd iff the triangle is rainbow
+  TODO: probably should be 2 mod 4, given that segments are counted with
+  both orientations
 -/
 
 def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
