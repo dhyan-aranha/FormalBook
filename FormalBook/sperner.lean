@@ -622,57 +622,92 @@ theorem basis_segments_exist (X : SegmentSet) :
 
 /-
   Lenny's stuff
-
 -/
-
-
--- side i of triangle T; probably better to do this for a polygon or so
-
-def side (T : Triangle) (i : Fin 3) : Segment :=
-  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
-
-
--- let's just test if this works
-
-variable (P Q R : ℝ²)
-
-def triangle (P Q R : ℝ²) : Triangle :=
-  fun | 0 => P | 1 => Q | 2 => R
-
-def interval (P Q : ℝ²) : Segment :=
-  fun | 0 => P | 1 => Q
-
-example : side (triangle P Q R) 0 = interval Q R := rfl
-example : side (triangle P Q R) 1 = interval R P := rfl
-example : side (triangle P Q R) 2 = interval P Q := rfl
-
--- now we can define the notion of a segment being on a trianglef
-
-
-
-
-def segment_on_triangle (L : Segment) (T : Triangle)  : Prop :=
-  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
-
 
 
 /-
-  State the theorem on colourings
+  First we import the definition and properties of the colouring.
+  We assume 0 = red, 1 = blue, 2 = green
 -/
 
--- things carried over from other groups:
+section noncomputable
 
 def color : ℝ² → Fin 3 := sorry
+
+def red : Fin 3 := 0
+def blue : Fin 3 := 1
+def green : Fin 3 := 2
 
 lemma no_three_colors_on_a_line (L : Segment) :
     ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
 
-lemma color00 : color (v 0 0) = 0 := sorry
-lemma color01 : color (v 0 1) = 1 := sorry
-lemma color10 : color (v 1 0) = 2 := sorry
+lemma color00 : color (v 0 0) = red := sorry
+lemma color01 : color (v 0 1) = blue := sorry
+lemma color10 : color (v 1 0) = green := sorry
+lemma color11 : color (v 1 1) = blue := sorry
 
 
--- main goal for our group
+/-
+  Define incidence relation between segments and triangles
+-/
 
-theorem Monsky_rainbow (S : Finset Triangle) (hS : is_cover unit_square S) :
-    ∃ T ∈ S, Function.Surjective (color ∘ T) := sorry
+def side (T : Triangle) (i : Fin 3) : Segment :=
+  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
+
+def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
+  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
+
+
+/-
+  A segment is purple if it runs from 0 to 1 or 1 to 0
+-/
+
+def IsPurple (L : Segment) : Prop :=
+  (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
+
+
+/-
+  Parity of number of purple basic segments on a segment
+-/
+
+noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
+  {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
+
+lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+  (L : X) (hL : IsPurple L) :
+  (purple_segments X L.val).card % 2 = 1 := sorry
+
+lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+  (L : X) (hL : ¬ IsPurple L) :
+  (purple_segments X L.val).card % 2 = 0 := sorry
+
+
+
+/-
+  Now we assume given a dissection S. Write X for the set of all segments in the dissection
+-/
+
+variable (S : Finset Triangle) (hS : is_cover unit_square S)
+
+def X : SegmentSet := sorry
+lemma hX : complete_segment_set X := sorry
+def B := {  L : X | basis_segment X L }
+
+/-
+  For any triangle in the dissection, the number of purple segments on its boundary
+  is odd iff the triangle is rainbow
+-/
+
+def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
+
+lemma purple_odd_iff_rainbow (T : S) :
+  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
+  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
+
+
+/-
+  Main goal for our group:
+-/
+
+theorem monsky_rainbow  :
+    ∃ T ∈ S, IsRainbow T := sorry
