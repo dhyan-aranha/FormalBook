@@ -34,15 +34,18 @@ def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
 
 
 
+
+/- Should we doe this or not? -/
 def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
 
+def Psquare : Fin 4 → ℝ² := (fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1)
 
 def unit_square : Set ℝ²
-  := closed_hull ((fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1) : Fin 4 → ℝ²)
+  := closed_hull Psquare
 
 def open_unit_square : Set ℝ²
-  := open_hull ((fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1) : Fin 4 → ℝ²)
+  := open_hull Psquare
 
 
 theorem Monsky (n : ℕ):
@@ -275,6 +278,9 @@ lemma non_vtx_imp_seg (T : Triangle) (v : ℝ²) (h₁ : v ∉ vertex_set T) (h�
   There is no non-trivial segment going through (0,0) of the unit square.
   This should imply the same statement for the other corners of the square without too much work.
 -/
+/-
+This lemma is now broken because the definition of unit_square changed.
+
 lemma no_segment_through_origin_square {L : Segment} (h₁ : L 0 ≠ L 1)
     (h₂ : closed_hull L ⊆ unit_square) : v 0 0 ∉ open_hull L := by
   have hNonzero : ∃ i j, L i j ≠ 0 := by
@@ -294,14 +300,14 @@ lemma no_segment_through_origin_square {L : Segment} (h₁ : L 0 ≠ L 1)
     _ ≤ (v 0 0) j               := by rw [←hαv]; simp
     _ = 0                       := by fin_cases j <;> simp
 
-
+-/
 
 /-
   Some stuff about bijections Fin 3 → Fin 3.
   This might be useful to brute force things later.
 -/
 
-def bijections_Fin3 : Fin 6 → (Fin 3 → Fin 3) := fun
+def σ : Fin 6 → (Fin 3 → Fin 3) := fun
 | 0 => (fun | 0 => 0 | 1 => 1 | 2 => 2)
 | 1 => (fun | 0 => 0 | 1 => 2 | 2 => 1)
 | 2 => (fun | 0 => 1 | 1 => 0 | 2 => 2)
@@ -321,8 +327,6 @@ def last_index : Fin 3 → Fin 3 → Fin 3 := fun
   | 2 => (fun | 0 => 1 | 1 => 0 | 2 => 2)
 
 
-
-
 lemma last_index_diff {i j : Fin 3} (hij : i ≠ j) :
     i ≠ last_index i j ∧ j ≠ last_index i j := by
   fin_cases i <;> fin_cases j <;> tauto
@@ -332,17 +336,17 @@ lemma last_index_comp {i j : Fin 3} (hij : i ≠ j) :
   fin_cases i <;> fin_cases j <;> tauto
 
 lemma bijection_right_inv
-    : ∀ b, (bijections_Fin3 b) ∘ (bijections_Fin3 (b_inv b)) = id := by
+    : ∀ b, (σ b) ∘ (σ (b_inv b)) = id := by
   intro b; funext x
   fin_cases b <;> fin_cases x <;> rfl
 
 lemma bijection_left_inv
-    : ∀ b, (bijections_Fin3 (b_inv b)) ∘ (bijections_Fin3 b) = id := by
+    : ∀ b, (σ (b_inv b)) ∘ (σ b) = id := by
   intro b; funext x
   fin_cases b <;> fin_cases x <;> rfl
 
 lemma fun_in_bijections {i j k : Fin 3} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
-    ∃ b, bijections_Fin3 b = (fun | 0 => i | 1 => j | 2 => k)  := by
+    ∃ b, σ b = (fun | 0 => i | 1 => j | 2 => k)  := by
   fin_cases i <;> fin_cases j <;> fin_cases k
   all_goals (tauto)
   · exact ⟨0, rfl⟩
@@ -356,22 +360,26 @@ lemma sign_non_zero : ∀ b, b_sign b ≠ 0 := by
   intro b; fin_cases b <;> simp [b_sign]
 
 
+lemma bijection_sum_right {α : Type} [AddCommMonoid α] (f : Fin 3 → α) (b : Fin 6)
+    : ∑ i, (f ∘ σ b) i = ∑ i, f i := by
+  fin_cases b <;> simp [σ,Fin.sum_univ_three, add_comm, add_assoc,add_left_comm]
+
+
 /- Given i j map to the bijection that maps i to 0, j to 1 and last to 2 -/
 def normalize_map : Fin 3 → Fin 3 → (Fin 3 → Fin 3) := fun
-  | 0 => (fun | 0 => bijections_Fin3 0 | 1 => bijections_Fin3 0 | 2 => bijections_Fin3 1)
-  | 1 => (fun | 0 => bijections_Fin3 2 | 1 => bijections_Fin3 0 | 2 => bijections_Fin3 4)
-  | 2 => (fun | 0 => bijections_Fin3 3 | 1 => bijections_Fin3 5 | 2 => bijections_Fin3 0)
+  | 0 => (fun | 0 => σ 0 | 1 => σ 0 | 2 => σ 1)
+  | 1 => (fun | 0 => σ 2 | 1 => σ 0 | 2 => σ 4)
+  | 2 => (fun | 0 => σ 3 | 1 => σ 5 | 2 => σ 0)
 
 
 lemma normalize_val_i {i j : Fin 3} (hij : i ≠ j) : normalize_map i j i = 0 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, bijections_Fin3]; try tauto)
+  fin_cases i <;> fin_cases j <;> (simp [normalize_map, σ]; try tauto)
 
 lemma normalize_val_j {i j : Fin 3} (hij : i ≠ j) : normalize_map i j j = 1 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, bijections_Fin3]; try tauto)
+  fin_cases i <;> fin_cases j <;> (simp [normalize_map, σ]; try tauto)
 
-lemma normalize_val_k {i j : Fin 3} (hij : i ≠ j)
-    : normalize_map i j (last_index i j) = 2 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, last_index, bijections_Fin3]; try tauto)
+lemma normalize_val_k {i j : Fin 3} (hij : i ≠ j) : normalize_map i j (last_index i j) = 2 := by
+  fin_cases i <;> fin_cases j <;> (simp [normalize_map, last_index, σ]; try tauto)
 
 
 
@@ -392,8 +400,8 @@ lemma linear_combination_det_last {n : ℕ} {x y : ℝ²} {P : Fin n → ℝ²} 
   congr <;> (ext; ring)
 
 lemma det_perm {T : Triangle} (b : Fin 6) :
-    det T = (b_sign b) *  det (T ∘ (bijections_Fin3 b)) := by
-  fin_cases b <;> (simp_all [det, b_sign, bijections_Fin3]; try ring)
+    det T = (b_sign b) *  det (T ∘ (σ b)) := by
+  fin_cases b <;> (simp_all [det, b_sign, σ]; try ring)
 
 lemma det_zero_perm {T : Triangle} (hT  : det T = 0) :
     ∀ i j k, det (fun | 0 => T i | 1 => T j | 2 => T k) = 0 := by
@@ -425,11 +433,11 @@ lemma linear_combination_det_middle {n : ℕ} {x z : ℝ²} {P : Fin n → ℝ²
   ∑ i, (α i * det (fun | 0 => x | 1 => (P i) | 2 => z)) := by
   convert linear_combination_det_last (y := x) (P := P) (x := z) hα using 1
   · convert det_perm 4
-    simp [b_sign, bijections_Fin3];
+    simp [b_sign, σ];
     congr; funext k; fin_cases k <;> rfl
   · congr; ext i; congr 1;
     convert det_perm 4
-    simp [b_sign, bijections_Fin3];
+    simp [b_sign, σ];
     congr; funext k; fin_cases k <;> rfl
 
 lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²} {α : Fin n → ℝ}
@@ -438,11 +446,11 @@ lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²}
   ∑ i, (α i * det (fun | 0 => (P i) | 1 => y | 2 => z)) := by
   convert linear_combination_det_last (y := z) (P := P) (x := y) hα using 1
   · convert det_perm 3
-    simp [b_sign, bijections_Fin3];
+    simp [b_sign, σ];
     congr; funext k; fin_cases k <;> rfl
   · congr; ext i; congr 1;
     convert det_perm 3
-    simp [b_sign, bijections_Fin3];
+    simp [b_sign, σ];
     congr; funext k; fin_cases k <;> rfl
 
 
@@ -457,6 +465,15 @@ lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
 
 def sign_seg (L : Segment) (v : ℝ²) : ℝ := det (fun | 0 => L 0 | 1 => L 1 | 2 => v)
 
+
+lemma sign_seg_mem_zero (L : Segment) {v : ℝ²} (hv : v ∈ closed_hull L) :
+    sign_seg L v = 0 := by
+  sorry
+
+
+
+
+
 lemma open_triangle_sign_det {T : Triangle} {i j : Fin 3} (hij : i ≠ j) :
     ∀ v ∈ open_hull T,
     Real.sign (sign_seg (fun | 0 => T i | 1 => T j) v) =
@@ -468,79 +485,125 @@ lemma open_triangle_sign_det {T : Triangle} {i j : Fin 3} (hij : i ≠ j) :
   all_goals rfl
 
 
-/-
-def boundary_triangle (T : Triangle) : Set ℝ² :=
-    closed_hull ((fun | 0 => T 0 | 1 => T 1) : Segment) ∪
-    closed_hull ((fun | 0 => T 1 | 1 => T 2) : Segment) ∪
-    closed_hull ((fun | 0 => T 2 | 1 => T 0) : Segment)
--/
 
-def boundary_triangle (T : Triangle) : Set ℝ² :=
-  ⋃ l : Prod (Fin 3) (Fin 3), closed_hull ((fun | 0 => T l.1 | 1 => T l.2) : Segment)
+def side_triangle (T : Triangle) (b : Fin 6) : Segment :=
+    (fun | 0 => T (σ b 0) | 1 => T (σ b 1))
 
 
-lemma boundary_sub_closed (T : Triangle)
-    : boundary_triangle T ⊆ closed_hull T := by
-  intro v ⟨S, ⟨⟨i,j⟩, hS⟩ ,hvS⟩
-  rw [←hS] at hvS; dsimp at hvS
-  by_cases hij : i = j
-  · rw [hij] at hvS
-    conv at hvS => lhs; change closed_hull (fun (_ : Fin 2) ↦ T j)
-    simp_rw [closed_hull_constant (n := 2) (P := T j) (by simp)] at hvS
-    rw [hvS]
-    exact vertex_mem_closed
-  · have ⟨α, hα, hαv⟩ := hvS
-    use (fun | 0 => α 0 | 1 => α 1 | 2 => 0) ∘ (normalize_map i j)
-    constructor
-    · constructor
-      · intro l
-        fin_cases l <;> fin_cases i <;> fin_cases j
-        all_goals (try tauto)
-        all_goals (simp [normalize_map, bijections_Fin3, hα.1 0, hα.1 1])
-      · simp [←sum_add_sum_compl {i,j}, last_index_comp hij,
-          sum_pair hij, normalize_val_i hij, normalize_val_j hij, normalize_val_k hij]
-        convert hα.2
-        exact (Fin.sum_univ_two α).symm
-    · dsimp at hαv
-      simp [←hαv, Fin.sum_univ_two, ←sum_add_sum_compl {i,j}, last_index_comp hij,
-          sum_pair hij, normalize_val_i hij, normalize_val_j hij, normalize_val_k hij]
 
-lemma open_triangle_iff (T : Triangle) (hdet : det T ≠ 0) (v : ℝ²) :
-    v ∈ open_hull T ↔
-    ∀ b : Fin 6,
-      Real.sign (sign_seg (fun | 0 => T ((bijections_Fin3 b) 0) | 1 => T ((bijections_Fin3 b) 1)) v)  =
-      Real.sign (det (T ∘ (bijections_Fin3 b))) := by
+
+
+
+noncomputable def Tco (T : Triangle) (x : ℝ²) : Fin 3 → ℝ := fun
+      | 0 => (sign_seg (fun | 0 => T 1 | 1 => T 2) x) / (det T)
+      | 1 => (sign_seg (fun | 0 => T 2 | 1 => T 0) x) / (det T)
+      | 2 => (sign_seg (fun | 0 => T 0 | 1 => T 1) x) / (det T)
+
+lemma Tco_sum {T : Triangle} (hdet : det T ≠ 0) (x : ℝ²) : ∑ i, Tco T x i = 1 := by
+  apply mul_cancel hdet
+  simp_rw [mul_sum, Tco, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, sign_seg, det]
+  ring
+
+lemma Tco_linear {n : ℕ} {T : Triangle} {P : Fin n → ℝ²} {α : Fin n → ℝ}
+    (hα : ∑ i, α i = 1) (k : Fin 3): Tco T (∑ i, (α i) • (P i)) k =  ∑ i, α i * Tco T (P i) k := by
+  fin_cases k <;> (
+  simp [Tco, sign_seg, linear_combination_det_last hα,sum_div]
+  congr; funext _; ring)
+
+lemma Tco_basis_diag {T : Triangle} (hdet : det T ≠ 0) {i : Fin 3} :
+    Tco T (T i) i = 1 := by
+  fin_cases i<;>(
+    apply mul_cancel hdet
+    simp [Tco, mul_div_cancel₀ _ hdet]
+    simp [sign_seg,det]
+  ) <;> ring
+
+lemma Tco_basis_off_diag {T : Triangle} {i j: Fin 3} (hij : i ≠ j) :
+    Tco T (T i) j = 0 := by
+  fin_cases i <;> fin_cases j
+  all_goals (try tauto)
+  all_goals (
+    simp [Tco]; left
+    simp [sign_seg, det]; ring)
+
+lemma Tco_sum_val {T : Triangle} (hdet : det T ≠ 0) {α : Fin 3 → ℝ} (hα : ∑i, α i = 1) (k : Fin 3) :
+    Tco T (∑ i, (α i) • (T i)) k = α k := by
+  rw [Tco_linear hα, Fin.sum_univ_three]
+  fin_cases k <;> simp [Tco_basis_diag hdet, Tco_basis_off_diag]
+
+lemma Tco_sum_self {T : Triangle} (hdet : det T ≠ 0) (x : ℝ²) :
+    ∑ i, (Tco T x i) • (T i) = x := by
+  apply smul_cancel hdet
+  simp [smul_sum, smul_smul, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, Tco]
+  simp [sign_seg, det]
+  exact PiLp.ext (fun i ↦ by fin_cases i <;> (simp; ring))
+
+
+
+lemma closed_triangle_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} :
+    x ∈ closed_hull T ↔ ∀ i, 0 ≤ Tco T x i := by
   constructor
-  · intro hv b
-    have temp := open_triangle_sign_det (?_ : bijections_Fin3 b 0 ≠ bijections_Fin3 b 1) v hv
-    · rw [temp]
-      congr
-      fin_cases b <;> funext i <;> fin_cases i <;> simp [last_index, bijections_Fin3]
-    · fin_cases b <;> simp [bijections_Fin3]
-  · intro hb
-    use fun
-      | 0 => (sign_seg (fun | 0 => T 1 | 1 => T 2) v) / (det T)
-      | 1 => (sign_seg (fun | 0 => T 2 | 1 => T 0) v) / (det T)
-      | 2 => (sign_seg (fun | 0 => T 0 | 1 => T 1) v) / (det T)
-    refine ⟨⟨?_,?_⟩,?_⟩
-    · intro i; fin_cases i <;> (dsimp; apply sign_div_pos hdet;)
-      · convert (hb 3) using 1
-        rw [det_perm 3, b_sign]
-        simp
-      · convert (hb 4) using 1
-        rw [det_perm 4, b_sign]
-        simp
-      · convert (hb 0) using 1
-    · apply mul_cancel hdet
-      simp_rw [mul_sum, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, sign_seg, det]
-      ring
-    · apply smul_cancel hdet
-      simp [smul_sum, smul_smul, Fin.sum_univ_three, mul_div_cancel₀ _ hdet]
-      simp [sign_seg, det]
-      apply PiLp.ext
-      intro i
-      fin_cases i <;> (simp; ring)
+  · exact fun ⟨α,hα,hαx⟩ ↦ by simp_rw [←hαx, Tco_sum_val hdet hα.2]; exact hα.1
+  · exact fun hco ↦ ⟨Tco T x, ⟨hco, Tco_sum hdet x⟩, Tco_sum_self hdet x⟩
 
+lemma open_triangle_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} :
+    x ∈ open_hull T ↔ ∀ i, 0 < Tco T x i := by
+  constructor
+  · exact fun ⟨α,hα,hαx⟩ ↦ by simp_rw [←hαx, Tco_sum_val hdet hα.2]; exact hα.1
+  · exact fun hco ↦ ⟨Tco T x, ⟨hco, Tco_sum hdet x⟩, Tco_sum_self hdet x⟩
+
+
+def boundary {n : ℕ} (P : Fin n → ℝ²) : Set ℝ² := (closed_hull P) \ (open_hull P)
+
+
+lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) :
+    x ∈ boundary T ↔ ∃ i, Tco T x i = 0 := by
+  constructor
+  · intro hxB
+    by_contra hAll
+    push_neg at hAll
+    apply ((Set.mem_diff _).mp hxB).2
+    rw [open_triangle_iff hdet]
+    rw [closed_triangle_iff hdet] at hx
+    exact fun i ↦ lt_of_le_of_ne (hx i) (hAll i).symm
+  · intro ⟨i,hi⟩
+    rw [boundary, Set.mem_diff]
+    refine ⟨hx,?_⟩
+    intro hxOpen
+    rw [open_triangle_iff hdet] at hxOpen
+    linarith [hi, hxOpen i]
+
+def triangle_side (T : Triangle) : Fin 3 → Segment := fun
+  | 0 => (fun | 0 => T 1 | 1 => T 2)
+  | 1 => (fun | 0 => T 2 | 1 => T 0)
+  | 2 => (fun | 0 => T 0 | 1 => T 1)
+
+
+lemma mem_side (T : Triangle) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
+    Tco T x i = 0 ↔ x ∈ closed_hull (triangle_side T i) := by
+
+  sorry
+
+lemma boundary_is_union_sides {T : Triangle} : boundary T = ⋃ i, closed_hull (triangle_side T i) := by
+  -- Shouldn't be too hard
+  sorry
+
+
+
+
+
+
+
+
+def normal_vec (L : Segment) : ℝ² := fun | 0 => L 0 1 - L 1 1 | 1 => L 1 0 - L 0 0
+
+def product_seg (L : Segment) (x : ℝ²) : ℝ := (x 0) * (L 0 1 - L 1 1) + (x 1) * (L 1 0 - L 0 0)
+
+def reverse (L : Segment) : Segment := fun | 0 => L 1 | 1 => L 0
+
+lemma formula_sign_seg (L : Segment) (x y : ℝ²) (a : ℝ) :
+    sign_seg L (x + a • y) = (sign_seg L x) + a * (product_seg L y) := by
+  simp [sign_seg, product_seg, det]; ring
 
 
 
@@ -549,14 +612,14 @@ def boundary_unit_square : Set ℝ² := unit_square \ open_unit_square
 lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit_square S)
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
     (hInt: ∀ Δ ∈ S, (open_hull Δ) ∩ (closed_hull L) = ∅)
-    (hLunit : open_hull L ⊆ open_unit_square) (hv : ∀ i, ∀ Δ ∈ S, Δ i ∉ open_hull L)
-  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 2 := sorry
+    (hLunit : open_hull L ⊆ open_hull Psquare) (hv : ∀ i, ∀ Δ ∈ S, Δ i ∉ open_hull L)
+  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 2 := sorry
 
 lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover unit_square S)
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
     (hInt: ∀ Δ ∈ S, (open_hull Δ) ∩ (closed_hull L) = ∅)
-    (hLunit : open_hull L ⊆ boundary_unit_square) (hv : ∀ i, ∀ Δ ∈ S, Δ i ∉ open_hull L)
-  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary_triangle Δ)).card = 1 := sorry
+    (hLunit : open_hull L ⊆ boundary Psquare) (hv : ∀ i, ∀ Δ ∈ S, Δ i ∉ open_hull L)
+  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 1 := sorry
 
 
 
