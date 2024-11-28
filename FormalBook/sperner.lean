@@ -701,7 +701,9 @@ theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
         have hTS : ↑T ∈ YS := by
           have hTinS : closed_hull T.val ⊆ closed_hull S := by
             calc closed_hull T.val ⊆ closed_hull (g i).val := hT
-              _ ⊆ closed_hull S := by sorry
+              _ = closed_hull (f i).val := rfl
+              _ ⊆ ⋃ (i : Fin n), closed_hull (f i).val := Set.subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
+              _ = closed_hull S := by rw [← hl]
           rw [mem_filter]
           exact ⟨coe_mem T, hTinS⟩
         exact (hr i).2 ⟨T, hTS⟩ hT
@@ -709,10 +711,37 @@ theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
     -- apply the induction hypothesis to two smaller sets.
     by_cases hSBasis : (basis_segment Y S)
     · use 1
-      sorry
-    · sorry -- can probably use finset.not_subset to construct element T of Y not in YS
-      -- Then need to take a complement of T and apply induction hypothesis to the two subsets
+      let f : Fin 1 → Y := fun 0 ↦ ⟨S, hSY⟩
+      use f
+      constructor
+      · calc closed_hull S = closed_hull (f 0).val := by rfl
+          _ = ⋃ (i : Fin 1), closed_hull (f 0).val := Eq.symm (Set.iUnion_const (closed_hull (f 0).val))
+          _ = ⋃ (i : Fin 1), closed_hull (f i).val := by sorry
+      · intro i
+        rw [Fin.fin_one_eq_zero i]
+        exact hSBasis
+    · -- Then need to take a complement of T and apply induction hypothesis to the two subsets
       -- of elements contained in T or its complement.
+      have hT : ∃ T ∈ Y, closed_hull T ⊂ closed_hull S := by
+        unfold basis_segment at hSBasis
+        rw [Decidable.not_and_iff_or_not] at hSBasis
+        cases' hSBasis with hl hr
+        · tauto
+        · rw [Decidable.not_forall] at hr
+          cases' hr with T hT
+          use T
+          refine ⟨coe_mem T, ?_⟩
+          sorry
+      cases' hT with T hT
+      have hYSComp : complete_segment_set Y := by
+        sorry
+      have hComp : closed_hull T ⊂ closed_hull S → ∃ S' : Y, (closed_hull S = closed_hull T ∪ closed_hull S'.val ∧
+        ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := by exact hYSComp ⟨T, hT.1⟩ ⟨S, hSY⟩
+      specialize hComp hT.2
+      cases' hComp with T' hT'
+      let YT : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T}
+      let YT' : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T'.val}
+      sorry
 
 
 theorem basis_segments_exist (X : SegmentSet) :
