@@ -276,17 +276,27 @@ def splitting_segment_set : SegmentSet → Prop :=
   (segment_covering S f ∧ ∀ i : Fin n, basis_segment X (f i))
 
 
-theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
-  splitting_segment_set X := by
-    sorry
-
 -- Example: if X : Segment_Set is a singleton, its only member is a basis segment
-example (S : Segment) : basis_segment (singleton S) ⟨S, by tauto⟩  := by
+theorem singleton_has_basis (S : Segment) : basis_segment (singleton S) ⟨S, by tauto⟩  := by
   intro T _
   have hTeqS : T = S := by
     rw [← Set.mem_singleton_iff]
     exact Set.mem_toFinset.mp T.2
   exact congrArg closed_hull hTeqS
+
+theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
+  splitting_segment_set X := by
+  apply Finset.strongInduction
+  intro Y hY S
+  cases' (eq_empty_or_nonempty Y) with h1 h2
+  · exfalso
+    rw [← Finset.isEmpty_coe_sort] at h1
+    exact IsEmpty.false S
+  · let YS := {T : Y // closed_hull T.val ⊆ closed_hull S.val}
+    sorry
+
+
+
 
 
 theorem basis_segments_exist (X : SegmentSet) :
