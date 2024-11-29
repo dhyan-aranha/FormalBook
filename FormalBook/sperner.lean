@@ -737,10 +737,11 @@ theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
         sorry
       have hComp : closed_hull T ⊂ closed_hull S → ∃ S' : Y, (closed_hull S = closed_hull T ∪ closed_hull S'.val ∧
         ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := by exact hYSComp ⟨T, hT.1⟩ ⟨S, hSY⟩
-      specialize hComp hT.2
-      cases' hComp with T' hT'
+      cases' hComp hT.2 with T' hT'
       let YT : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T}
       let YT' : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T'.val}
+      have hYT := hY YT -- todo: add proof of strict inclusion
+      have hYT' := hY YT' -- todo: add proof of strict inclusion
       sorry
 
 
