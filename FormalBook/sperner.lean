@@ -645,8 +645,8 @@ instance partialorder (X : SegmentSet) : Preorder X where
 
 
 -- A basis segment is a segment that does not properly contain another segment
-def basis_segment (X : SegmentSet) (S : X) : Prop :=
-  ∀ T : X, closed_hull T.val ⊆ closed_hull S.val → closed_hull T.val = closed_hull S.val
+def basis_segment (X : SegmentSet) (S : Segment) : Prop :=
+  S ∈ X ∧ ∀ T : X, closed_hull T.val ⊆ closed_hull S → closed_hull T.val = closed_hull S
 
 -- A SegmentSet is complete if for any inclusions of segements, the closure of the complement
 -- of a segment is also in the SegmentSet
@@ -656,26 +656,95 @@ def complete_segment_set (X : SegmentSet) : Prop :=
   ∃ p : ℝ², closed_hull S.val ∩ closed_hull S'.val = {p})
 
 -- A decomposition of a segment is a collection of segments covering it
-def segment_covering {X : SegmentSet} (S : X) {n : ℕ} (f : Fin n → X) : Prop :=
-  closed_hull S.val = ⋃ (i : Fin n), closed_hull (f i).val
+def segment_covering {X : SegmentSet} (S : Segment) {n : ℕ} (f : Fin n → X) : Prop :=
+  closed_hull S = ⋃ (i : Fin n), closed_hull (f i).val
 
 -- A SegmentSet is splitting if every segment is the union of the basic segments it contains.
-def splitting_segment_set : SegmentSet → Prop :=
-  fun X ↦ ∀ S : X, ∃ n : ℕ, ∃ f : Fin n → X,
+def splitting_segment_set (X : SegmentSet) : Prop :=
+  ∀ S : Segment, S ∈ X → ∃ n : ℕ, ∃ f : Fin n → X,
   (segment_covering S f ∧ ∀ i : Fin n, basis_segment X (f i))
+
+
+-- Example: if X : Segment_Set is a singleton, its only member is a basis segment
+theorem singleton_has_basis (S : Segment) : basis_segment (singleton S) S  := by
+  constructor
+  · exact mem_singleton.mpr rfl
+  · intro T
+    have hTeqS : T = S := by
+      rw [← Set.mem_singleton_iff]
+      exact Set.mem_toFinset.mp T.2
+    exact fun _ ↦ congrArg closed_hull hTeqS
 
 
 theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
   splitting_segment_set X := by
-    sorry
-
--- Example: if X : Segment_Set is a singleton, its only member is a basis segment
-example (S : Segment) : basis_segment (singleton S) ⟨S, by tauto⟩  := by
-  intro T _
-  have hTeqS : T = S := by
-    rw [← Set.mem_singleton_iff]
-    exact Set.mem_toFinset.mp T.2
-  exact congrArg closed_hull hTeqS
+  apply Finset.strongInduction
+  intro Y hY S hSY
+  let YS : Finset Segment := {T ∈ Y | closed_hull T ⊆ closed_hull S}
+  have hYSsubY : YS ⊆ Y := filter_subset (fun T ↦ closed_hull T ⊆ closed_hull S) Y
+  have hSinYS : S ∈ YS := by
+    rw [mem_filter]
+    exact ⟨hSY, by rfl⟩
+  cases' ssubset_or_eq_of_subset hYSsubY with hstrict heq
+  · -- Apply induction hypothesis
+    specialize hY YS hstrict S
+    rcases hY hSinYS with ⟨n, f, ⟨hl, hr⟩⟩
+    use n
+    let g : Fin n → {x // x ∈ Y} := fun i ↦ ⟨f i, hYSsubY (f i).2⟩
+    use g
+    constructor
+    · calc closed_hull S = ⋃ (i : Fin n), closed_hull (f i).val := hl
+        _ = ⋃ (i : Fin n), closed_hull (g i).val := by rfl
+    · intro i
+      constructor
+      · exact coe_mem (g i)
+      · intro T hT
+        -- now need to prove that T is actually in YS to apply h.right
+        have hTS : ↑T ∈ YS := by
+          have hTinS : closed_hull T.val ⊆ closed_hull S := by
+            calc closed_hull T.val ⊆ closed_hull (g i).val := hT
+              _ = closed_hull (f i).val := rfl
+              _ ⊆ ⋃ (i : Fin n), closed_hull (f i).val := Set.subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
+              _ = closed_hull S := by rw [← hl]
+          rw [mem_filter]
+          exact ⟨coe_mem T, hTinS⟩
+        exact (hr i).2 ⟨T, hTS⟩ hT
+  · -- if S is basis, we are done. If not, choose something in S and use completeness to
+    -- apply the induction hypothesis to two smaller sets.
+    by_cases hSBasis : (basis_segment Y S)
+    · use 1
+      let f : Fin 1 → Y := fun 0 ↦ ⟨S, hSY⟩
+      use f
+      constructor
+      · calc closed_hull S = closed_hull (f 0).val := by rfl
+          _ = ⋃ (i : Fin 1), closed_hull (f 0).val := Eq.symm (Set.iUnion_const (closed_hull (f 0).val))
+          _ = ⋃ (i : Fin 1), closed_hull (f i).val := by sorry
+      · intro i
+        rw [Fin.fin_one_eq_zero i]
+        exact hSBasis
+    · -- Then need to take a complement of T and apply induction hypothesis to the two subsets
+      -- of elements contained in T or its complement.
+      have hT : ∃ T ∈ Y, closed_hull T ⊂ closed_hull S := by
+        unfold basis_segment at hSBasis
+        rw [Decidable.not_and_iff_or_not] at hSBasis
+        cases' hSBasis with hl hr
+        · tauto
+        · rw [Decidable.not_forall] at hr
+          cases' hr with T hT
+          use T
+          refine ⟨coe_mem T, ?_⟩
+          sorry
+      cases' hT with T hT
+      have hYSComp : complete_segment_set Y := by
+        sorry
+      have hComp : closed_hull T ⊂ closed_hull S → ∃ S' : Y, (closed_hull S = closed_hull T ∪ closed_hull S'.val ∧
+        ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := by exact hYSComp ⟨T, hT.1⟩ ⟨S, hSY⟩
+      cases' hComp hT.2 with T' hT'
+      let YT : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T}
+      let YT' : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T'.val}
+      have hYT := hY YT -- todo: add proof of strict inclusion
+      have hYT' := hY YT' -- todo: add proof of strict inclusion
+      sorry
 
 
 theorem basis_segments_exist (X : SegmentSet) :
