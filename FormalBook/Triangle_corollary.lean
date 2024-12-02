@@ -97,13 +97,16 @@ def open_diagonal_line := open_hull diagonal_line
 --We now want to show the open_unit_square is the disjoint union of these open triangles
 --and the open diagonal
 
+
+
 def union_of_open_triangles := open_unit_triangle  ∪ open_flip_unit_triangle
 
-theorem aux (X Y : Type)(x y : X → Y):(∀ z : X, x z = y z) → x = y := by exact?
 
-theorem open_unit_square_in_union : open_unit_square1 = union_of_open_triangles ∪  open_diagonal_line := by
+
+theorem open_unit_square1_is_union : open_unit_square1 = union_of_open_triangles ∪  open_diagonal_line := by
   have hunit : unit_triangle = fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1) := by rfl
   have hdiag : diagonal_line = fun | 0 => (v 1 0) | 1 => (v 0 1) := by rfl
+  have hflipunit: flip_unit_triangle = fun | 0 => (v 1 1) | 1 => (v 0 1) | 2 => (v 1 0) := by rfl
   ext x
   constructor
   · rintro ⟨ h,h1,h2, h3 ⟩
@@ -142,12 +145,42 @@ theorem open_unit_square_in_union : open_unit_square1 = union_of_open_triangles 
         fin_cases i <;> simp
     · left
       right
+      use (fun | 0 => (x 0 + x 1 -1) | 1 => 1 - x 0 | 2 => 1- x 1)
+      constructor
+      · constructor
+        · dsimp
+          intro i
+          fin_cases i <;> dsimp <;> linarith
+        · rw[Fin.sum_univ_three]
+          dsimp
+          linarith
+      · dsimp
+        rw[Fin.sum_univ_three, hflipunit]
+        simp
+        ext i
+        fin_cases i <;> simp
+  · intro h
+    cases' h  with h1 h2
+    cases' h1 with h1 h3
+    · rcases h1 with ⟨ a , ⟨ h4 ,h5⟩ ,h6⟩
+      rw[← h6]
+      dsimp
+      rw[Fin.sum_univ_three,hunit] at *
+      dsimp
+      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp <;> linarith[ h4 0 ,h4 1 ,h4 2, h4 3]
+    · rcases h3 with ⟨ a , ⟨ h4 ,h5⟩ ,h6⟩
+      rw[← h6]
+      dsimp
+      rw[Fin.sum_univ_three,hflipunit] at *
+      dsimp
+      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp <;> linarith[ h4 0 ,h4 1 ,h4 2, h4 3]
+    · rcases h2 with ⟨ a , ⟨ h4 ,h5⟩ ,h6⟩
+      rw[← h6]
+      dsimp
+      rw[Fin.sum_univ_two,hdiag] at *
+      dsimp
+      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp <;> linarith[ h4 0 ,h4 1 ,h4 2, h4 3]
 
-      sorry
-
-  · sorry
-
-theorem aux1 (a c : ℝ ): (a< c) ∨ (a = c) ∨ (a > c):= by exact lt_trichotomy a c
 
 
 
@@ -161,17 +194,10 @@ theorem open_unit_squares_are_same : open_unit_square = open_unit_square1 := by
     rw[Fin.sum_univ_four,hp] at *
     dsimp
     refine ⟨?_, ?_, ?_, ?_⟩ <;> simp <;> linarith[ h2 0 ,h2 1 ,h2 2, h2 3]
-  · rintro ⟨ h,h1,h2, h3 ⟩
+  · sorry
 
-
-    sorry
 
 
 theorem open_square_union_of : open_unit_square = union_of_open_triangles ∪  open_diagonal_line := by
-  ext x
-  constructor
-  · rintro ⟨ a,⟨ ⟨ h2,h3⟩ ,h1⟩ ⟩
-
-
-    sorry
-  · sorry
+  rw[ open_unit_squares_are_same]
+  exact open_unit_square1_is_union
