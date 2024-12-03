@@ -648,10 +648,10 @@ def basis_segment (X : SegmentSet) (S : Segment) : Prop :=
 
 -- A SegmentSet is complete if for any inclusions of segements, the closure of the complement
 -- of a segment is also in the SegmentSet
-def complete_segment_set (X : SegmentSet) : Prop :=
-  ∀ S T : X, closed_hull S.val ⊂ closed_hull T.val → ∃ S' : X,
+def complete_segment_set : SegmentSet → Prop :=
+  fun X ↦ (∀ S T : X, closed_hull S.val ⊂ closed_hull T.val → ∃ S' : X,
   (closed_hull T.val = closed_hull S.val ∪ closed_hull S'.val ∧
-  ∃ p : ℝ², closed_hull S.val ∩ closed_hull S'.val = {p})
+  ∃ p : ℝ², closed_hull S.val ∩ closed_hull S'.val = {p}))
 
 -- A decomposition of a segment is a collection of segments covering it
 def segment_covering {X : SegmentSet} (S : Segment) {n : ℕ} (f : Fin n → X) : Prop :=
@@ -674,19 +674,26 @@ theorem singleton_has_basis (S : Segment) : basis_segment (singleton S) S  := by
     exact fun _ ↦ congrArg closed_hull hTeqS
 
 
-theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
-  splitting_segment_set X := by
+theorem downward_set_complete {Y : SegmentSet} (S : Segment) (h : S ∈ Y)
+(hYCompl : complete_segment_set Y) :
+  complete_segment_set {T ∈ Y | closed_hull T ⊆ closed_hull S} := by
+  sorry
+
+
+theorem complete_is_splitting: ∀ (X : SegmentSet),
+  complete_segment_set X → splitting_segment_set X := by
   apply Finset.strongInduction
-  intro Y hY S hSY
+  intro Y hY hYCompl S hSY
   let YS : Finset Segment := {T ∈ Y | closed_hull T ⊆ closed_hull S}
   have hYSsubY : YS ⊆ Y := filter_subset (fun T ↦ closed_hull T ⊆ closed_hull S) Y
   have hSinYS : S ∈ YS := by
     rw [mem_filter]
     exact ⟨hSY, by rfl⟩
+  have hYSComp : complete_segment_set YS := downward_set_complete S hSY hYCompl
   cases' ssubset_or_eq_of_subset hYSsubY with hstrict heq
   · -- Apply induction hypothesis
-    specialize hY YS hstrict S
-    rcases hY hSinYS with ⟨n, f, ⟨hl, hr⟩⟩
+    specialize hY YS hstrict hYSComp
+    rcases hY S hSinYS with ⟨n, f, ⟨hl, hr⟩⟩
     use n
     let g : Fin n → {x // x ∈ Y} := fun i ↦ ⟨f i, hYSsubY (f i).2⟩
     use g
@@ -733,15 +740,16 @@ theorem complete_is_splitting (X : SegmentSet) (h : complete_segment_set X) :
           refine ⟨coe_mem T, ?_⟩
           sorry
       cases' hT with T hT
-      have hYSComp : complete_segment_set Y := by
-        sorry
       have hComp : closed_hull T ⊂ closed_hull S → ∃ S' : Y, (closed_hull S = closed_hull T ∪ closed_hull S'.val ∧
-        ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := by exact hYSComp ⟨T, hT.1⟩ ⟨S, hSY⟩
+        ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := hYCompl ⟨T, hT.1⟩ ⟨S, hSY⟩
       specialize hComp hT.2
       cases' hComp with T' hT'
       let YT : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T}
       let YT' : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T'.val}
+      have hYTCompl : complete_segment_set YT := downward_set_complete T hT.1 hYCompl
+      have hYT'Compl : complete_segment_set YT' := downward_set_complete T' T'.2 hYCompl
       sorry
+
 
 
 theorem basis_segments_exist (X : SegmentSet) :
