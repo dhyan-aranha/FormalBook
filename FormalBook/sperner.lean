@@ -486,22 +486,19 @@ lemma open_triangle_sign_det {T : Triangle} {i j : Fin 3} (hij : i ≠ j) :
 
 
 
-def side_triangle (T : Triangle) (b : Fin 6) : Segment :=
-    (fun | 0 => T (σ b 0) | 1 => T (σ b 1))
 
 
+def Tside (T : Triangle) : Fin 3 → Segment := fun
+  | 0 => (fun | 0 => T 1 | 1 => T 2)
+  | 1 => (fun | 0 => T 2 | 1 => T 0)
+  | 2 => (fun | 0 => T 0 | 1 => T 1)
 
-
-
-
-noncomputable def Tco (T : Triangle) (x : ℝ²) : Fin 3 → ℝ := fun
-      | 0 => (sign_seg (fun | 0 => T 1 | 1 => T 2) x) / (det T)
-      | 1 => (sign_seg (fun | 0 => T 2 | 1 => T 0) x) / (det T)
-      | 2 => (sign_seg (fun | 0 => T 0 | 1 => T 1) x) / (det T)
+noncomputable def Tco (T : Triangle) (x : ℝ²) : Fin 3 → ℝ :=
+  fun i ↦ (sign_seg (Tside T i) x) / det T
 
 lemma Tco_sum {T : Triangle} (hdet : det T ≠ 0) (x : ℝ²) : ∑ i, Tco T x i = 1 := by
   apply mul_cancel hdet
-  simp_rw [mul_sum, Tco, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, sign_seg, det]
+  simp_rw [mul_sum, Tco, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, sign_seg, det, Tside]
   ring
 
 lemma Tco_linear {n : ℕ} {T : Triangle} {P : Fin n → ℝ²} {α : Fin n → ℝ}
@@ -515,7 +512,7 @@ lemma Tco_basis_diag {T : Triangle} (hdet : det T ≠ 0) {i : Fin 3} :
   fin_cases i<;>(
     apply mul_cancel hdet
     simp [Tco, mul_div_cancel₀ _ hdet]
-    simp [sign_seg,det]
+    simp [sign_seg,det, Tside]
   ) <;> ring
 
 lemma Tco_basis_off_diag {T : Triangle} {i j: Fin 3} (hij : i ≠ j) :
@@ -524,7 +521,7 @@ lemma Tco_basis_off_diag {T : Triangle} {i j: Fin 3} (hij : i ≠ j) :
   all_goals (try tauto)
   all_goals (
     simp [Tco]; left
-    simp [sign_seg, det]; ring)
+    simp [sign_seg, det, Tside]; ring)
 
 lemma Tco_sum_val {T : Triangle} (hdet : det T ≠ 0) {α : Fin 3 → ℝ} (hα : ∑i, α i = 1) (k : Fin 3) :
     Tco T (∑ i, (α i) • (T i)) k = α k := by
@@ -535,10 +532,8 @@ lemma Tco_sum_self {T : Triangle} (hdet : det T ≠ 0) (x : ℝ²) :
     ∑ i, (Tco T x i) • (T i) = x := by
   apply smul_cancel hdet
   simp [smul_sum, smul_smul, Fin.sum_univ_three, mul_div_cancel₀ _ hdet, Tco]
-  simp [sign_seg, det]
+  simp [sign_seg, det, Tside]
   exact PiLp.ext (fun i ↦ by fin_cases i <;> (simp; ring))
-
-
 
 lemma closed_triangle_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} :
     x ∈ closed_hull T ↔ ∀ i, 0 ≤ Tco T x i := by
@@ -554,7 +549,6 @@ lemma open_triangle_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} :
 
 
 def boundary {n : ℕ} (P : Fin n → ℝ²) : Set ℝ² := (closed_hull P) \ (open_hull P)
-
 
 lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) :
     x ∈ boundary T ↔ ∃ i, Tco T x i = 0 := by
@@ -573,28 +567,28 @@ lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ c
     rw [open_triangle_iff hdet] at hxOpen
     linarith [hi, hxOpen i]
 
-def triangle_side (T : Triangle) : Fin 3 → Segment := fun
-  | 0 => (fun | 0 => T 1 | 1 => T 2)
-  | 1 => (fun | 0 => T 2 | 1 => T 0)
-  | 2 => (fun | 0 => T 0 | 1 => T 1)
 
 
-lemma mem_side (T : Triangle) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
-    Tco T x i = 0 ↔ x ∈ closed_hull (triangle_side T i) := by
-
+lemma mem_closed_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3)  :
+    Tco T x i = 0 ↔ x ∈ closed_hull (Tside T i) := by
   sorry
 
-lemma boundary_is_union_sides {T : Triangle} : boundary T = ⋃ i, closed_hull (triangle_side T i) := by
-  -- Shouldn't be too hard
+lemma mem_open_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
+    Tco T x i = 0 ∧ ∀ j, j ≠ i → 0 < Tco T x j ↔ x ∈ open_hull (Tside T i) := by
+  sorry
+
+lemma boundary_is_union_sides {T : Triangle} (hdet : det T ≠ 0)
+    : boundary T = ⋃ i, closed_hull (Tside T i) := by
+  sorry
+
+lemma segment_in_boundary_imp_in_side {T : Triangle} {L : Segment} (hdet : det T ≠ 0)
+    (hL : closed_hull L ⊆ boundary T) : ∃ i, closed_hull L ⊆ closed_hull (Tside T i) := by
   sorry
 
 
 
 
-
-
-
-
+-- Might not be necessary
 def normal_vec (L : Segment) : ℝ² := fun | 0 => L 0 1 - L 1 1 | 1 => L 1 0 - L 0 0
 
 def product_seg (L : Segment) (x : ℝ²) : ℝ := (x 0) * (L 0 1 - L 1 1) + (x 1) * (L 1 0 - L 0 0)
@@ -604,6 +598,14 @@ def reverse (L : Segment) : Segment := fun | 0 => L 1 | 1 => L 0
 lemma formula_sign_seg (L : Segment) (x y : ℝ²) (a : ℝ) :
     sign_seg L (x + a • y) = (sign_seg L x) + a * (product_seg L y) := by
   simp [sign_seg, product_seg, det]; ring
+
+
+
+
+
+
+
+
 
 
 
