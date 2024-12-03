@@ -73,13 +73,46 @@ and any other volume of triangles will follow.
 
 For this, I think I should use the fact that the square can be divided into two 'similar' triangles.
 However, it is slightly awkward, because if we divide a square up into open triangles, we are missing
-a line of measure zero. -/
+a line of measure zero (this is outdated now).
+
+Let us first show that we if we apply a linear transformation to a polygon, the volume will
+be the absolute value of the determeninant times the original volume. -/
+
 
 
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
 
 def open_unit_triangle := open_hull unit_triangle
 def closed_unit_triangle := closed_hull unit_triangle
+
+--first the statement that for a polygon P and a linear map L,  L( open hull P) = open hull (L P),
+--starting with an elementary used to prove it
+
+lemma lincom_commutes ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ}(a : Fin n → ℝ)(f : Fin n → ℝ²): ∑ i : Fin n, a i • L (f i)  =L (∑ i : Fin n, (a i) • (f i)) := by
+  rw[  map_sum L (fun i ↦  a i • f i) univ]
+  apply Fintype.sum_congr
+  exact fun i ↦ Eq.symm (LinearMap.CompatibleSMul.map_smul L (a i) (f i))
+
+
+theorem open_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin n → ℝ²)) : open_hull (L ∘ f ) = Set.image L (open_hull f) := by
+  have hhull : open_hull  f=  (fun a ↦ ∑ i, a i • f i) '' open_simplex n := by rfl
+  rw[hhull, ← Set.image_comp]
+  ext x
+  constructor
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · have h3 : (⇑L ∘ fun a ↦ ∑ i : Fin n, a i • f i) a = L  (∑ i : Fin n, a i • f i) :=by rfl
+      rw[ h3, ← lincom_commutes L a f, h2]
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · have h3 : (fun α ↦ ∑ i : Fin n, α i • (⇑L ∘ f) i) a =  (∑ i : Fin n, a i • L (f i)) := by rfl
+      rw[ h3, lincom_commutes L a f, h2]
 
 -- This is what we want to prove
 theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).toReal = (1/2 : ℝ ) := by sorry
@@ -98,8 +131,8 @@ def open_diagonal_line := open_hull diagonal_line
 --and the open diagonal
 
 
-
 def union_of_open_triangles := open_unit_triangle  ∪ open_flip_unit_triangle
+
 
 
 
