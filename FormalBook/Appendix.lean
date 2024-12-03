@@ -81,6 +81,54 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     have one_last : α⁻¹ ∉ B := H.2
     rw[← false_iff] at one_last
     rwa[one_last]
+
+  let degree : Set ℕ := {n : ℕ | ∃(p : Polynomial B), p.degree = n ∧ (Polynomial.aeval α) p = 1/2}
+
+  have nonempty : degree ≠ ∅ := by
+    -- use: Algebra.adjoin_singleton_eq_range_aeval
+    sorry
+
+  have minimal_degree : ∃ n ∈ degree, ∀ m ∈ degree, n ≤ m := by
+    -- use that N is a well-order and use well-ordering principle
+    sorry
+
+  cases' minimal_degree with n minimal_degree
+
+  have lower_degree : (n-1) ∈ degree := by
+    sorry
+
+
+
+
+
+
+
+
+  let Balpha2 := Balpha.toSubring
+  let Balpha'2 := Balpha'.toSubring
+  have range : Set.range ↑(algebraMap B ℝ) = B := by
+    ext x
+    constructor
+    . intro h
+
+      sorry
+    . intro h
+      have x_is_y : ∃ y : B, y = x := CanLift.prf x h
+      cases' x_is_y with y x_is_y'
+      have H : (algebraMap B ℝ) y = x := x_is_y'
+      rw[Set.mem_range]
+      use y
+  have closure : Balpha2 = Subring.closure (B ∪ {α}) := by
+    rw[← range]
+    exact adjoin_eq_ring_closure {α}
+
+
+
+
+
+
+
+
   -- We now want to say something like:
   -- have rings_equal : twoBalpha = Balpha ∧ twoBalpha' = Balpha'
   -- This does not work yet, because the types are different.
