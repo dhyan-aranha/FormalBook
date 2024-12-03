@@ -81,12 +81,10 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     have one_last : α⁻¹ ∉ B := H.2
     rw[← false_iff] at one_last
     rwa[one_last]
-
-
   -- We now want to say something like:
   -- have rings_equal : twoBalpha = Balpha ∧ twoBalpha' = Balpha'
   -- This does not work yet, because the types are different.
-  sorry
+
 
 
 -- There exists a valuation subring of ℝ not containing 1/2.
