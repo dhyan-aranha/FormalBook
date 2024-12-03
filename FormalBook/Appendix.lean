@@ -81,12 +81,10 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     have one_last : α⁻¹ ∉ B := H.2
     rw[← false_iff] at one_last
     rwa[one_last]
-
-
   -- We now want to say something like:
   -- have rings_equal : twoBalpha = Balpha ∧ twoBalpha' = Balpha'
   -- This does not work yet, because the types are different.
-  sorry
+
 
 
 -- There exists a valuation subring of ℝ not containing 1/2.
@@ -120,7 +118,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
 
 lemma non_archimedean (Γ₀ : Type) [LinearOrderedCommGroupWithZero Γ₀] (K : Type) [Field K] (v : Valuation K Γ₀) :
   (∀(x y : K), v x ≠ v y → v (x + y) = max (v x) (v y)) := by
-  sorry
+  exact fun x y a ↦ Valuation.map_add_of_distinct_val v a
 
 
 -- There is a valuation v on ℝ such that v(1/2) > 1.
