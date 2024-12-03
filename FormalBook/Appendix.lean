@@ -101,11 +101,11 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
     -- Idea: This is exactly hr, so maybe change statement of
     -- inclusion_maximal_valuation to have hr as hypothesis.
-    rintro y ⟨h2, h3⟩
-    have h4 : y ∈ S := by
-      exact h3
-    have h5 : y ≤ B := hr h4 h2
-    exact LE.le.antisymm h2 h5
+    rintro y ⟨h6, h7⟩
+    have h8 : y ∈ S := by
+      exact h7
+    have h5 : y ≤ B := hr h8 h6
+    exact LE.le.antisymm h6 h5
   have h4 := inclusion_maximal_valuation B hl h3
   cases' h4 with D hd
   use D
@@ -120,7 +120,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
 
 lemma non_archimedean (Γ₀ : Type) [LinearOrderedCommGroupWithZero Γ₀] (K : Type) [Field K] (v : Valuation K Γ₀) :
   (∀(x y : K), v x ≠ v y → v (x + y) = max (v x) (v y)) := by
-  sorry
+  exact fun x y a ↦ Valuation.map_add_of_distinct_val v a
 
 
 -- There is a valuation v on ℝ such that v(1/2) > 1.
