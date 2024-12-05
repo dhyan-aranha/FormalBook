@@ -89,3 +89,74 @@
   \uses{valuation_lemma}
   TODO
 \end{proof}
+
+
+\section{Corollary}
+
+The subgoal that we want to show is that whenever we have a dissection of the unit square into
+triangles the sum of the areas of these triangles is given equal to $1$. Although this statement
+may just look like a direct application of the additivity of the Lebesgue measure, there are
+some issues. Firstly the definition of area we use in the proof, is not definitionally equal
+to the actual Lebesgue measure of the triangle. The second is that the concept of a triangle is
+not uniquely defined in $\mathbb{R}^2$: Is it an (ordered) set of three points? In that case the
+triangle does not really have a sensible area. Is it the open hull of these three points, or is it
+the closed hull of these three points? For the latter cases, the Lebesgue measure is the same, but
+this does not follow immediately. The third issue is that in order to use additivity of the Lebesgue
+measure, sets have to be measurable. Although all the sets we have mentioned are measurable
+(as a matter of fact, essentially any set you can think of is measurable), if want to use this, we
+have to show this.
+
+Of course, all of these problems can be fixed, but the question is how to this in the most efficient
+way using the present tools in mathlib. The most straightforward way to calculate the area of the
+triangle, would be to use the fact that the area under a curve is the integral of the function
+describing this curve. Mathlib has this in the library, but it only appears to have the `open' version.
+This method works nicely to calculate the area of the `standard triangle' (with points $(0,0)(1,0),(0,1))$,
+but for more complicated triangles it may be a bit tricky, and for degenerate open triangles
+(which are not actually open) this is probably not going to work. Therefore we can try to use a
+change of variables formula: areas under the Lebesgue measure are translation invariant, and under
+a linear transformation it should scale with the absolute value of the determinant (I haven't found
+the appropriate theorem in Mathlib yet, but I am fairly confident it should be there).
+A bit of a non-serious problem with this approach is that I still have to find a notation in Lean,
+that matches with these statement.
+
+In order to also show that the area of the open and closed triangle are the same, I would suggest
+the following. As there does not appear to be a present theorem similar to the one we used for
+the open triangles, we show that the closed triangle is equal to the open triangle united with the
+`boundary'. I say `boundary', because I do not mean the topological boundary, but the three
+line segments given by the endpoints of the triangle. It should be fairly easy to show that this
+union indeed gives the closed triangle. Furthermore, almost by definition, the line segment
+corrsesponding to $[0,1]x[0,0]$ has measure zero by definition. Then we can do a similar transformation
+argument as we did for the triangles.
+
+Now, for all of this to work, we need that all of the sets we talked about are measurable (maybe not
+all, but at least most of these). Mathlib tells us that the (open) area under a curve is measurable,
+and so the open standard triangle is measurable. Unfortunately, images of measurable sets do not
+have to be measurable. We do however know that the pre image of an open set is measurable. This
+would suggest that if a linear transformation is a bijection, (translations are always bijections)
+that the corresponding transformed triangle is also measurable. For a degenerate linear map, we can
+probably use the fact the sets that have measure zero are always Lebesgue measurable. The line segments
+will be measurable for the same reason.
+
+If all that is done, we can do the following, where $det(A)$ means the determinant version of the
+area of the triangle $A$, $\mathring{A}$ means the open hull of $A$ (and so this set is not necessarily
+open), $\delta A$ means the boundary as given by the closed line segments of the points of the triangle
+and $\overline A$ means the closed hull of the triangle:
+\begin{equation}
+\begin{split}
+  \sum_{\text{triangles} A} \det(A) & = \sum_{\text{triangles} A} \mu (\mathring {A}) \\
+  & =\mu (\bigcup_{\text{triangles} A} \mathring{A}) \\
+  & = \mu ((\bigcup_{\text{triangles} A} \mathring{A}) \cup (\bigcup_{\text{triangles} A} \delta A)) \\
+  & = \mu (\bigcup_{\text{triangles} A} \mathring {A} \cup \delta A) \\
+  & = \mu (\bigcup_{\text{triangles} A} \overline{A}) \\
+  & = \mu ([0,1]^2) = 1
+
+
+\end{split}
+\end{equation}
+
+The first step is that the determinant area actually corresponds to the actual area of the open
+triangle, the second step is by the fact that all of these open triangles are measurable. The third
+step is by that the boundaries and therefore the union of the boundaries has measure zero (and maybe
+also by the fact they are measurable? Not sure actually). The remaining steps are just standard set theory,
+except for the last which is by definition of the Lebesgue measure, except that we have to show
+our definition of the unit square matches the Lebesgue measure definition of the unit square.
