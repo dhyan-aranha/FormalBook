@@ -114,6 +114,44 @@ theorem open_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin 
     · have h3 : (fun α ↦ ∑ i : Fin n, α i • (⇑L ∘ f) i) a =  (∑ i : Fin n, a i • L (f i)) := by rfl
       rw[ h3, lincom_commutes L a f, h2]
 
+--Now do something similar for translations (I really hope this matches with Leans stuff)
+def translation (a : ℝ²) : (ℝ² → ℝ²) := fun x ↦ x + a
+
+theorem aux_for_translation {n : ℕ }{f: Fin n → ℝ²}{a : Fin n → ℝ }{b : ℝ² }(h1 : a ∈ open_simplex n):   ∑ i : Fin n, a i • (f i + b) =  ∑ i : Fin n, a i • f i + b := by
+  rcases h1 with ⟨h2, h3⟩
+  have h4: b = ∑ i : Fin n, a i • b
+  rw[← sum_smul, h3, one_smul]
+  nth_rewrite 2[h4]
+  rw[← sum_add_distrib]
+  apply Fintype.sum_congr
+  exact fun i ↦ DistribSMul.smul_add (a i) (f i) b
+
+
+--Most of the proof now gets copied
+theorem translation_commutes {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : open_hull ( (translation b) ∘ f) = Set.image (translation b) (open_hull f) := by
+  have hhull : open_hull  f=  (fun a ↦ ∑ i, a i • f i) '' open_simplex n := by rfl
+  have htrans : translation b = fun x ↦ x + b := by rfl
+  rw[hhull, ← Set.image_comp]
+  rw[htrans] at *
+  ext x
+  constructor
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · dsimp
+      rwa[← aux_for_translation h1]
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · dsimp
+      rwa[aux_for_translation h1]
+
+
+
 -- This is what we want to prove
 theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).toReal = (1/2 : ℝ ) := by sorry
 
