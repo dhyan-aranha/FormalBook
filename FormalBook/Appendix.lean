@@ -28,6 +28,10 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 
   have alpha_in_Balpha : α ∈ Balpha := subset_adjoin rfl
   have alpha_in_Balpha' : α⁻¹ ∈ Balpha' := subset_adjoin rfl
+
+  have algebramap : ∀x : B, (algebraMap ↥B ℝ) x = x := by
+    intro x
+    rfl
   -- -- We consider {2} as a subset of Balpha and {2} as a subset of Balpha'
   -- let (two : Set Balpha.toSubring) := {2}
   -- let (two' : Set Balpha'.toSubring) := {2}
@@ -129,9 +133,7 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     intro m_eq_zero
     rw[← m_eq_degree_p, Polynomial.natDegree_eq_zero] at m_eq_zero
     rcases m_eq_zero with ⟨x, eq⟩
-    rw[← eq, Polynomial.aeval_C] at p_eval
-    have algebramap : (algebraMap ↥B ℝ) x = x := by rfl
-    rw[algebramap] at p_eval
+    rw[← eq, Polynomial.aeval_C, algebramap x] at p_eval
     rw[← p_eval] at h1
     apply h1
     exact SetLike.coe_mem x
@@ -140,9 +142,7 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     intro n_eq_zero
     rw[← n_eq_degree_q, Polynomial.natDegree_eq_zero] at n_eq_zero
     rcases n_eq_zero with ⟨x, eq⟩
-    rw[← eq, Polynomial.aeval_C] at q_eval
-    have algebramap : (algebraMap ↥B ℝ) x = x := by rfl
-    rw[algebramap] at q_eval
+    rw[← eq, Polynomial.aeval_C, algebramap x] at q_eval
     rw[← q_eval] at h1
     apply h1
     exact SetLike.coe_mem x
@@ -150,6 +150,12 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   by_cases leq : n ≤ m
 
   have lower_degree : (n-1) ∈ degree := by
+    have two_eq_constant : Polynomial.C (2:B) = (2 : Polynomial ↥B) := by rfl
+    have two_p_eval : (Polynomial.aeval α) (2 * p) = 1 := by
+      rw[← two_eq_constant, map_mul, Polynomial.aeval_C, algebramap 2, p_eval]
+      simp
+      -- Somehow this does not work...
+      sorry
 
     sorry
 
