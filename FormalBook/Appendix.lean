@@ -119,17 +119,39 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 
   have m_mem : m ∈ degree := WellFounded.min_mem wellFounded_lt degree nonempty
   have n_mem : n ∈ degree' := WellFounded.min_mem wellFounded_lt degree' nonempty'
-
   rcases m_mem with ⟨p, m_eq_degree_p, p_eval⟩
   rcases n_mem with ⟨q, n_eq_degree_q, q_eval⟩
 
   -- m and n are not equal to zero, because otherwise 1/2 would be in B
-  have zero_lt m : 0 ≠ m := by sorry
-  have zero_lt n : 0 ≠ n := by sorry
+  -- We use that a polynomial of degree zero is constant and  that the
+  -- evalauation of a contant polynomial lands in B (Polynomial.aeval_C)
+  have zero_lt_m : m ≠ 0 := by
+    intro m_eq_zero
+    rw[← m_eq_degree_p, Polynomial.natDegree_eq_zero] at m_eq_zero
+    rcases m_eq_zero with ⟨x, eq⟩
+    rw[← eq, Polynomial.aeval_C] at p_eval
+    have algebramap : (algebraMap ↥B ℝ) x = x := by rfl
+    rw[algebramap] at p_eval
+    rw[← p_eval] at h1
+    apply h1
+    exact SetLike.coe_mem x
+
+  have zero_lt_n : n ≠ 0 := by
+    intro n_eq_zero
+    rw[← n_eq_degree_q, Polynomial.natDegree_eq_zero] at n_eq_zero
+    rcases n_eq_zero with ⟨x, eq⟩
+    rw[← eq, Polynomial.aeval_C] at q_eval
+    have algebramap : (algebraMap ↥B ℝ) x = x := by rfl
+    rw[algebramap] at q_eval
+    rw[← q_eval] at h1
+    apply h1
+    exact SetLike.coe_mem x
 
   by_cases leq : n ≤ m
 
-  have lower_degree : (n-1) ∈ degree := by sorry
+  have lower_degree : (n-1) ∈ degree := by
+
+    sorry
 
   sorry
 
