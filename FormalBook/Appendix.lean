@@ -4,6 +4,7 @@ noncomputable section
 
 open ValuationSubring
 open Algebra
+open Polynomial
 
 -- Any maximal subring of ℝ not containing 1/2 is a valuation ring.
 lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
@@ -147,6 +148,10 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     apply h1
     exact SetLike.coe_mem x
 
+  let v₀ := Polynomial.coeff q 0
+  let two_v₀ := 2*v₀
+  let one_minus_two_v₀ := 1-two_v₀
+
   by_cases leq : n ≤ m
 
   have lower_degree : (n-1) ∈ degree := by
@@ -154,11 +159,20 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     have two_p_eval : (Polynomial.aeval α) (2 * p) = 1 := by
       rw[← two_eq_constant, map_mul, Polynomial.aeval_C, algebramap 2, p_eval]
       simp
-      -- Somehow this does not work...
-      sorry
-
+      refine CommGroupWithZero.mul_inv_cancel 2 ?_
+      exact Ne.symm (NeZero.ne' 2)
+    have constant_in_poly :
+      ∀(b : B), ∀(p : Polynomial B), (Polynomial.aeval α) ((Polynomial.C b) * p) = b * (Polynomial.aeval α) p := by
+        intro b p
+        rw[map_mul, Polynomial.aeval_C, algebramap b]
+    have one_minus_two_v₀_eq : (aeval α) ((C one_minus_two_v₀) * (2*p)) = one_minus_two_v₀ := by
+      rw[constant_in_poly one_minus_two_v₀ (2*p), two_p_eval]
+      simp
+    have one_eq : 1 = (aeval α) ((C one_minus_two_v₀) * (2*p) + (C two_v₀)) := by
+      rw[← Eq.symm (aeval_add α), Polynomial.aeval_C, algebramap (two_v₀), one_minus_two_v₀_eq]
+      exact sub_eq_iff_eq_add.mp rfl
     sorry
-
+  sorry
   sorry
 
 
