@@ -159,8 +159,7 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     have two_p_eval : (Polynomial.aeval α) (2 * p) = 1 := by
       rw[← two_eq_constant, map_mul, Polynomial.aeval_C, algebramap 2, p_eval]
       simp
-      refine CommGroupWithZero.mul_inv_cancel 2 ?_
-      exact Ne.symm (NeZero.ne' 2)
+      exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
     have constant_in_poly :
       ∀(b : B), ∀(p : Polynomial B), (Polynomial.aeval α) ((Polynomial.C b) * p) = b * (Polynomial.aeval α) p := by
         intro b p
