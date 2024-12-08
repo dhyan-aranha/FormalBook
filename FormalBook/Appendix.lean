@@ -158,22 +158,24 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 -- There exists a valuation subring of ℝ not containing 1/2.
 lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   let S := {A : Subring ℝ | (1/2) ∉ A}
-  have h1 : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
+  have sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
     -- Idea: The upper bound is the union of the subrings.
-    intro c
+    intro c subset chain
     -- def subring_to_set_of_sets : Set (Set ℝ) := {S.carrier | S ∈ c}
-    -- def union_of_sets : Set ℝ := subring_to_set_of_sets.sUnion
-    -- def ub : Subring ℝ :=                           -- We can also use subring.closure as that is the smallest subring containing all elements (in this case the thing itself) but then we need to show it is in S
-    -- { carrier := union_of_sets,
-    --   zero_mem' := by sorry                         -- 0 is in the set
-    --   one_mem' := by sorry,                         -- 1 is in the set
-    --   add_mem' := by sorry,                         -- closure under addition
-    --   mul_mem' := by sorry,                         -- closure under multiplication
-    --   neg_mem' := by sorry }                        -- closure under negation
-    -- have ub_mem_S : ub ∈ S:= by
-    --   sorry
+    let subring_to_set_of_sets : Set (Set ℝ) :=
+      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
+    let union_of_sets : Set ℝ := subring_to_set_of_sets.sUnion
+    let ub : Subring ℝ :=                           -- We can also use subring.closure as that is the smallest subring containing all elements (in this case the thing itself) but then we need to show it is in S
+    { carrier := union_of_sets,
+      zero_mem' := by sorry,                        -- 0 is in the set
+      one_mem' := by sorry,                         -- 1 is in the set
+      add_mem' := by sorry,                         -- closure under addition
+      mul_mem' := by sorry,                         -- closure under multiplication
+      neg_mem' := by sorry }                        -- closure under negation
+    have ub_mem_S : ub ∈ S:= by
+      sorry
     sorry
-  have h2 := zorn_le₀ S h1
+  have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
     -- Idea: This is exactly hr, so maybe change statement of
