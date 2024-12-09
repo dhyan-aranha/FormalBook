@@ -232,12 +232,12 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
     intro c subset chain
     -- def subring_to_set_of_sets : Set (Set ℝ) := {S.carrier | S ∈ c}
     let subring_to_set_of_sets : Set (Set ℝ) :=
-      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ S ∧ Rset = R.carrier}
+      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
     let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets-- .sUnion
     let ub : Subring ℝ :=                           -- We can also use subring.closure as that is the smallest subring containing all elements (in this case the thing itself) but then we need to show it is in S
     { carrier := union_of_sets,
-      zero_mem' := by exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, ZeroMemClass.zero_mem Z⟩,
-      one_mem' := by exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, OneMemClass.one_mem Z⟩,
+      zero_mem' := by sorry -- exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, ZeroMemClass.zero_mem Z⟩,
+      one_mem' := by sorry -- exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, OneMemClass.one_mem Z⟩,
       add_mem' := by
         intro a b a_in_carrier b_in_carrier
 
@@ -249,7 +249,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
       rw[Set.mem_sUnion] at half_in
       rcases half_in with ⟨t, h, g⟩
       rcases h with ⟨ringt, H2, H3⟩
-      have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) H2
+      have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) (subset H2)
       tauto
     have ub_mem_S : ub ∈ S := by
       exact ub_carrier_non_half
@@ -257,7 +257,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
     constructor
     · exact ub_mem_S
     · intro z hz x hx
-      exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, subset hz, by rfl⟩, hx⟩)
+      exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, hz, by rfl⟩, hx⟩)
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
