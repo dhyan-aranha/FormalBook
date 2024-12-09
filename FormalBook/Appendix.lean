@@ -194,40 +194,70 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   --   rw[← range]
   --   exact adjoin_eq_ring_closure {α}
 
-
-
 -- There exists a valuation subring of ℝ not containing 1/2.
+
 lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   let S := {A : Subring ℝ | (1/2) ∉ A}
+  let Z := (Int.castRingHom ℝ).range
+  have two_eq_two : (Int.castRingHom ℝ) 2 = 2 := by rfl
+  have int_in_S : Z ∈ S := by
+    intro half_in_Z
+    simp at half_in_Z
+    rcases half_in_Z with ⟨n, h⟩
+    rw[← two_eq_two] at h
+    have inj : (Int.castRingHom ℝ).toFun.Injective := by
+      exact Isometry.injective fun x1 ↦ congrFun rfl
+    have two_n : (Int.castRingHom ℝ) (2*n) = 1 := by
+      rw[map_mul, h]
+      simp
+    rw[← (Int.castRingHom ℝ).map_one] at two_n
+    have two_n_eq_one : 2*n = 1 := by
+      exact (inj two_n)
+    have n_two_eq_one : n*2 = 1 := by
+      rw[← two_n_eq_one]
+      exact Int.mul_comm n 2
+    have two_unit : ∃two : ℤˣ, two = (2:ℤ) := by
+      refine CanLift.prf 2 ?_
+      rw[isUnit_iff_exists]
+      use n
+    rcases two_unit with ⟨two, H⟩
+    have := Int.units_eq_one_or two
+    cases' this with l r
+    . rw[l] at H
+      tauto
+    . rw[r] at H
+      tauto
   have sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
     -- Idea: The upper bound is the union of the subrings.
     intro c subset chain
     -- def subring_to_set_of_sets : Set (Set ℝ) := {S.carrier | S ∈ c}
     let subring_to_set_of_sets : Set (Set ℝ) :=
-      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
-    let union_of_sets : Set ℝ := subring_to_set_of_sets.sUnion
+      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ S ∧ Rset = R.carrier}
+    let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets-- .sUnion
     let ub : Subring ℝ :=                           -- We can also use subring.closure as that is the smallest subring containing all elements (in this case the thing itself) but then we need to show it is in S
     { carrier := union_of_sets,
-      zero_mem' := by sorry,                        -- 0 is in the set
-      one_mem' := by sorry,                         -- 1 is in the set
-      add_mem' := by sorry,                         -- closure under addition
-      mul_mem' := by sorry,                         -- closure under multiplication
-      neg_mem' := by sorry }                        -- closure under negation
-    have ub_mem_S : ub ∈ S:= by
-      -- ub is subring and if 1/2 ∈ ub we woulc have that there is a n such that 1/2∈ c_n
-      rw[← mem_sUnion]
-      sorry -- How do you make this the conditions to be in S
+      zero_mem' := by exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, ZeroMemClass.zero_mem Z⟩,
+      one_mem' := by exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, OneMemClass.one_mem Z⟩,
+      add_mem' := by
+        intro a b a_in_carrier b_in_carrier
+
+        sorry,
+      mul_mem' := by sorry,
+      neg_mem' := by sorry }
+    have ub_carrier_non_half : 1/2 ∉ ub.carrier := by
+      intro half_in
+      rw[Set.mem_sUnion] at half_in
+      rcases half_in with ⟨t, h, g⟩
+      rcases h with ⟨ringt, H2, H3⟩
+      have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) H2
+      tauto
+    have ub_mem_S : ub ∈ S := by
+      exact ub_carrier_non_half
     use ub
     constructor
     · exact ub_mem_S
-    · intro z hz
-      intro x hx
-      refine Subring.mem_carrier.mp ?h.right.a
-      refine Set.mem_sUnion.mpr ?h.right.a.a
-      use z
-      constructor
-      · sorry
-      · exact hx
+    · intro z hz x hx
+      exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, subset hz, by rfl⟩, hx⟩)
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
