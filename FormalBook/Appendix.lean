@@ -30,6 +30,10 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   have alpha_in_Balpha : α ∈ Balpha := subset_adjoin rfl
   have alpha_in_Balpha' : α⁻¹ ∈ Balpha' := subset_adjoin rfl
 
+  -- lift α to Balpha using alpha_in_Balpha
+
+  have alpha_type_B : ∃ β : B, α = β := by exact?
+
   have algebramap : ∀x : B, (algebraMap ↥B ℝ) x = x := by
     intro x
     rfl
@@ -84,6 +88,9 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 
   let degree : Set ℕ := {n : ℕ | ∃(p : Polynomial B), p.natDegree = n ∧ (Polynomial.aeval α) p = 1/2}
   let degree' : Set ℕ := {n : ℕ | ∃(p : Polynomial B), p.natDegree = n ∧ (Polynomial.aeval α⁻¹) p = 1/2}
+
+  let β : Balpha := ⟨α, alpha_in_Balpha⟩
+
 
   -- any element of B[α] can be written as a polynomial in α with variables in B
   have contains_half : 1/2 ∈ ((Polynomial.aeval α).range : Subalgebra ↥B ℝ) := by
@@ -157,6 +164,7 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   have lower_degree : (n-1) ∈ degree := by
     have two_eq_constant : Polynomial.C (2:B) = (2 : Polynomial ↥B) := by rfl
     have two_p_eval : (Polynomial.aeval α) (2 * p) = 1 := by
+      rw[Polynomial.aeval_mul]
       rw[← two_eq_constant, map_mul, Polynomial.aeval_C, algebramap 2, p_eval]
       simp
       exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
@@ -215,13 +223,21 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
       neg_mem' := by sorry }                        -- closure under negation
     have ub_mem_S : ub ∈ S:= by
       -- ub is subring and if 1/2 ∈ ub we woulc have that there is a n such that 1/2∈ c_n
-      rw[← mem_sUnion]
+      -- rw[← mem_sUnion]
+
       sorry -- How do you make this the conditions to be in S
     use ub
     constructor
     · exact ub_mem_S
-    · intro z
-      sorry
+    · intro z hz
+      intro x hx
+      refine Subring.mem_carrier.mp ?h.right.a
+      refine Set.mem_sUnion.mpr ?h.right.a.a
+      use z
+      constructor
+      ·
+        sorry
+      · exact hx
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
