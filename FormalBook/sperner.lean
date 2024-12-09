@@ -24,9 +24,10 @@ def open_hull   {n : ℕ} (f : Fin n → ℝ²) : Set ℝ² := (fun α ↦ ∑ i
 noncomputable def triangle_area (T : Triangle) : ℝ :=
   abs (- (T 0 1) * (T 1 0) + (T 0 0) * (T 1 1) + (T 0 1) * (T 2 0) - (T 1 1) * (T 2 0) - (T 0 0) * (T 2 1) + (T 1 0) * (T 2 1)) / 2
 
+
 def is_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
-  (X = ⋃ (T ∈ S), closed_hull T) ∧
-  (Set.PairwiseDisjoint S open_hull)
+  (X = ⋃ (Δ ∈ S), closed_hull Δ) ∧
+  (∀ Δ₁ ∈ S, ∀ Δ₂ ∈ S, open_hull Δ₁ ∩ open_hull Δ₂ = ∅)
 
 def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
   is_cover X S ∧
@@ -41,11 +42,9 @@ def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
 def Psquare : Fin 4 → ℝ² := (fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1)
 
-def unit_square : Set ℝ²
-  := closed_hull Psquare
+def unit_square : Set ℝ² := closed_hull Psquare
 
-def open_unit_square : Set ℝ²
-  := open_hull Psquare
+def open_unit_square : Set ℝ² := open_hull Psquare
 
 
 theorem Monsky (n : ℕ):
@@ -82,6 +81,10 @@ lemma simplex_vertex_image {n : ℕ} {i : Fin n} (f : Fin n → ℝ²) :
     ∑ k, (simplex_vertex i k) • f k = f i := by
   unfold simplex_vertex; simp
 
+@[simp]
+lemma corner_in_closed_hull {n : ℕ} {i : Fin n} {P : Fin n → ℝ²} : P i ∈ closed_hull P := by
+  exact ⟨simplex_vertex i, simplex_vertex_in_simplex, by simp⟩
+
 lemma vertex_mem_closed {n : ℕ} {i : Fin n} {f : Fin n → ℝ²} :
     f i ∈ ((fun α ↦ ∑ i, α i • f i) '' closed_simplex n) :=
   ⟨simplex_vertex i, ⟨simplex_vertex_in_simplex, by simp⟩⟩
@@ -99,9 +102,9 @@ lemma closed_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
     exact vertex_mem_closed (i := ⟨0,Nat.zero_lt_of_ne_zero hn⟩)
 
 
-
-
-
+-- Cleaner to first prove open_simplex ⊆ closed_simplex.
+lemma open_sub_closed {n : ℕ} (P : Fin n → ℝ²) : open_hull P ⊆ closed_hull P :=
+  fun _ ⟨α,hαx,hx⟩ ↦ ⟨α,⟨⟨fun i ↦ by linarith [hαx.1 i],hαx.2⟩,hx⟩⟩
 
 noncomputable def vertex_set {n : ℕ} (P : Fin n → ℝ²) : Finset ℝ² :=
     image P univ
@@ -160,6 +163,10 @@ lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : F
     exact hβp
 
 
+lemma open_segment_sub {L₁ L₂ : Segment} (hsub: ∀ i : Fin 2, L₁ i ∈ closed_hull L₂) (hL₁ : L₁ 0 ≠ L₁ 1) :
+    open_hull L₁ ⊆ open_hull L₂ := by
+
+  sorry
 
 
 /- A basic lemma about sums that I want to use but that I cannot find.-/
@@ -219,108 +226,6 @@ lemma smul_cancel {a : ℝ} {b c : ℝ²} (h₁ : a ≠ 0) (h₂: a • b = a �
   assumption
 
 
-/-
-  Given a v ∈ ℝ² inside a closed triangle that is not one of its vertices
-  there exists a (non-trivial) segment L with v in its interior and
-  L inside the closed triangle. This statement is true even if the triangle
-  is degenerate.
--/
-lemma non_vtx_imp_seg (T : Triangle) (v : ℝ²) (h₁ : v ∉ vertex_set T) (h₂ : v ∈ closed_hull T) :
-    ∃ (L : Segment), L 0 ≠ L 1 ∧ closed_hull L ⊆ closed_hull T ∧ v ∈ open_hull L := by
-  have ⟨α, hα, hvα⟩ := h₂; dsimp at hvα
-  have ⟨i,hi⟩ := simplex_exists_co_pos hα
-  have hneq : α i ≠ 1 := by
-    intro hcontra
-    refine h₁ (mem_image.mpr ⟨i, by simp, ?_⟩)
-    rw [←hvα, ←sum_add_sum_compl {i} fun k ↦ α k • T k, ←add_zero (T i)]
-    congr
-    · rw [sum_singleton, hcontra, one_smul]
-    · refine (sum_eq_zero ?_).symm
-      intro k hk; simp at hk
-      rw [simplex_co_eq_1 hα hcontra k hk, zero_smul]
-  have heq : v - α i • T i = (1 - α i) • ∑ k ∈ {i}ᶜ, (α k / (1 - α i)) • T k := by
-    simp [smul_sum, smul_smul, mul_div_cancel₀ _ (sub_ne_zero_of_ne hneq.symm),
-      sub_eq_iff_eq_add', ←hvα, ←sum_add_sum_compl {i} fun k ↦ α k • T k]
-  use fun | 0 => T i | 1 => ∑ k ∈ {i}ᶜ, ((α k) / (1 - α i)) • T k
-  dsimp
-  refine ⟨?_,?_,?_⟩
-  · intro hTi
-    refine h₁ (mem_image.mpr ⟨i, by simp, ?_⟩)
-    have hcontra := congrArg (HSMul.hSMul (1 - α i)) hTi
-    simp only [sub_smul, one_smul, ← heq, sub_eq_iff_eq_add', add_sub_cancel] at hcontra
-    exact hcontra
-  · apply closed_hull_convex
-    intro k; fin_cases k
-    exact vertex_mem_closed
-    use fun j ↦ if j = i then 0 else (α j) / (1 - α i)
-    refine ⟨⟨?_,?_⟩,?_⟩
-    · intro j
-      by_cases h : j = i <;> simp_all
-      exact div_nonneg (hα.1 j) (sub_nonneg_of_le (simplex_co_leq_1 hα i))
-    · convert sum_if_comp (fun j ↦ (α j /  (1 - α i))) i
-      apply mul_left_cancel₀ (sub_ne_zero_of_ne hneq.symm)
-      simp [mul_sum, mul_div_cancel₀ _ (sub_ne_zero_of_ne hneq.symm),sub_eq_iff_eq_add']
-      convert hα.2.symm
-      rw [←(sum_add_sum_compl {i} fun k ↦ α k)]
-      convert add_right_cancel_iff.mpr (sum_singleton _ _).symm
-      exact AddCommMagma.IsLeftCancelAdd.toIsRightCancelAdd ℝ -- This feels strange
-    · simp
-      convert sum_if_comp (fun j ↦ (α j /  (1 - α i)) • T j) i
-  · use fun | 0 => α i | 1 => 1 - α i
-    refine ⟨⟨?_, by simp⟩,?_⟩
-    · intro k
-      fin_cases k <;> simp
-      · linarith
-      · exact lt_of_le_of_ne (simplex_co_leq_1 hα _) hneq
-    · simp [←heq]
-
-/-
-  There is no non-trivial segment going through (0,0) of the unit square.
-  This should imply the same statement for the other corners of the square without too much work.
--/
-/-
-This lemma is now broken because the definition of unit_square changed.
-
-lemma no_segment_through_origin_square {L : Segment} (h₁ : L 0 ≠ L 1)
-    (h₂ : closed_hull L ⊆ unit_square) : v 0 0 ∉ open_hull L := by
-  have hNonzero : ∃ i j, L i j ≠ 0 := by
-    by_contra hcontra; push_neg at hcontra
-    exact h₁ (PiLp.ext fun i ↦ (by rw [hcontra 0 i, hcontra 1 i]))
-  have ⟨i,j,hNonzero⟩ := hNonzero
-  intro ⟨α,hα,hαv⟩
-  have hLpos : ∀ l k, 0 ≤ L l k := by
-    intro l k
-    have ⟨_,_,_,_⟩ := h₂ (vertex_mem_closed (i := l))
-    fin_cases k <;> assumption
-  rw [←lt_self_iff_false (0 : ℝ)]
-  calc
-    0 < α i * L i j             := mul_pos (hα.1 i) (lt_of_le_of_ne (hLpos i j) (hNonzero.symm))
-    _ = ∑ k ∈ {i}, α k * L k j  := by simp
-    _ ≤ ∑ k, α k * L k j        := sum_le_univ_sum_of_nonneg (fun k ↦ (mul_nonneg_iff_of_pos_left (hα.1 k)).mpr (hLpos k j))
-    _ ≤ (v 0 0) j               := by rw [←hαv]; simp
-    _ = 0                       := by fin_cases j <;> simp
-
--/
-
-/-
-  Some stuff about bijections Fin 3 → Fin 3.
-  This might be useful to brute force things later.
--/
-
-def σ : Fin 6 → (Fin 3 → Fin 3) := fun
-| 0 => (fun | 0 => 0 | 1 => 1 | 2 => 2)
-| 1 => (fun | 0 => 0 | 1 => 2 | 2 => 1)
-| 2 => (fun | 0 => 1 | 1 => 0 | 2 => 2)
-| 3 => (fun | 0 => 1 | 1 => 2 | 2 => 0)
-| 4 => (fun | 0 => 2 | 1 => 0 | 2 => 1)
-| 5 => (fun | 0 => 2 | 1 => 1 | 2 => 0)
-
-def b_sign : Fin 6 → ℝ := fun
-  | 0 => 1 | 1 => -1 | 2 => -1 | 3 => 1 | 4 => 1 | 5 => -1
-
-def b_inv : Fin 6 → Fin 6 := fun
-  | 0 => 0 | 1 => 1 | 2 => 2 | 3 => 4 | 4 => 3 | 5 => 5
-
 def last_index : Fin 3 → Fin 3 → Fin 3 := fun
   | 0 => (fun | 0 => 0 | 1 => 2 | 2 => 1)
   | 1 => (fun | 0 => 2 | 1 => 1 | 2 => 0)
@@ -334,53 +239,6 @@ lemma last_index_diff {i j : Fin 3} (hij : i ≠ j) :
 lemma last_index_comp {i j : Fin 3} (hij : i ≠ j) :
     ({i,j} : Finset (Fin 3))ᶜ = {last_index i j} := by
   fin_cases i <;> fin_cases j <;> tauto
-
-lemma bijection_right_inv
-    : ∀ b, (σ b) ∘ (σ (b_inv b)) = id := by
-  intro b; funext x
-  fin_cases b <;> fin_cases x <;> rfl
-
-lemma bijection_left_inv
-    : ∀ b, (σ (b_inv b)) ∘ (σ b) = id := by
-  intro b; funext x
-  fin_cases b <;> fin_cases x <;> rfl
-
-lemma fun_in_bijections {i j k : Fin 3} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
-    ∃ b, σ b = (fun | 0 => i | 1 => j | 2 => k)  := by
-  fin_cases i <;> fin_cases j <;> fin_cases k
-  all_goals (tauto)
-  · exact ⟨0, rfl⟩
-  · exact ⟨1, rfl⟩
-  · exact ⟨2, rfl⟩
-  · exact ⟨3, rfl⟩
-  · exact ⟨4, rfl⟩
-  · exact ⟨5, rfl⟩
-
-lemma sign_non_zero : ∀ b, b_sign b ≠ 0 := by
-  intro b; fin_cases b <;> simp [b_sign]
-
-
-lemma bijection_sum_right {α : Type} [AddCommMonoid α] (f : Fin 3 → α) (b : Fin 6)
-    : ∑ i, (f ∘ σ b) i = ∑ i, f i := by
-  fin_cases b <;> simp [σ,Fin.sum_univ_three, add_comm, add_assoc,add_left_comm]
-
-
-/- Given i j map to the bijection that maps i to 0, j to 1 and last to 2 -/
-def normalize_map : Fin 3 → Fin 3 → (Fin 3 → Fin 3) := fun
-  | 0 => (fun | 0 => σ 0 | 1 => σ 0 | 2 => σ 1)
-  | 1 => (fun | 0 => σ 2 | 1 => σ 0 | 2 => σ 4)
-  | 2 => (fun | 0 => σ 3 | 1 => σ 5 | 2 => σ 0)
-
-
-lemma normalize_val_i {i j : Fin 3} (hij : i ≠ j) : normalize_map i j i = 0 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, σ]; try tauto)
-
-lemma normalize_val_j {i j : Fin 3} (hij : i ≠ j) : normalize_map i j j = 1 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, σ]; try tauto)
-
-lemma normalize_val_k {i j : Fin 3} (hij : i ≠ j) : normalize_map i j (last_index i j) = 2 := by
-  fin_cases i <;> fin_cases j <;> (simp [normalize_map, last_index, σ]; try tauto)
-
 
 
 
@@ -399,68 +257,7 @@ lemma linear_combination_det_last {n : ℕ} {x y : ℝ²} {P : Fin n → ℝ²} 
   simp [det, left_distrib, sum_add_distrib, sum_apply _, mul_sum, ←sum_mul, hα]
   congr <;> (ext; ring)
 
-lemma det_perm {T : Triangle} (b : Fin 6) :
-    det T = (b_sign b) *  det (T ∘ (σ b)) := by
-  fin_cases b <;> (simp_all [det, b_sign, σ]; try ring)
 
-lemma det_zero_perm {T : Triangle} (hT  : det T = 0) :
-    ∀ i j k, det (fun | 0 => T i | 1 => T j | 2 => T k) = 0 := by
-  intro i j k
-  by_cases hij : i = j
-  · simp [det, hij]
-  · by_cases hik : i = k
-    · simp [det, hik]; ring
-    · by_cases hjk : j = k
-      · simp [det, hjk]; ring
-      · have ⟨b, hb⟩ := fun_in_bijections hij hik hjk
-        rw [det_perm b] at hT
-        convert eq_zero_of_ne_zero_of_mul_left_eq_zero (sign_non_zero b) hT
-        split <;> simp [hb]
-
-lemma det_zero_01 {T : Triangle} (h01 : T 0 = T 1) :
-    det T = 0 := by simp [det, h01]
-
-lemma det_zero_02 {T : Triangle} (h02 : T 0 = T 2) :
-    det T = 0 := by simp [det, h02]; ring
-
-lemma det_zero_12 {T : Triangle} (h12 : T 1 = T 2) :
-    det T = 0 := by simp [det, h12]; ring
-
-/- Doing it with bijections here doesn't really seem to gain anything. -/
-lemma linear_combination_det_middle {n : ℕ} {x z : ℝ²} {P : Fin n → ℝ²} {α : Fin n → ℝ}
-    (hα : ∑ i, α i = 1) :
-  det (fun | 0 => x | 1 => (∑ i, α i • P i) | 2 => z) =
-  ∑ i, (α i * det (fun | 0 => x | 1 => (P i) | 2 => z)) := by
-  convert linear_combination_det_last (y := x) (P := P) (x := z) hα using 1
-  · convert det_perm 4
-    simp [b_sign, σ];
-    congr; funext k; fin_cases k <;> rfl
-  · congr; ext i; congr 1;
-    convert det_perm 4
-    simp [b_sign, σ];
-    congr; funext k; fin_cases k <;> rfl
-
-lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²} {α : Fin n → ℝ}
-    (hα : ∑ i, α i = 1) :
-  det (fun | 0 => (∑ i, α i • P i) | 1 => y | 2 => z) =
-  ∑ i, (α i * det (fun | 0 => (P i) | 1 => y | 2 => z)) := by
-  convert linear_combination_det_last (y := z) (P := P) (x := y) hα using 1
-  · convert det_perm 3
-    simp [b_sign, σ];
-    congr; funext k; fin_cases k <;> rfl
-  · congr; ext i; congr 1;
-    convert det_perm 3
-    simp [b_sign, σ];
-    congr; funext k; fin_cases k <;> rfl
-
-
-
-lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
-    ∀ x y z, x ∈ closed_hull T → y ∈ closed_hull T → z ∈ closed_hull T →
-      det (fun | 0 => x | 1 => y | 2 => z) = 0 := by
-  intro x y z ⟨_, ⟨_, hαx⟩ , hx⟩ ⟨_, ⟨_, hαy⟩ , hy⟩ ⟨_, ⟨_, hαz⟩ , hz⟩
-  simp [←hx, ← hy, ←hz, linear_combination_det_first hαx,
-    linear_combination_det_middle hαy, linear_combination_det_last hαz, det_zero_perm hT]
 
 
 def sign_seg (L : Segment) (v : ℝ²) : ℝ := det (fun | 0 => L 0 | 1 => L 1 | 2 => v)
@@ -469,21 +266,6 @@ def sign_seg (L : Segment) (v : ℝ²) : ℝ := det (fun | 0 => L 0 | 1 => L 1 |
 lemma sign_seg_mem_zero (L : Segment) {v : ℝ²} (hv : v ∈ closed_hull L) :
     sign_seg L v = 0 := by
   sorry
-
-
-
-
-
-lemma open_triangle_sign_det {T : Triangle} {i j : Fin 3} (hij : i ≠ j) :
-    ∀ v ∈ open_hull T,
-    Real.sign (sign_seg (fun | 0 => T i | 1 => T j) v) =
-    Real.sign (det (fun | 0 => T i | 1 => T j | 2 => T (last_index i j))) := by
-  intro v ⟨α,⟨hαpos,hα⟩ ,hαv⟩
-  rw [←hαv, sign_seg, linear_combination_det_last hα, ←sum_add_sum_compl {i,j},
-      sum_pair hij, det_zero_02, det_zero_12, last_index_comp hij]
-  simp [sign_mul_pos (hαpos _)]
-  all_goals rfl
-
 
 
 
@@ -547,8 +329,30 @@ lemma open_triangle_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} :
   · exact fun ⟨α,hα,hαx⟩ ↦ by simp_rw [←hαx, Tco_sum_val hdet hα.2]; exact hα.1
   · exact fun hco ↦ ⟨Tco T x, ⟨hco, Tco_sum hdet x⟩, Tco_sum_self hdet x⟩
 
+lemma two_co_zero_imp_corner_co {T : Triangle} {i j : Fin 3} {x : ℝ²} (hdet : det T ≠ 0)
+    (hij : i ≠ j) (hi : Tco T x i = 0) (hj : Tco T x j = 0) :
+    Tco T x (last_index i j) =  1 := by
+  rw [←Tco_sum hdet x, Fin.sum_univ_three]
+  fin_cases i <;> fin_cases j <;> simp_all [last_index]
+
+lemma two_co_zero_imp_corner {T : Triangle} {i j : Fin 3} {x : ℝ²} (hdet : det T ≠ 0)
+  (hij : i ≠ j) (hi : Tco T x i = 0) (hj : Tco T x j = 0) :
+    x = T (last_index i j) := by
+  have hk := two_co_zero_imp_corner_co hdet hij hi hj
+  rw [←Tco_sum_self hdet x, Fin.sum_univ_three]
+  fin_cases i <;> fin_cases j <;> simp_all [last_index]
+
+
+
 
 def boundary {n : ℕ} (P : Fin n → ℝ²) : Set ℝ² := (closed_hull P) \ (open_hull P)
+
+lemma boundary_not_in_open {n : ℕ} (P : Fin n → ℝ²) {x : ℝ²} (hx : x ∈ boundary P) :
+    x ∉ open_hull P := by
+  sorry
+
+lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1} := by
+  sorry
 
 lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) :
     x ∈ boundary T ↔ ∃ i, Tco T x i = 0 := by
@@ -567,55 +371,426 @@ lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ c
     rw [open_triangle_iff hdet] at hxOpen
     linarith [hi, hxOpen i]
 
+lemma nondegen_triangle_imp_nondegen_side {T : Triangle} (i : Fin 3) (hdet : det T ≠ 0):
+    Tside T i 0 ≠ Tside T i 1 :=
+  fun hS ↦ hdet (by fin_cases i <;> (simp [Tside] at hS; simp [det, hS]) <;> ring)
 
-
-lemma mem_closed_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3)  :
+lemma mem_closed_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
     Tco T x i = 0 ↔ x ∈ closed_hull (Tside T i) := by
-  sorry
+  constructor
+  · intro hTco
+    use (fun | 0 => Tco T x (i + 1) | 1 => Tco T x (i + 2))
+    refine ⟨⟨?_,?_⟩,?_⟩
+    · exact fun j ↦ by fin_cases j <;> exact (closed_triangle_iff hdet).1 hx _
+    · simp_rw [←Tco_sum hdet x, Fin.sum_univ_three, Fin.sum_univ_two]
+      fin_cases i <;> (simp [hTco, add_comm] at *)
+    · nth_rw 3 [←Tco_sum_self hdet x]
+      fin_cases i <;> (simp [Fin.sum_univ_three, hTco, Tside, add_comm] at *)
+  · intro ⟨α, hα, hαx⟩
+    rw [←hαx, Tco_linear hα.2]
+    fin_cases i <;> (simp [Tside, Tco_basis_off_diag])
+
+lemma closed_side_sub {T : Triangle} {x : ℝ²} {i : Fin 3} (hx : x ∈ closed_hull (Tside T i)) :
+    x ∈ closed_hull T := by
+  refine closed_hull_convex ?_ hx
+  intro j
+  fin_cases i <;> fin_cases j <;> simp [Tside, simplex_vertex_in_simplex]
+
+lemma closed_side_to_co {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} {i : Fin 3} (hx : x ∈ closed_hull (Tside T i)) :
+    Tco T x i = 0 := (mem_closed_side hdet (closed_side_sub hx) _).2 hx
+
 
 lemma mem_open_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
-    Tco T x i = 0 ∧ ∀ j, j ≠ i → 0 < Tco T x j ↔ x ∈ open_hull (Tside T i) := by
-  sorry
+    (Tco T x i = 0 ∧ ∀ j, j ≠ i → 0 < Tco T x j) ↔ x ∈ open_hull (Tside T i) := by
+  constructor
+  · intro ⟨hTco, hall⟩
+    -- This is basically the same proof as the closed version.
+    use (fun | 0 => Tco T x (i + 1) | 1 => Tco T x (i + 2))
+    refine ⟨⟨?_,?_⟩,?_⟩
+    · exact fun j ↦ by fin_cases j <;> simp [hall]
+    · simp_rw [←Tco_sum hdet x, Fin.sum_univ_three, Fin.sum_univ_two]
+      fin_cases i <;> (simp [hTco, add_comm] at *)
+    · nth_rw 3 [←Tco_sum_self hdet x]
+      fin_cases i <;> (simp [Fin.sum_univ_three, hTco, Tside, add_comm] at *)
+  · intro hxOpen
+    have hTcoi : Tco T x i = 0 := by
+      rw [mem_closed_side hdet hx]
+      exact open_sub_closed _ hxOpen
+    refine ⟨hTcoi, ?_⟩
+    by_contra hEx;
+    push_neg at hEx
+    have ⟨j,hjneq,hTcoj'⟩ := hEx
+    have hTcoj : Tco T x j = 0 := by
+      linarith [hTcoj', (closed_triangle_iff hdet).1 hx j]
+    refine boundary_not_in_open (Tside T i) ?_ hxOpen
+    rw [boundary_seg (nondegen_triangle_imp_nondegen_side i hdet), two_co_zero_imp_corner hdet hjneq hTcoj hTcoi]
+    fin_cases i <;> fin_cases j <;> tauto
+
+
+lemma mem_open_side_other_co {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²}  {i : Fin 3} (hxOpen : x ∈ open_hull (Tside T i))
+  : ∀ j, j ≠ i → 0 < Tco T x j := by
+  rw [←(mem_open_side hdet (closed_side_sub (open_sub_closed _ hxOpen)))] at hxOpen
+  exact hxOpen.2
+
+lemma side_in_boundary {T : Triangle} (hdet : det T ≠ 0) (i : Fin 3) :
+    closed_hull (Tside T i) ⊆ boundary T := by
+  intro x hx
+  rw [boundary_iff hdet (closed_side_sub hx)]
+  exact ⟨i, closed_side_to_co hdet hx⟩
+
 
 lemma boundary_is_union_sides {T : Triangle} (hdet : det T ≠ 0)
     : boundary T = ⋃ i, closed_hull (Tside T i) := by
-  sorry
+  ext x
+  constructor
+  · intro hx
+    have ⟨i,_⟩ := (boundary_iff hdet (Set.mem_of_mem_diff hx)).1 hx
+    exact Set.mem_iUnion.mpr ⟨i, by rwa [←mem_closed_side hdet (Set.mem_of_mem_diff hx) i]⟩
+  · intro hx
+    have ⟨_,hx⟩ := Set.mem_iUnion.1 hx
+    exact side_in_boundary hdet _ hx
 
+
+lemma el_in_boundary_imp_side {T : Triangle} {x : ℝ²} (hdet : det T ≠ 0)
+    (hx : x ∈ boundary T) (hv : ∀ i, x ≠ T i) : ∃ i, x ∈ open_hull (Tside T i) := by
+  have hxClosed := (Set.mem_of_mem_diff hx)
+  have ⟨i,hi⟩ := (boundary_iff hdet hxClosed).1 hx
+  use i
+  rw [←mem_open_side hdet hxClosed]
+  refine ⟨hi,?_⟩
+  intro j hji
+  by_contra hj
+  apply hv (last_index j i)
+  refine two_co_zero_imp_corner hdet hji  ?_ hi
+  linarith [hj, (closed_triangle_iff hdet).1 hxClosed j]
+
+
+/- Might not be necessary.-/
 lemma segment_in_boundary_imp_in_side {T : Triangle} {L : Segment} (hdet : det T ≠ 0)
     (hL : closed_hull L ⊆ boundary T) : ∃ i, closed_hull L ⊆ closed_hull (Tside T i) := by
   sorry
 
 
+def det₂ (x y : ℝ²) : ℝ := x 0 * y 1 - x 1 * y 0
 
+lemma det₂_iff (x y : ℝ²) (hx : x ≠ 0)
+  : det₂ x y = 0 ↔ ∃ (α : ℝ), y = α • x := by
+  sorry
+
+noncomputable def seg_vec (L : Segment) : ℝ² := L 1 - L 0
+noncomputable def Oside (T : Triangle) (i : Fin 3) := seg_vec (Tside T i)
 
 -- Might not be necessary
 def normal_vec (L : Segment) : ℝ² := fun | 0 => L 0 1 - L 1 1 | 1 => L 1 0 - L 0 0
 
-def product_seg (L : Segment) (x : ℝ²) : ℝ := (x 0) * (L 0 1 - L 1 1) + (x 1) * (L 1 0 - L 0 0)
+lemma seg_vec_co {L : Segment} {x y : ℝ²} (hx : x ∈ closed_hull L) (hy : y ∈ closed_hull L)
+  : ∃ a : ℝ, y = x + a • seg_vec L := by
 
-def reverse (L : Segment) : Segment := fun | 0 => L 1 | 1 => L 0
+  sorry
 
-lemma formula_sign_seg (L : Segment) (x y : ℝ²) (a : ℝ) :
-    sign_seg L (x + a • y) = (sign_seg L x) + a * (product_seg L y) := by
-  simp [sign_seg, product_seg, det]; ring
+lemma sign_seg_line (L : Segment) (x y : ℝ²) (a : ℝ) :
+    sign_seg L (x + a • y) = (sign_seg L x) + a * (det₂ (seg_vec L) y) := by
+  simp [sign_seg, det₂, det, seg_vec]; ring
+
+lemma seg_vec_zero_iff (L : Segment) : seg_vec L = 0 ↔ L 0 = L 1 := by
+  sorry
+
+lemma Tco_line {T : Triangle} {i : Fin 3} (x y : ℝ²) (a : ℝ) :
+    Tco T (x  + a • y) i = Tco T x i + a * (det₂ (Oside T i) y) / det T := by
+  rw [Tco, sign_seg_line, add_div, ←Tco, ←Oside]
+
+
+lemma seg_inter_open {T : Triangle} {x y : ℝ²} {i : Fin 3}
+  (hxT : x ∈ open_hull (Tside T i)) (hdet: det T ≠ 0)
+  (hdet₂ : det₂ (seg_vec (Tside T i)) y ≠ 0) :
+  ∃ σ ∈ ({-1,1} : Finset ℝ), ∃ δ > 0, (∀ a : ℝ,
+    (0 < a → a ≤ δ → x + a • σ • y ∈ open_hull T)) ∧ ∀ a : ℝ, 0 < a → x + a • (- σ) • y ∉ closed_hull T := by
+  use (Real.sign (det T * det₂ (Oside T i) y))
+  constructor
+  · sorry
+  · sorry
+
+lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
+    ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
+
+  sorry
+
+lemma cover_mem_side {S : Finset Triangle} {X : Set ℝ²} (hCover : is_cover X S)
+    (hArea : ∀ Δ ∈ S, det Δ ≠ 0) {x : ℝ²} (hx : x ∈ X) (hInt: ∀ Δ ∈ S, x ∉ (open_hull Δ))
+    (hv : ∀ i, ∀ Δ ∈ S, x ≠ Δ i) : ∃ Δ ∈ S, ∃ i : Fin 3, x ∈ open_hull (Tside Δ i) := by
+  sorry
+
+
+lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : det T ≠ 0)
+    (hxL : x ∈ open_hull L) (hxT : x ∈ open_hull (Tside T i))
+    (hInter : open_hull T ∩ closed_hull L = ∅)
+    (hv : ∀ i, T i ∉ open_hull L) : closed_hull L ⊆ closed_hull (Tside T i) := by
+  have hdir : det₂ (seg_vec (Tside T i)) (seg_vec L) = 0 := by
+    by_contra hcontra
+    have ⟨σ,hσ,δ, hδ, hseg⟩  := seg_inter_open hxT hdet hcontra
+    have ⟨δ', hδ', hseg'⟩ := seg_dir_sub hxL
+    rw [Set.eq_empty_iff_forall_not_mem] at hInter
+    apply hInter (x + (min δ δ') • σ • seg_vec L)
+    rw [@Set.mem_inter_iff]
+    constructor
+    · exact hseg.1 _ (lt_min hδ hδ') (min_le_left _ _)
+    · rw [←mul_smul]
+      refine open_sub_closed _ (hseg' (min δ δ' * σ) ?_)
+      have hσabs : |σ| = 1 := by
+        cases' (mem_insert.1 hσ) with ht ht
+        · simp only [ht, abs_neg, abs_one]
+        · simp at ht
+          simp only [ht, abs_one]
+      rw [abs_mul, hσabs, mul_one]
+      refine Eq.trans_le (b := min δ δ') ?_ ?_
+      · simp_all only [abs_eq_self, le_min_iff, and_self]
+        constructor <;> linarith
+      · exact min_le_right _ _
+  intro y hy
+  have ⟨a, ha⟩ := seg_vec_co (open_sub_closed _ hxL) hy
+  have hTyi : ∀ z, z ∈ closed_hull L →  Tco T z i = 0 := by
+    intro z hz
+    have ⟨b,hb⟩ := seg_vec_co (open_sub_closed _ hxL) hz
+    rw [hb, Tco_line, Oside, hdir, mul_zero, zero_div,add_zero]
+    exact closed_side_to_co hdet (open_sub_closed _ hxT)
+  have hy₂ : y ∈ closed_hull T := by
+    rw [closed_triangle_iff hdet]
+    by_contra hc; push_neg at hc
+    have ⟨j, hj⟩ := hc
+    have hij : i ≠ j := by
+      by_contra hij
+      rw [←hij, hTyi y hy] at hj
+      linarith
+    have hxCoj : 0 < Tco T x j := by
+      exact mem_open_side_other_co hdet hxT j hij.symm
+    have hxCoij : 0 < Tco T x j - Tco T y j := by
+      linarith
+    let α : Fin 2 → ℝ := fun | 0 => ((- Tco T y j)/ (Tco T x j - Tco T y j)) | 1 => (Tco T x j/ (Tco T x j - Tco T y j))
+    have hαSimp : α ∈ open_simplex 2 := by
+      constructor
+      · intro k
+        fin_cases k <;>(
+        · dsimp [α]
+          field_simp
+          linarith)
+      · simp [α]
+        field_simp
+        ring
+    let L' : Segment := fun | 0 => x | 1 => y
+    let z := ∑ k, α k • L' k
+    have hiz : Tco T z i = 0 := by
+      simp_rw [z, Tco_linear hαSimp.2, Fin.sum_univ_two, L', hTyi x (open_sub_closed _ hxL), hTyi y hy]
+      linarith
+    have hjz : Tco T z j = 0 := by
+      simp_rw [z, Tco_linear hαSimp.2, Fin.sum_univ_two, L', α]
+      field_simp
+      ring
+    apply hv (last_index i j)
+    rw [←(two_co_zero_imp_corner hdet hij hiz hjz)]
+    apply open_segment_sub (L₁ := L')
+    · intro k
+      fin_cases k <;> simp [L']
+      · exact (open_sub_closed _ hxL)
+      · exact hy
+    · simp [L']
+      intro hcontra
+      rw [←hcontra] at hj
+      linarith [hj, hTyi x (open_sub_closed _ hxL)]
+    · exact ⟨α,hαSimp,rfl⟩
+  refine (mem_closed_side hdet hy₂ i).1 (hTyi y hy)
+
+example {a b : ℝ} (ha : 0 ≤ a) (hb : 0 = b): 0 ≤ b  := by
+  exact le_of_eq hb
+  sorry
+
+example {a b : ℝ} (ha : 0 ≤ a) (hb : 0 = b): 0 ≤ b  := by
+  simp_all only [abs_eq_self, le_min_iff, and_self]
+  sorry
 
 
 
+lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L 1)
+    : ∃ y : ℝ², ∀ L ∈ Lset, det₂ (seg_vec L) y ≠ 0 := by
+  have ⟨y₁, hy₁⟩ := Infinite.exists_not_mem_finset (image (fun L ↦ seg_vec L 1 / seg_vec L 0) Lset)
+  use fun | 0 => 1 | 1 => y₁
+  intro L hL
+  simp [det₂]
+  intro hContra
+  by_cases h : seg_vec L 0 = 0
+  · apply hLset L hL
+    rw [←seg_vec_zero_iff]
+    exact PiLp.ext (fun i ↦ by fin_cases i <;> simp_all)
+  · apply hy₁
+    rw [mem_image]
+    refine ⟨L,hL,?_⟩
+    field_simp
+    linarith
 
 
+/- Pigeonhole lemma of the form that I have not been able to find. -/
+lemma finset_infinite_pigeonhole {α β : Type} [Infinite α] {f : α → β} {B : Finset β}
+    (hf : ∀ a, f a ∈ B)
+    : ∃ b ∈ B, Set.Infinite (f⁻¹' {b}) := by
 
 
+  sorry
 
+/- An version that states that the open_unit_square is open. -/
+lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_unit_square) :
+    ∃ (ε : ℝ), ε > 0 ∧ ∀ (n : ℕ), x + (1 / (n : ℝ)) • (ε • y) ∈ open_unit_square := by
+  sorry
+
+/-
+We let this connect to a version that states that closed_hull T is closed.
+The determinant assumption is probably not necessary.
+-/
+lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : ℝ²}
+    (h : Set.Infinite {n : ℕ | x + (1 / (n : ℝ)) • y ∈ closed_hull T}) : x ∈ closed_hull T := by
+  rw [closed_triangle_iff hdet]
+  by_contra hContra; push_neg at hContra
+  have ⟨i,hi⟩ := hContra
+
+
+  sorry
+
+
+/- I don't know if this is in matlib. Could not find it, -/
+lemma infinite_distinct_el {α : Type} {S : Set α} (hS : Set.Infinite S) (k : α) : ∃ a ∈ S, a ≠ k := by
+  have ⟨a, haS, ha⟩ :=  Set.Infinite.exists_not_mem_finset hS ({k} : Finset α)
+  exact ⟨a, haS, List.ne_of_not_mem_cons ha⟩
+
+
+lemma open_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : ∃ x, x ∈ open_hull P := by
+  use ∑ i, (1/(n : ℝ)) • P i, fun _ ↦ (1/(n : ℝ))
+  exact ⟨⟨fun _ ↦ by simp [hn], by simp; exact (mul_inv_cancel₀ (by simp; linarith))⟩, by simp⟩
+
+lemma open_seg_nonempty (L : Segment) : ∃ x, x ∈ open_hull L :=
+  open_pol_nonempty (by linarith) L
 
 
 
 def boundary_unit_square : Set ℝ² := unit_square \ open_unit_square
 
 lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit_square S)
-    (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
+    (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment)
     (hInt: ∀ Δ ∈ S, (open_hull Δ) ∩ (closed_hull L) = ∅)
-    (hLunit : open_hull L ⊆ open_hull Psquare) (hv : ∀ i, ∀ Δ ∈ S, Δ i ∉ open_hull L)
-  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 2 := sorry
+    (hLunit : open_hull L ⊆ open_hull Psquare) (hv : ∀ Δ ∈ S, ∀ i, Δ i ∉ open_hull L)
+  : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 2 := by
+  -- We first take an element from open_hull L
+  have ⟨x, hLx⟩ := open_seg_nonempty L
+  -- First a useful statement:
+  have hU : ∀ Δ ∈ S, x ∉ open_hull Δ := by
+    intro Δ hΔ hxΔ
+    have this := Set.mem_inter hxΔ (open_sub_closed _ hLx )
+    rw [hInt Δ hΔ] at this
+    exact this
+  -- This x is a member of side i of some triangle Δ.
+  have ⟨Δ, hΔ, i, hxi⟩ := cover_mem_side hCover hArea (open_sub_closed _ (hLunit hLx)) hU ?_
+  · -- Now it should follow that the closed hull of L is contained in the closed hull of Tside Δ i
+    have hLΔ := seg_sub_side (hArea Δ hΔ) hLx hxi (hInt Δ hΔ) (hv Δ hΔ)
+    -- We take a vector y that is not in the direction of any side.
+    have ⟨y,hy⟩ := perp_vec_exists (Finset.biUnion S (fun Δ ↦ image (fun i ↦ Tside Δ i) (univ))) ?_
+    · -- Specialize to the Δᵢ
+      have yΔi := hy (Tside Δ i) (by rw [mem_biUnion]; exact ⟨Δ,hΔ,by rw [mem_image]; exact ⟨i, mem_univ _,rfl⟩⟩)
+      -- Use this to show that there is a direction of y to move in which does not intersect Δ
+      have ⟨σ, hσ, δ, hδ, hain, haout⟩ := seg_inter_open hxi (hArea Δ hΔ) yΔi
+      -- We have an epsilon such that x + (1/n) ε • - σ • y lies inside the open triangle for all n ∈ ℕ
+      have ⟨ε,hεPos, hn⟩ := open_unit_square_open_dir (- σ • y) (hLunit hLx)
+      -- This gives a map from ℕ to S assigning to each such ℕ a triangle that contains it.
+      have hfS : ∀ n : ℕ, ∃ T ∈ S, x + (1 / (n : ℝ)) • ε • -σ • y ∈ closed_hull T := by
+        intro n
+        have this := (open_sub_closed _ (hn n))
+        rw [←unit_square, hCover.1, Set.mem_iUnion₂] at this
+        have ⟨T,hT,hT'⟩ := this
+        exact ⟨T,hT,hT'⟩
+      choose f hfS hfCl using hfS
+      -- This means that there is a triangle with infinitely many vectors of the form x + (1 / (n : ℝ)) • ε • -σ • y
+      have ⟨Δ', hΔ', hΔ'Inf⟩ := finset_infinite_pigeonhole hfS
+      -- First we prove that Δ' ≠ Δ
+      have ⟨l,hl,hlZ⟩ := infinite_distinct_el hΔ'Inf 0
+      have hMemΔ' := hfCl l
+      rw [hl] at hMemΔ'
+      have hΔneq : Δ' ≠ Δ := by
+        by_contra hΔeq
+        rw [hΔeq] at hMemΔ'
+        apply haout ((1/ (l : ℝ) * ε)) (by field_simp; exact Nat.zero_lt_of_ne_zero hlZ)
+        convert hMemΔ' using 2
+        simp [mul_smul]
+      -- Then we prove that x ∈ closed_hull Δ'
+      have hxΔ' := closed_triangle_is_closed_dir (x := x) (y := ε • -σ • y) (hArea Δ' hΔ') (by
+        refine Set.Infinite.mono ?_ hΔ'Inf
+        intro m _
+        have _ := hfCl m
+        simp_all
+        )
+      -- This means that x lies in some side of Δ'
+      have ⟨i',hi'⟩ := el_in_boundary_imp_side (hArea Δ' hΔ') (Set.mem_diff_of_mem hxΔ' (fun d ↦ hU Δ' hΔ' d)) (fun i ht ↦ hv Δ' hΔ' i (by rwa [←ht]))
+      -- This again means that L lies completely in Tside Δ' i
+      have hLΔ' := seg_sub_side (hArea Δ' hΔ') hLx hi' (hInt Δ' hΔ') (hv Δ' hΔ')
+      -- We now have our two elements that should give the cardinality 2.
+      rw [card_eq_two]
+      use Δ', Δ, hΔneq
+      ext Δ''
+      constructor
+      · -- The hard part of the proof continues here.
+        -- We have to show that if there is a third triangle that it intersects one of the triangles.
+        intro hΔ''
+        rw [mem_filter] at hΔ''
+        have ⟨hΔ'', hLΔ''⟩ := hΔ''
+        have ⟨i'',hi''⟩ := el_in_boundary_imp_side (hArea Δ'' hΔ'') (hLΔ'' (open_sub_closed _ hLx)) (fun i ht ↦ hv Δ'' hΔ'' i (by rwa [←ht]))
+        -- We define σ' and σ''
+        have yΔi' := hy (Tside Δ' i') (by rw [mem_biUnion]; exact ⟨Δ',hΔ',by rw [mem_image]; exact ⟨i', mem_univ _,rfl⟩⟩)
+        have ⟨σ', hσ', δ',hδ', hain', haout'⟩ := seg_inter_open hi' (hArea Δ' hΔ') yΔi'
+        have yΔi'' := hy (Tside Δ'' i'') (by rw [mem_biUnion]; exact ⟨Δ'',hΔ'',by rw [mem_image]; exact ⟨i'', mem_univ _,rfl⟩⟩)
+        have ⟨σ'', hσ'', δ'',hδ'', hain'', haout''⟩ := seg_inter_open hi'' (hArea Δ'' hΔ'') yΔi''
+        -- First we show that σ ≠ σ' The following argument is repeated
+        -- three times and could use its own lemma
+        have σneq : σ ≠ σ' := by
+          intro σeq
+          rw [σeq] at hain
+          specialize hain (min δ δ')
+          specialize hain' (min δ δ')
+          simp_all -- bit overkill perhaps.
+          apply Set.eq_empty_iff_forall_not_mem.1 (hCover.2 Δ' hΔ' Δ hΔ) (x + min δ δ' • σ' • y)
+          exact ⟨hain', hain⟩
+        -- This means that σ'' ∈ {σ,σ'}
+        have σ''mem : σ'' = σ ∨ σ'' = σ' := by
+          simp only [mem_insert, mem_singleton] at hσ hσ' hσ''
+          cases' hσ with t t <;> cases' hσ' with t' t' <;> cases' hσ'' with t'' t'' <;> (
+            rw [t,t',t'']
+            rw [t,t'] at σneq
+            tauto)
+        cases' σ''mem with h h
+        · have hl : Δ'' = Δ := by
+            by_contra hneq
+            rw [h] at hain''
+            specialize hain (min δ δ'')
+            specialize hain'' (min δ δ'')
+            simp_all -- bit overkill perhaps.
+            apply Set.eq_empty_iff_forall_not_mem.1 (hCover.2 Δ'' hΔ'' Δ hΔ) (x + min δ δ'' • σ • y)
+            exact ⟨hain'', hain⟩
+          simp only [hl, mem_insert, mem_singleton, or_true]
+        · have hl : Δ'' = Δ' := by
+            by_contra hneq
+            rw [h] at hain''
+            specialize hain' (min δ' δ'')
+            specialize hain'' (min δ' δ'')
+            simp_all -- bit overkill perhaps.
+            apply Set.eq_empty_iff_forall_not_mem.1 (hCover.2 Δ'' hΔ'' Δ' hΔ') (x + min δ' δ'' • σ' • y)
+            exact ⟨hain'', hain'⟩
+          simp only [hl, mem_insert, mem_singleton, true_or]
+      · intro hΔ''; simp at hΔ''
+        cases' hΔ'' with hΔ'' hΔ'' <;> (rw [hΔ'']; simp)
+        · exact ⟨hΔ', fun _ a ↦ (side_in_boundary (hArea Δ' hΔ') i') (hLΔ' a)⟩
+        · exact ⟨hΔ, fun _ a ↦ (side_in_boundary (hArea Δ hΔ) i) (hLΔ a)⟩
+    · intro L hL
+      simp_rw [mem_biUnion, mem_image] at hL
+      have ⟨T,TS,i',_,hTL⟩ := hL
+      rw [←hTL]
+      exact nondegen_triangle_imp_nondegen_side _ (hArea T TS)
+  · intro i Δ hΔ hxΔ
+    rw [hxΔ] at hLx
+    exact hv Δ hΔ i hLx
 
 lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover unit_square S)
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment) (hL : L 0 ≠ L 1)
