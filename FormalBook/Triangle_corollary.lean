@@ -142,10 +142,37 @@ theorem translation_commutes {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : ope
     dsimp at h2
     exact ⟨ a, h1, by dsimp ; rwa[ aux_for_translation h1]⟩
 
+--These maps tell us hows to transform from the unit triangle to the an arbitrary triangle
+def matrix_transform ( T : Triangle) : Matrix (Fin 2) (Fin 2) ℝ :=![ ![T 1 0 - T 0 0, T 2 0 - T 0 0], ![T 1 1 - T 0 1, T 2 1 - T 0 1]]
+def linear_transform (T : Triangle) := Matrix.toLin' (matrix_transform T)
+def triangle_translation (T : Triangle) := translation (T 0)
+
+--This theorem tells us that these maps indeed do the trick, combined with translation_commutes and open_hull_lin_trans
+theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translation T) (Set.image (linear_transform T) (open_hull unit_triangle)) = open_hull T:= by
+  have h1 : triangle_translation T = translation (T 0) := by rfl
+  let f : (Fin 3 → ℝ²) := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
+  have hunit_triangle : unit_triangle = f :=by rfl
+  rw[hunit_triangle, h1]
+  have h2 : open_hull (linear_transform T ∘ f )= ⇑(linear_transform T) '' open_hull f
+  exact open_hull_lin_trans (linear_transform T) f
+  rw[← h2]
+  --rw[← open_hull_lin_trans (linear_transform T) f] Why doesnt this work!??
+  rw[← translation_commutes]
+  apply congrArg
+  --This part of the proof says that the linear transformation and translation of the unit triangle give the triangle we want
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp[translation,linear_transform, f, matrix_transform, Matrix]
 
 
 -- This is what we want to prove
 theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).toReal = (1/2 : ℝ ) := by sorry
+
+
+
+theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal = triangle_area (T : Triangle) := by
+  sorry
+
+
 
 --We additionally want its flipped version
 
