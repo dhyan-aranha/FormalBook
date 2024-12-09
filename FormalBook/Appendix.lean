@@ -235,8 +235,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
       refine Set.mem_sUnion.mpr ?h.right.a.a
       use z
       constructor
-      ·
-        sorry
+      · sorry
       · exact hx
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
