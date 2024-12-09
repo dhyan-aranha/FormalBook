@@ -214,8 +214,14 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
       mul_mem' := by sorry,                         -- closure under multiplication
       neg_mem' := by sorry }                        -- closure under negation
     have ub_mem_S : ub ∈ S:= by
+      -- ub is subring and if 1/2 ∈ ub we woulc have that there is a n such that 1/2∈ c_n
+      sorry -- How do you make this the conditions to be in S
+    use ub
+    constructor
+    · exact ub_mem_S
+    · intro z
+      -- refine fun a ↦ ?_ a
       sorry
-    sorry
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
