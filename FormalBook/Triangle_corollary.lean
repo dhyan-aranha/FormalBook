@@ -163,6 +163,15 @@ theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translatio
   ext i j
   fin_cases i <;> fin_cases j <;> simp[translation,linear_transform, f, matrix_transform, Matrix]
 
+theorem aux ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
+  exact MeasureTheory.Measure.addHaar_image_linearMap MeasureTheory.volume L A
+--This is some garbage that is not working yet (I want it to be like the above)
+-- theorem aux1 (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (fun x ↦ a + x ) A) = MeasureTheory.volume (A) :=
+--   by --apply? -- MeasureTheory.volume.IsAddLeftInvariant
+--   sorry
+-- variable (a b : (Fin 2) → ℝ)(G : Type) [AddGroup G] [TopologicalSpace G] [TopologicalAddGroup G] [MeasurableSpace G] [BorelSpace G]  (K₀ : TopologicalSpace.PositiveCompacts G)
+-- #check MeasureTheory.Measure.isAddLeftInvariant_addHaarMeasure K₀
+--#check map_add_left_eq_self
 
 -- This is what we want to prove
 theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).toReal = (1/2 : ℝ ) := by sorry
