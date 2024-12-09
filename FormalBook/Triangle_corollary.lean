@@ -137,18 +137,10 @@ theorem translation_commutes {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : ope
   constructor
   · rintro ⟨ a ,h1 , h2⟩
     dsimp at h2
-    use a
-    constructor
-    · exact h1
-    · dsimp
-      rwa[← aux_for_translation h1]
+    exact ⟨ a, h1, by dsimp ; rwa[← aux_for_translation h1]⟩
   · rintro ⟨ a ,h1 , h2⟩
     dsimp at h2
-    use a
-    constructor
-    · exact h1
-    · dsimp
-      rwa[aux_for_translation h1]
+    exact ⟨ a, h1, by dsimp ; rwa[ aux_for_translation h1]⟩
 
 
 
