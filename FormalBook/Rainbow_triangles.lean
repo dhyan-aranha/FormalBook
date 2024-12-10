@@ -82,8 +82,7 @@ lemma blue_region (X : ℝ²) : (coloring v X = Color.Blue) → v (X 0) ≥ v (1
 -- Record our definition of a Color triangle
 
 def Color_triangle (T : Fin 3 → ℝ²) {Γ₀ : Type} {locg : LinearOrderedCommGroupWithZero Γ₀}
-(v : Valuation ℝ Γ₀) : Prop :=
-Function.Surjective (coloring v ∘ T)
+(v : Valuation ℝ Γ₀) : Prop := Function.Surjective (coloring v ∘ T)
 
 -- Before the first main lemma we need a few lemmas that will be used in its proof.
 -- Essentially we are just establishing bounds on valuations of the terms that appear in the
