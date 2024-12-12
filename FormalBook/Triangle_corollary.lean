@@ -161,7 +161,9 @@ theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translatio
   apply congrArg
   --This part of the proof says that the linear transformation and translation of the unit triangle give the triangle we want
   ext i j
-  fin_cases i <;> fin_cases j <;> simp[translation,linear_transform, f, matrix_transform, Matrix]
+  fin_cases i <;> fin_cases j <;> simp[translation,linear_transform, f, matrix_transform, Matrix.mulVec, Matrix.vecHead, Matrix.vecTail  ]
+
+
 
 theorem aux ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
   exact MeasureTheory.Measure.addHaar_image_linearMap MeasureTheory.volume L A
