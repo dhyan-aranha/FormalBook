@@ -230,20 +230,36 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   have sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
     -- Idea: The upper bound is the union of the subrings.
     intro c subset chain
-    -- def subring_to_set_of_sets : Set (Set ℝ) := {S.carrier | S ∈ c}
+    by_cases emp_or_not : c ≠ ∅
     let subring_to_set_of_sets : Set (Set ℝ) :=
       {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
-    let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets-- .sUnion
-    let ub : Subring ℝ :=                           -- We can also use subring.closure as that is the smallest subring containing all elements (in this case the thing itself) but then we need to show it is in S
-    { carrier := union_of_sets,
-      zero_mem' := by sorry -- exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, ZeroMemClass.zero_mem Z⟩,
-      one_mem' := by sorry -- exact Set.mem_sUnion.mpr ⟨Z, ⟨Z, int_in_S, by rfl⟩, OneMemClass.one_mem Z⟩,
-      add_mem' := by
-        intro a b a_in_carrier b_in_carrier
-
-        sorry,
-      mul_mem' := by sorry,
-      neg_mem' := by sorry }
+    let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets
+    let ub : Subring ℝ :=
+      { carrier := union_of_sets,
+        zero_mem' := by
+          have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
+          cases' in_c with t in_c
+          exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.zero_mem'⟩
+        one_mem' := by
+          have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
+          cases' in_c with t in_c
+          exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.one_mem'⟩
+        add_mem' := by
+          intro a b a_in_carrier b_in_carrier
+          refine Set.mem_sUnion.mpr ?_
+          -- have a_in_ring_c : ∃(s : Subring ℝ), (s ∈ c ∧ a ∈ s) := by apply?
+          rcases a_in_carrier with ⟨cara, hypa, a_in_car⟩
+          rcases b_in_carrier with ⟨carb, hypb, b_in_car⟩
+          rcases hypa with ⟨ringa, H1a, H2a⟩
+          rcases hypb with ⟨ringb, H1b, H2b⟩
+          have antisymm : ringa ≤ ringb ∨ ringb ≤ ringa := by
+            exact IsChain.total chain H1a H1b
+          cases' antisymm with l r
+          use carb
+          sorry
+          sorry,
+        mul_mem' := by sorry,
+        neg_mem' := by sorry }
     have ub_carrier_non_half : 1/2 ∉ ub.carrier := by
       intro half_in
       rw[Set.mem_sUnion] at half_in
@@ -258,6 +274,7 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
     · exact ub_mem_S
     · intro z hz x hx
       exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, hz, by rfl⟩, hx⟩)
+    sorry
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
