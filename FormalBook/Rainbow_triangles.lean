@@ -79,156 +79,89 @@ lemma blue_region (X : ℝ²) : (coloring v X = Color.Blue) → v (X 0) ≥ v (1
   rw [← not_lt] at q
   contradiction
 
--- Record our definition of a Color triangle
+-- Record our definition of a rainbow triangle
 
-def Color_triangle (T : Fin 3 → ℝ²) {Γ₀ : Type} {locg : LinearOrderedCommGroupWithZero Γ₀}
-(v : Valuation ℝ Γ₀) : Prop := Function.Surjective (coloring v ∘ T)
+def rainbow_triangle (T : Fin 3 → ℝ²) : Prop := Function.Surjective (coloring v ∘ T)
 
--- Before the first main lemma we need a few lemmas that will be used in its proof.
--- Essentially we are just establishing bounds on valuations of the terms that appear in the
--- definition of the area of a triangle.
+-- We need a few inequalities that will be used in the proof of the main lemma.
+-- These are just bounds on valuations of terms that appear in the
+-- determinant expression that captures the area of a triangle.
 
-lemma val_bound1
-  (X Y : ℝ²)
-  (hb : coloring v X = Color.Blue)
-  (hg : coloring v Y = Color.Green) :
-  v (X 0 * Y 1) ≥ 1 := by
-
-  have h1 : v (X 0) ≥ v 1 := (blue_region v X hb).1
-  have h2 : v (Y 1) ≥ v 1 := (green_region v Y hg).2
-  have h3 : v (X 0 * Y 1) ≥ v 1 * v 1 := by
-    rw [v.map_mul]
-    apply mul_le_mul' h1 h2
-  rw [v.map_mul]
-  rw [v.map_one, one_mul, v.map_mul] at h3
-  exact h3
-
-lemma val_bound2
+lemma valuation_bounds
   (X Y Z : ℝ²)
   (hb : coloring v X = Color.Blue)
   (hg : coloring v Y = Color.Green)
   (hr : coloring v Z = Color.Red) :
-  v (X 1 * Z 0) < v (X 0 * Y 1) := by
-
-  have h1 : v (X 1) ≤  v (X 0) := (blue_region v X hb).2
-  have h2 : v (Z 0) < v 1 := (red_region v Z hr).1
-  have h3 : v (X 1 * Z 0) < v (X 0) * v 1 := by
-    rw [v.map_mul]
-    apply mul_lt_mul' h1 h2
-    apply zero_le'
-    have h4 : v (X 0) ≥  v 1 := (blue_region v X hb).1
-    have h5 : v 1 > 0 := by
-      rw [v.map_one]
-      apply zero_lt_one
-    exact lt_of_lt_of_le h5 h4
-  have h6 : v (Y 1) ≥ v 1 := (green_region v Y hg).2
-  have h7 : v (X 0) * v 1 ≤ v (X 0) * v (Y 1) :=
-    mul_le_mul' (le_refl (v (X 0))) h6
-  rw [← map_mul, ← map_mul] at h7
-  rw [← map_mul] at h3
-  exact lt_of_lt_of_le h3 h7
-
-lemma val_bound3
-  (X Y Z : ℝ²)
-  (hb : coloring v X = Color.Blue)
-  (hg : coloring v Y = Color.Green)
-  (hr : coloring v Z = Color.Red) :
-  v (Y 0 * Z 1) < v (X 0 * Y 1) := by
-
-  have h1 : v (Y 0) < v (Y 1) := (green_region v Y hg).1
-  have h2 : v (Z 1) < v 1 := (red_region v Z hr).2
-  have h3 : v (Y 0 * Z 1) < v (Y 1) * v 1 := by
-    rw [v.map_mul]
-    apply mul_lt_mul'' h1 h2
-    apply zero_le'
-    apply zero_le'
-  have h4 : v (X 0) ≥ v 1 := (blue_region v X hb).1
-  have h5 : v (Y 1) * v 1 ≤ v (Y 1) * v (X 0) :=
-    mul_le_mul' (le_refl (v (Y 1))) h4
-  rw [← map_mul] at h5
-  rw [← map_mul] at h3
-  rw [← map_mul] at h5
-  have h6: v (X 0 * Y 1) = v (Y 1 * X 0) := by
-    rw [mul_comm]
-  rw [h6]
-  exact lt_of_lt_of_le h3 h5
-
-lemma val_bound4
-  (X Y Z : ℝ²)
-  (hb : coloring v X = Color.Blue)
-  (hg : coloring v Y = Color.Green)
-  (hr : coloring v Z = Color.Red) :
-  v (X 0 * Y 1) > v (-(Y 1 * Z 0)) := by
-
-  have h1 : v (Z 0 ) < v 1 := (red_region v Z hr).1
-  have h2 : v (Z 0 * Y 1) < v 1 * v (Y 1) := by
-    rw [v.map_mul]
-    apply mul_lt_mul
-    apply h1
-    apply refl
-    have h3: v (Y 1) ≥ v 1 := (green_region v Y hg).2
-    have h4: v 1 > 0 := by
-      rw [v.map_one]
-      apply zero_lt_one
-    exact lt_of_lt_of_le h4 h3
-    apply zero_le'
-  have h5: v (X 0) ≥ v 1 := (blue_region v X hb).1
-  have h6:  v (Y 1) * v 1 ≤  v (Y 1) * v (X 0):=
-    mul_le_mul' (le_refl (v (Y 1))) h5
-  rw [mul_comm] at h6
-  have h7: v (Y 1) * v (X 0) = v (X 0 * Y 1) := by
-    rw [mul_comm, v.map_mul]
-  rw [h7] at h6
-  rw [mul_comm] at h2
-  rw [Valuation.map_neg]
-  exact lt_of_lt_of_le h2 h6
-
-lemma val_bound5
-  (X Y : ℝ²)
-  (hb : coloring v X = Color.Blue)
-  (hg : coloring v Y = Color.Green) :
-  v (X 0 * Y 1) > v (-(X 1 * Y 0)) := by
-
-  have h1 : v (X 1) ≤ v (X 0) := (blue_region v X hb).2
-  have h2 : v (Y 0) < v (Y 1) := (green_region v Y hg).1
-  have h3: v (X 1 * Y 0) < v (X 0) * v (Y 1) := by
-    rw [v.map_mul]
-    apply mul_lt_mul' h1 h2
-    apply zero_le'
-    have h5: v (X 0) ≥ v 1 := (blue_region v X hb).1
-    rw [v.map_one] at h5
-    have h6: v 1 > 0 := by
-      rw [v.map_one]
-      apply zero_lt_one
-    rw [← v.map_one] at h5
-    exact lt_of_lt_of_le h6 h5
-  rw [← v.map_mul] at h3
-  rw [Valuation.map_neg]
-  apply h3
-
-lemma val_bound6
-  (X Y Z : ℝ²)
-  (hb : coloring v X = Color.Blue)
-  (hg : coloring v Y = Color.Green)
-  (hr : coloring v Z = Color.Red) :
+  v (X 0 * Y 1) ≥ 1 ∧
+  v (X 1 * Z 0) < v (X 0 * Y 1) ∧
+  v (Y 0 * Z 1) < v (X 0 * Y 1) ∧
+  v (X 0 * Y 1) > v (-(Y 1 * Z 0)) ∧
+  v (X 0 * Y 1) > v (-(X 1 * Y 0)) ∧
   v (X 0 * Y 1) > v (-(X 0 * Z 1)) := by
 
-  have h1 : v (Z 1) < v 1 := (red_region v Z hr).2
-  have h2 : v (X 0) * v 1 ≤  v (X 0) * v (Y 1) :=
-    mul_le_mul' (le_refl (v (X 0))) (green_region v Y hg).2
-  have h3 : v (X 0 * Z 1) < v (X 0) * v 1 := by
-    rw [v.map_mul]
-    apply mul_lt_mul' (le_refl (v (X 0))) h1
-    apply zero_le'
-    have h4: v (X 0) ≥ v 1 := (blue_region v X hb).1
-    have h5: v 1 > 0 := by
-      rw [v.map_one]
-      apply zero_lt_one
-    exact lt_of_lt_of_le h5 h4
-  rw [← v.map_mul] at h3
-  rw [← v.map_mul, ← v.map_mul] at h2
-  rw [Valuation.map_neg]
-  exact lt_of_lt_of_le h3 h2
+  -- Get rid of all minus signs
+  repeat rw [Valuation.map_neg]
+  -- Apply multiplicativity of v everywhere
+  repeat rw [v.map_mul]
+
+  -- Trivial bounds from the coloring
+  have hx0 : v (X 0) ≥ v 1 := (blue_region v X hb).1
+  have hy1 : v (Y 1) ≥ v 1 := (green_region v Y hg).2
+  have hz0 : v (Z 0) < v 1 := (red_region v Z hr).1
+  have hz1 : v (Z 1) < v 1 := (red_region v Z hr).2
+  have hxx : v (X 1) ≤ v (X 0) := (blue_region v X hb).2
+  have hyy : v (Y 0) < v (Y 1) := (green_region v Y hg).1
+  -- Replace v 1 by 1
+  simp_all only [map_one]
+  -- We won't need the coloring hypotheses anymore
+  clear hb hg hr
+
+  -- Non-negativity bounds
+  have x0_gt_zero : v (X 0) > 0 := gt_of_ge_of_gt hx0 zero_lt_one
+  have y1_gt_zero : v (Y 1) > 0 := gt_of_ge_of_gt hy1 zero_lt_one
+
+  -- v (X 0) * v (Y 1) ≥ 1
+  constructor
+  exact Right.one_le_mul hx0 hy1
+
+  -- v (X 1) * v (Z 0) < v (X 0) * v (Y 1)
+  constructor
+  apply mul_lt_mul'
+  exact hxx
+  exact gt_of_ge_of_gt hy1 hz0
+  exact zero_le'
+  exact x0_gt_zero
+
+  -- v (Y 0) * v (Z 1) < v (X 0) * v (Y 1)
+  constructor
+  rw [mul_comm (v (X 0)) (v (Y 1))]
+  apply mul_lt_mul''
+  exact hyy
+  exact gt_of_ge_of_gt hx0 hz1
+  exact zero_le'
+  exact zero_le'
+
+  -- v (X 0) * v (Y 1) > v (Y 1) * v (Z 0)
+  constructor
+  rw [mul_comm (v (X 0)) (v (Y 1))]
+  apply mul_lt_mul'
+  apply refl
+  exact gt_of_ge_of_gt hx0 hz0
+  exact zero_le'
+  exact y1_gt_zero
+
+  -- v (X 0) * v (Y 1) > v (X 1) * v (Y 0)
+  constructor
+  apply mul_lt_mul' hxx hyy
+  apply zero_le'
+  exact x0_gt_zero
+
+  -- v (X 0) * v (Y 1) > v (X 0) * v (Z 1)
+  apply mul_lt_mul'
+  apply refl
+  exact gt_of_ge_of_gt hy1 hz1
+  exact zero_le'
+  exact x0_gt_zero
 
 --The next definition and lemma relate things to matrices more like in the book.
 --But they are not needed.
@@ -276,20 +209,14 @@ lemma bounded_det
   v (X 0 * Y 1 + X 1 * Z 0 + Y 0 * Z 1 - Y 1 * Z 0 - X 1 * Y 0 - X 0 * Z 1) ≥ 1 := by
   -- Change minus signs to plus signs
   repeat rw [sub_eq_add_neg]
-  -- Establish all the required assumptions
-  have h1 : v (X 0 * Y 1) > v (X 1 * Z 0) := val_bound2 v X Y Z hb hg hr
-  have h2 : v (X 0 * Y 1) > v (Y 0 * Z 1) := val_bound3 v X Y Z hb hg hr
-  have h3 : v (X 0 * Y 1) > v (-(Y 1 * Z 0)) := val_bound4 v X Y Z hb hg hr
-  have h4 : v (X 0 * Y 1) > v (-(X 1 * Y 0)) := val_bound5 v X Y hb hg
-  have h5 : v (X 0 * Y 1) > v (-(X 0 * Z 1)) := val_bound6 v X Y Z hb hg hr
-  -- Use the previous lemma
+  -- Establish all required assumptions for the lemma
+  rcases (valuation_bounds v X Y Z hb hg hr) with ⟨h0, ⟨h1, ⟨h2, ⟨h3, ⟨h4,h5⟩⟩⟩⟩⟩
+  -- Use the above lemma
   rw [valuation_max v h1 h2 h3 h4 h5]
   -- Change the inequality to v (X 0 * Y 1) ≥ 1
-  exact val_bound1 v X Y hb hg
-
+  exact h0
 
 -- We now prove that for any line segment in ℝ² contains at most 2 colors.
-
 
 lemma det_triv_triangle (X Y : ℝ² ) : det (fun | 0 => X | 1 => X | 2 => Y) = 0 := by
   simp [det]
