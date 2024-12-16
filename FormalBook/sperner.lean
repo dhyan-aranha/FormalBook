@@ -637,53 +637,68 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover
 
 local notation "SegmentSet" => Finset Segment
 
+variable (X : SegmentSet)
 
-instance partialorder (X : SegmentSet) : Preorder X where
-  le := fun S ↦ (fun T ↦ closed_hull S.val ⊆ closed_hull T.val)
-  le_refl := by exact fun a ⦃a_1⦄ a ↦ a
-  le_trans := by exact fun a b c a_1 a_2 ⦃a_3⦄ a ↦ a_2 (a_1 a)
-
-
--- A basis segment is a segment that does not properly contain another segment
-def basis_segment (X : SegmentSet) (S : Segment) : Prop :=
+-- A basic segment is a segment that does not properly contain another segment
+def IsBasic (S : Segment) : Prop :=
   S ∈ X ∧ ∀ T : X, closed_hull T.val ⊆ closed_hull S → closed_hull T.val = closed_hull S
 
 -- A SegmentSet is complete if for any inclusions of segements, the closure of the complement
 -- of a segment is also in the SegmentSet
-def complete_segment_set : SegmentSet → Prop :=
-  fun X ↦ (∀ S T : X, closed_hull S.val ⊂ closed_hull T.val → ∃ S' : X,
+def HasComplements : Prop :=
+  ∀ S T : X, closed_hull S.val ⊂ closed_hull T.val → ∃ S' : X,
   (closed_hull T.val = closed_hull S.val ∪ closed_hull S'.val ∧
-  ∃ p : ℝ², closed_hull S.val ∩ closed_hull S'.val = {p}))
+  ∃ p : ℝ², closed_hull S.val ∩ closed_hull S'.val = {p})
 
 -- A decomposition of a segment is a collection of segments covering it
-def segment_covering {X : SegmentSet} (S : Segment) {n : ℕ} (f : Fin n → X) : Prop :=
-  closed_hull S = ⋃ (i : Fin n), closed_hull (f i).val
+def IsCovering (S : Segment) (C : Finset Segment) : Prop :=
+  closed_hull S = ⋃ (T ∈ C), closed_hull T
 
 -- A SegmentSet is splitting if every segment is the union of the basic segments it contains.
-def splitting_segment_set (X : SegmentSet) : Prop :=
-  ∀ S : Segment, S ∈ X → ∃ n : ℕ, ∃ f : Fin n → X,
-  (segment_covering S f ∧ ∀ i : Fin n, basis_segment X (f i))
+def IsSplitting : Prop :=
+  ∀ S ∈ X, ∃ C : Finset Segment, IsCovering S C ∧ ∀ T ∈ C, IsBasic X T
 
+-- A SegmentSet is NonDegenerate if each segment is nondegenerate, meaning its not a point
+def NonDegenerateSet : Prop :=
+  ∀ S ∈ X, S 0 ≠ S 1
+
+noncomputable def segment_midpoint (S : Segment) : ℝ² := ((1 : ℝ ) / (2 : ℝ)) • (S 0 + S 1)
 
 -- Example: if X : Segment_Set is a singleton, its only member is a basis segment
-theorem singleton_has_basis (S : Segment) : basis_segment (singleton S) S  := by
-  constructor
-  · exact mem_singleton.mpr rfl
-  · intro T
-    have hTeqS : T = S := by
-      rw [← Set.mem_singleton_iff]
-      exact Set.mem_toFinset.mp T.2
-    exact fun _ ↦ congrArg closed_hull hTeqS
+lemma singleton_has_basis (S : Segment) : IsBasic (singleton S) S  := by
+  refine ⟨mem_singleton.mpr rfl, ?_⟩
+  intro T
+  exact fun _ ↦ congrArg closed_hull (Set.mem_singleton_iff.1 (Set.mem_toFinset.mp T.2))
+
+lemma smul_cancel' (a : ℝ) {b c : ℝ²} : a • b ≠ a • c → b ≠ c := by
+  intro h
+  exact fun a_1 ↦ h (congrArg (HSMul.hSMul a) a_1)
 
 
-theorem downward_set_complete {Y : SegmentSet} (S : Segment) (h : S ∈ Y)
-(hYCompl : complete_segment_set Y) :
-  complete_segment_set {T ∈ Y | closed_hull T ⊆ closed_hull S} := by
-  sorry
+lemma downward_set_non_degenerate {Y : SegmentSet} (S : Segment) (h : S ∈ Y)
+    (hND : NonDegenerateSet Y) : NonDegenerateSet {T ∈ Y | closed_hull T ⊆ closed_hull S} := by
+  intro S₁ hS₁
+  have h₁ : S₁ ∈ Y := mem_of_mem_filter S₁ hS₁
+  exact hND S₁ h₁
 
+lemma downward_set_complete {Y : SegmentSet} (S : Segment) (h : S ∈ Y)
+    (hYCompl : HasComplements Y) : HasComplements {T ∈ Y | closed_hull T ⊆ closed_hull S} := by
+  intro T T₁ hTT₁
+  cases' hYCompl ⟨T.val, by aesop⟩ ⟨T₁.val, by aesop⟩ hTT₁ with S' hS'
+  use ⟨S'.val, by aesop⟩
 
-theorem complete_is_splitting: ∀ (X : SegmentSet),
-  complete_segment_set X → splitting_segment_set X := by
+lemma downward_set_basic {Y : SegmentSet} {S T : Segment} (h : S ∈ Y)
+    (hTS : closed_hull T ⊆ closed_hull S)
+    (hbas : IsBasic {T' ∈ Y | closed_hull T' ⊆ closed_hull S} T) :
+    IsBasic Y T := by
+  refine ⟨mem_of_mem_filter T hbas.1, ?_⟩
+  intro T₁ hT₁
+  have h₁ : T₁.val ∈ filter (fun T' ↦ closed_hull T' ⊆ closed_hull S) Y := by
+    rw [mem_filter]
+    exact ⟨T₁.prop, by tauto⟩
+  exact hbas.2 ⟨T₁.val, h₁⟩ hT₁
+
+theorem complete_is_splitting: ∀ (X : SegmentSet), HasComplements X ∧ NonDegenerateSet X → IsSplitting X := by
   apply Finset.strongInduction
   intro Y hY hYCompl S hSY
   let YS : Finset Segment := {T ∈ Y | closed_hull T ⊆ closed_hull S}
@@ -691,72 +706,196 @@ theorem complete_is_splitting: ∀ (X : SegmentSet),
   have hSinYS : S ∈ YS := by
     rw [mem_filter]
     exact ⟨hSY, by rfl⟩
-  have hYSComp : complete_segment_set YS := downward_set_complete S hSY hYCompl
+  have hYSComp : HasComplements YS ∧ NonDegenerateSet YS := by
+    refine ⟨downward_set_complete S hSY hYCompl.1, ?_⟩
+    intro S₁ hS₁
+    exact downward_set_non_degenerate S hSY hYCompl.2 S₁ hS₁
   cases' ssubset_or_eq_of_subset hYSsubY with hstrict heq
   · -- Apply induction hypothesis
     specialize hY YS hstrict hYSComp
-    rcases hY S hSinYS with ⟨n, f, ⟨hl, hr⟩⟩
-    use n
-    let g : Fin n → {x // x ∈ Y} := fun i ↦ ⟨f i, hYSsubY (f i).2⟩
-    use g
-    constructor
-    · calc closed_hull S = ⋃ (i : Fin n), closed_hull (f i).val := hl
-        _ = ⋃ (i : Fin n), closed_hull (g i).val := by rfl
-    · intro i
-      constructor
-      · exact coe_mem (g i)
-      · intro T hT
-        -- now need to prove that T is actually in YS to apply h.right
-        have hTS : ↑T ∈ YS := by
-          have hTinS : closed_hull T.val ⊆ closed_hull S := by
-            calc closed_hull T.val ⊆ closed_hull (g i).val := hT
-              _ = closed_hull (f i).val := rfl
-              _ ⊆ ⋃ (i : Fin n), closed_hull (f i).val := Set.subset_iUnion_of_subset i fun ⦃a⦄ a ↦ a
-              _ = closed_hull S := by rw [← hl]
-          rw [mem_filter]
-          exact ⟨coe_mem T, hTinS⟩
-        exact (hr i).2 ⟨T, hTS⟩ hT
-  · -- if S is basis, we are done. If not, choose something in S and use completeness to
+    rcases hY S hSinYS with ⟨C, ⟨hl, hr⟩⟩
+    use C
+    refine ⟨hl, ?_⟩
+    intro T hT
+    -- now need to prove that T is actually in YS to apply h.right
+    have hTS : ↑T ∈ YS := by
+      have hTinS : closed_hull T ⊆ closed_hull S := by
+        calc closed_hull T ⊆ ⋃ (T ∈ C), closed_hull T := by exact Set.subset_biUnion_of_mem hT
+          _ = closed_hull S := by rw [← hl]
+      rw [mem_filter]
+      exact ⟨hYSsubY (hr T hT).1, hTinS⟩
+    refine ⟨hYSsubY (hr T hT).1, ?_⟩
+    intro T' hT2
+    have hT' : T'.val ∈ YS := by
+      rw [mem_filter] at *
+      exact ⟨T'.2, by tauto⟩
+    exact (hr T hT).2 ⟨T'.val, hT'⟩ hT2
+  · -- if S is basic, we are done. If not, choose something in S and use completeness to
     -- apply the induction hypothesis to two smaller sets.
-    by_cases hSBasis : (basis_segment Y S)
-    · use 1
-      let f : Fin 1 → Y := fun 0 ↦ ⟨S, hSY⟩
-      use f
-      constructor
-      · calc closed_hull S = closed_hull (f 0).val := by rfl
-          _ = ⋃ (i : Fin 1), closed_hull (f 0).val := Eq.symm (Set.iUnion_const (closed_hull (f 0).val))
-          _ = ⋃ (i : Fin 1), closed_hull (f i).val := by sorry
-      · intro i
-        rw [Fin.fin_one_eq_zero i]
-        exact hSBasis
+    by_cases hSBasic : (IsBasic Y S)
+    · use {S}
+      refine ⟨Eq.symm (set_biUnion_singleton S closed_hull), ?_⟩
+      intro T hT
+      rw [mem_singleton] at hT
+      rw [hT]
+      exact hSBasic
     · -- Then need to take a complement of T and apply induction hypothesis to the two subsets
       -- of elements contained in T or its complement.
       have hT : ∃ T ∈ Y, closed_hull T ⊂ closed_hull S := by
-        unfold basis_segment at hSBasis
-        rw [Decidable.not_and_iff_or_not] at hSBasis
-        cases' hSBasis with hl hr
+        unfold IsBasic at hSBasic
+        rw [Decidable.not_and_iff_or_not] at hSBasic
+        cases' hSBasic with hl hr
         · tauto
         · rw [Decidable.not_forall] at hr
           cases' hr with T hT
           use T
           refine ⟨coe_mem T, ?_⟩
-          sorry
-      cases' hT with T hT
-      have hComp : closed_hull T ⊂ closed_hull S → ∃ S' : Y, (closed_hull S = closed_hull T ∪ closed_hull S'.val ∧
-        ∃ p : ℝ², closed_hull T ∩ closed_hull S'.val = {p}) := hYCompl ⟨T, hT.1⟩ ⟨S, hSY⟩
-      specialize hComp hT.2
-      cases' hComp with T' hT'
-      let YT : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T}
-      let YT' : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T'.val}
-      have hYTCompl : complete_segment_set YT := downward_set_complete T hT.1 hYCompl
-      have hYT'Compl : complete_segment_set YT' := downward_set_complete T' T'.2 hYCompl
-      sorry
+          rw [Mathlib.Tactic.PushNeg.not_implies_eq, ← Set.ssubset_iff_subset_ne] at hT
+          exact hT
+      cases' hT with T₁ hT₁
+      have hComp : closed_hull T₁ ⊂ closed_hull S → ∃ S' : Y,
+          (closed_hull S = closed_hull T₁ ∪ closed_hull S'.val ∧
+          ∃ p : ℝ², closed_hull T₁ ∩ closed_hull S'.val = {p}) := hYCompl.1 ⟨T₁, hT₁.1⟩ ⟨S, hSY⟩
+      specialize hComp hT₁.2
+      cases' hComp with T₂ hT₂
+      let YT₁ : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T₁}
+      let YT₂ : Finset Segment := {U ∈ Y | closed_hull U ⊆ closed_hull T₂.val}
+      have hYTCompl : HasComplements YT₁ := downward_set_complete T₁ hT₁.1 hYCompl.1
+      have hYT'Compl : HasComplements YT₂ := downward_set_complete T₂ T₂.prop hYCompl.1
+      have hYTStrict : YT₁ ⊂ Y := by
+        rw [ssubset_iff_subset_ne]
+        refine ⟨filter_subset (fun U ↦ closed_hull U ⊆ closed_hull T₁) Y, ?_⟩
+        intro h
+        have h₂ : T₂.val ∉ YT₁ := by
+          by_contra h'
+          rw [mem_filter] at h'
+          apply ssubset_irrefl (closed_hull S)
+          calc closed_hull S = closed_hull T₁ ∪ closed_hull T₂.val := hT₂.1
+            _⊆ closed_hull T₁ ∪ closed_hull T₁ := by exact Set.union_subset_union_right (closed_hull T₁) h'.2
+            _= closed_hull T₁ := Set.union_eq_self_of_subset_left fun ⦃a⦄ a ↦ a
+            _⊂ closed_hull S := hT₁.2
+        rw [h] at h₂
+        exact h₂ T₂.prop
+      have hYT'Strict : YT₂ ⊂ Y := by
+        rw [ssubset_iff_subset_ne]
+        refine ⟨filter_subset (fun U ↦ closed_hull U ⊆ closed_hull T₂.val) Y, ?_⟩
+        intro h
+        rw [← h, mem_filter] at hT₁
+        have h' : ¬(closed_hull T₁ ⊆  closed_hull T₂.val) := by
+          intro h
+          let x := segment_midpoint T₁
+          have hT₁ND : T₁ 0 ≠ T₁ 1 := hYCompl.2 T₁ hT₁.1.1
+          have hx : x ≠ T₁ 0 ∧ x ≠ T₁ 1 := by -- TODO: this may be good as a separate lemma
+            unfold_let
+            unfold segment_midpoint
+            have hstupid (a : ℝ²) : (2 : ℝ) • a + (-1) • a = ((2 : ℝ) + (-1)) • a := by
+              rw [add_smul]
+              simp only [Fin.isValue, Int.reduceNeg, neg_smul, one_smul]
+            constructor
+            · apply (smul_cancel' 2)
+              rw [← add_ne_add_left (- T₁ 0), ← neg_one_zsmul, hstupid]
+              ring_nf
+              simp only [one_div, Fin.isValue, smul_add, ne_eq, OfNat.ofNat_ne_zero,
+                not_false_eq_true, smul_inv_smul₀, Int.reduceNeg, neg_smul, one_smul,
+                add_neg_cancel_comm]
+              intro hc
+              symm at hc
+              exact hT₁ND hc
+            · apply (smul_cancel' 2)
+              rw [← add_ne_add_left (- T₁ 1), ← neg_one_zsmul, hstupid]
+              ring_nf
+              simp only [one_div, Fin.isValue, smul_add, ne_eq, OfNat.ofNat_ne_zero,
+                not_false_eq_true, smul_inv_smul₀, Int.reduceNeg, neg_smul, one_smul,
+                add_neg_cancel_right]
+              exact hT₁ND
+          have hxT₁ : x ∈ closed_hull T₁ := by
+            unfold closed_hull
+            simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image]
+            use fun i ↦ ((1 : ℝ) / (2 : ℝ))
+            constructor
+            · unfold closed_simplex
+              simp only [Fin.sum_univ_two, Fin.isValue, one_div, Set.mem_setOf_eq, inv_nonneg,
+                Nat.ofNat_nonneg, implies_true, true_and]
+              ring
+            · unfold_let
+              unfold segment_midpoint
+              rw [smul_add]
+          have hx₂ : x ∉ closed_hull T₂.val := by
+            by_contra hx₂
+            cases' hT₂.2 with p hp
+            have hxp : x = p := by
+              rw [← Set.mem_singleton_iff, ← hp]
+              exact ⟨hxT₁, hx₂⟩
+            have hpT₁0 : p = T₁ 0 := by
+              symm
+              rw [← Set.mem_singleton_iff, ← hp]
+              have hTT₁ : T₁ 0 ∈ closed_hull T₁ := by
+                unfold closed_hull
+                simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image]
+                use fun i ↦ ((1 - i) : ℝ)
+                constructor
+                · unfold closed_simplex
+                  simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_setOf_eq, sub_nonneg,
+                    Nat.cast_le_one, Fin.val_zero, CharP.cast_eq_zero, sub_zero, Fin.val_one,
+                    Nat.cast_one, sub_self, add_zero, and_true]
+                  intro i
+                  exact Fin.is_le i
+                · simp only [Fin.isValue, Fin.val_zero, CharP.cast_eq_zero, sub_zero, one_smul,
+                  Fin.val_one, Nat.cast_one, sub_self, zero_smul, add_zero]
+              exact ⟨hTT₁, h hTT₁⟩
+            rw [hxp, hpT₁0] at hx
+            tauto
+          tauto
+        tauto
+      have hT₁YT₁ : T₁ ∈ YT₁ := by
+        rw [mem_filter]
+        exact ⟨hT₁.1, fun ⦃a⦄ a ↦ a⟩
+      have hT₂YT₂ : T₂.val ∈ YT₂ := by
+        rw [mem_filter]
+        exact ⟨T₂.2, fun ⦃a⦄ a ↦ a⟩
+      have hYT₁ND : NonDegenerateSet YT₁ := by
+        intro S₁ hS₁
+        exact downward_set_non_degenerate T₁ hT₁.1 hYCompl.2 S₁ hS₁
+      have hYT₂ND : NonDegenerateSet YT₂ := by
+        intro S₁ hS₁
+        exact downward_set_non_degenerate T₂ T₂.prop hYCompl.2 S₁ hS₁
+      cases' hY YT₁ hYTStrict ⟨hYTCompl, hYT₁ND⟩ T₁ hT₁YT₁ with CT₁ hCT₁
+      cases' hY YT₂ hYT'Strict ⟨hYT'Compl, hYT₂ND⟩ T₂ hT₂YT₂ with CT₂ hCT₂
+      use CT₁ ∪ CT₂
+      constructor
+      · calc closed_hull S = closed_hull T₁ ∪ closed_hull T₂.val := hT₂.1
+          _ = closed_hull T₁ ∪ (⋃ (L' ∈ CT₂), closed_hull L') := by rw [hCT₂.1]
+          _ = (⋃ (L ∈ CT₁), closed_hull L) ∪ (⋃ (L' ∈ CT₂), closed_hull L') := by rw [hCT₁.1]
+          _ = ⋃ (L ∈ CT₁ ∪ CT₂), closed_hull L := Eq.symm (set_biUnion_union CT₁ CT₂ closed_hull)
+      · rintro T
+        rw [mem_union]
+        rintro (hCT | hCT')
+        · have h₁ : closed_hull T ⊆ closed_hull T₁ := by
+            calc closed_hull T ⊆ ⋃ (L ∈ CT₁), closed_hull L := Set.subset_biUnion_of_mem hCT
+              _ = closed_hull T₁ := by rw [← hCT₁.1]
+          exact downward_set_basic hT₁.1 h₁ (hCT₁.2 T hCT)
+        · have h₂ : closed_hull T ⊆ closed_hull T₂.val := by
+            calc closed_hull T ⊆ ⋃ (L ∈ CT₂), closed_hull L := Set.subset_biUnion_of_mem hCT'
+              _ = closed_hull T₂.val := by rw [← hCT₂.1]
+          exact downward_set_basic T₂.2 h₂ (hCT₂.2 T hCT')
 
+def NonDegenerate (S : Segment) := S 0 ≠ S 1
 
+def NoDuplicates {n : ℕ} (T : Fin n → X) :=
+    ∀ i j, i ≠ j → open_hull (T i).val ∩ open_hull (T j).val = ∅
 
-theorem basis_segments_exist (X : SegmentSet) :
-  ∃ S : X, basis_segment X S := by
+theorem has_chains (S : X) (hX : IsSplitting X) (hS : NonDegenerate S) :
+    ∃ n : ℕ, ∃ T : Fin (n + 1) → X, ∀ i, IsBasic X (T i).val ∧ NoDuplicates X T ∧
+    ∀ i : Fin n, (T i).val 1 = (T (i + 1)).val 0 := by
+  -- start with a covering of S by basis segments, need to find an ordering. Evident way:
+  -- look at the order in which the points occur under the standard mapping [0,1] → closed_segment S
+  -- We can use Finset.orderEmbOfFin to construct the map T
   sorry
+
+variable (O : Type) [LinearOrder O]
+example (A : Finset O) : ∃ n : ℕ, ∃ f : Fin n → O, f '' ⊤ = A ∧ ∀ i j : Fin n, i < j → f i < f j
+  := by
+  sorry -- Use Finset.orderEmbOfFin
 
 
 
@@ -814,11 +953,11 @@ def IsPurple (L : Segment) : Prop :=
 noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
   {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
 
-lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+lemma purple_segments_parity (X : SegmentSet) (hX : HasComplements X)
   (L : X) (hL : IsPurple L) :
   (purple_segments X L.val).card % 2 = 1 := sorry
 
-lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+lemma grey_segments_parity (X : SegmentSet) (hX : HasComplements X)
   (L : X) (hL : ¬ IsPurple L) :
   (purple_segments X L.val).card % 2 = 0 := sorry
 
@@ -830,9 +969,9 @@ lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
 
 variable (S : Finset Triangle) (hS : is_cover unit_square S)
 
-def X : SegmentSet := sorry
-lemma hX : complete_segment_set X := sorry
-def B := {  L : X | basis_segment X L }
+def Y : SegmentSet := sorry
+lemma hY : HasComplements Y := sorry
+def B := {  L : Y | IsBasic Y L }
 
 /-
   For any triangle in the dissection, the number of purple segments on its boundary
@@ -844,8 +983,8 @@ def B := {  L : X | basis_segment X L }
 def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
 
 lemma purple_odd_iff_rainbow (T : S) :
-  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
-  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
+  (purple_segments Y (side T 0)).card + (purple_segments Y (side T 1)).card +
+  (purple_segments Y (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
 
 
 /-
