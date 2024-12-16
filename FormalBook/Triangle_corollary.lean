@@ -81,6 +81,7 @@ be the absolute value of the determeninant times the original volume. -/
 
 
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
+def unit_segment : Segment := fun | 0 => (v 0 0) | 1 => (v 1 0)
 
 def open_unit_triangle := open_hull unit_triangle
 def closed_unit_triangle := closed_hull unit_triangle
@@ -183,7 +184,64 @@ theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).to
 theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal = triangle_area (T : Triangle) := by
   sorry
 
+def point0 : (Fin 2 → ℝ ) := fun | 0 => 0 | 1 => 0
+def point1 : (Fin 2 → ℝ ) := fun | 0 => 1 | 1 => 0
 
+theorem closed_unit_segment_is_box : (closed_hull unit_segment) = Set.Icc point0 point1 := by
+  have hunit_segment : unit_segment = fun | 0 => (v 0 0) | 1 => (v 1 0) := by rfl
+  have hp0 : point0 = fun | 0 => 0 | 1 => 0 := by rfl
+  have hp1 : point1 = fun | 0 => 1 | 1 => 0 := by rfl
+  ext x
+  constructor
+  · rintro ⟨ a ,⟨ h1,h3⟩  , h2⟩
+    rw[hunit_segment] at h2
+    simp at *
+    rw[← h2]
+    constructor
+    · intro i
+      rw[hp0]
+      fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
+    · intro i -- this part is directly copied except there is hp1 instead of hp0
+      rw[hp1]
+      fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
+  · rintro ⟨ h1, h2⟩
+    use (fun | 0 =>  (1 - x 0) | 1 => x 0)
+    rw[hp0,hp1] at *
+    dsimp at *
+    constructor
+    · specialize h1 0
+      specialize h2 0
+      dsimp at *
+      constructor
+      · intro i
+        fin_cases i <;> dsimp <;> linarith[h1, h1]
+      · simp
+    · ext i
+      rw[hunit_segment]
+      fin_cases i
+      · simp
+      · simp
+        specialize h1 1
+        specialize h2 1
+        dsimp at *
+        linarith
+
+
+
+
+theorem volume_closed_unit_segment : (MeasureTheory.volume (closed_hull unit_segment)).toReal = 0 := by
+  rw[closed_unit_segment_is_box]
+  have h1: point0 ≤ point1
+  intro i
+  fin_cases i <;> dsimp <;> rw[ point0, point1] <;> linarith
+  rw[Real.volume_Icc_pi_toReal h1 ]
+  apply?
+
+  sorry
+
+
+theorem volume_closed_segment (L : Segment) : (MeasureTheory.volume (closed_hull L)).toReal = 0 := by
+  sorry
 
 --We additionally want its flipped version
 
