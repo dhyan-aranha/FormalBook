@@ -348,8 +348,7 @@ lemma two_co_zero_imp_corner {T : Triangle} {i j : Fin 3} {x : ℝ²} (hdet : de
 def boundary {n : ℕ} (P : Fin n → ℝ²) : Set ℝ² := (closed_hull P) \ (open_hull P)
 
 lemma boundary_not_in_open {n : ℕ} (P : Fin n → ℝ²) {x : ℝ²} (hx : x ∈ boundary P) :
-    x ∉ open_hull P := by
-  sorry
+    x ∉ open_hull P :=  Set.not_mem_of_mem_diff hx
 
 lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1} := by
   sorry
@@ -547,7 +546,6 @@ lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : 
         constructor <;> linarith
       · exact min_le_right _ _
   intro y hy
-  have ⟨a, ha⟩ := seg_vec_co (open_sub_closed _ hxL) hy
   have hTyi : ∀ z, z ∈ closed_hull L →  Tco T z i = 0 := by
     intro z hz
     have ⟨b,hb⟩ := seg_vec_co (open_sub_closed _ hxL) hz
@@ -598,15 +596,7 @@ lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : 
       linarith [hj, hTyi x (open_sub_closed _ hxL)]
     · exact ⟨α,hαSimp,rfl⟩
   refine (mem_closed_side hdet hy₂ i).1 (hTyi y hy)
-
-example {a b : ℝ} (ha : 0 ≤ a) (hb : 0 = b): 0 ≤ b  := by
-  exact le_of_eq hb
-  sorry
-
-example {a b : ℝ} (ha : 0 ≤ a) (hb : 0 = b): 0 ≤ b  := by
-  simp_all only [abs_eq_self, le_min_iff, and_self]
-  sorry
-
+  
 
 
 lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L 1)
@@ -649,7 +639,7 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
   rw [closed_triangle_iff hdet]
   by_contra hContra; push_neg at hContra
   have ⟨i,hi⟩ := hContra
-
+  
 
   sorry
 
