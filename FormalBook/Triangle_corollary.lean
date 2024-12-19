@@ -1,11 +1,13 @@
 
 --This stuff is copy pasted from another file so I don't have rewrite definitions
-
-import Mathlib.Tactic
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Data.Finset.Basic
-import Mathlib.Order.Defs
-import Mathlib.Data.Real.Sign
+import Mathlib
+-- import Mathlib.Tactic
+-- import Mathlib.Analysis.InnerProductSpace.PiL2
+-- import Mathlib.Data.Finset.Basic
+-- import Mathlib.Order.Defs
+-- import Mathlib.Data.Real.Sign
+-- import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+-- import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "Triangle" => Fin 3 → ℝ²
@@ -19,9 +21,14 @@ open Finset
 def closed_simplex (n : ℕ)  : Set (Fin n → ℝ) := {α | (∀ i, 0 ≤ α i) ∧ ∑ i, α i = 1}
 def open_simplex   (n : ℕ)  : Set (Fin n → ℝ) := {α | (∀ i, 0 < α i) ∧ ∑ i, α i = 1}
 
+lemma closed_simplex_def (n : ℕ ): (closed_simplex n) = {α | (∀ i, 0 ≤ α i) ∧ ∑ i, α i = 1} := by rfl
+lemma open_simplex_def (n : ℕ ): (open_simplex n) = {α | (∀ i, 0 < α i) ∧ ∑ i, α i = 1} := by rfl
+
 def closed_hull {n : ℕ} (f : Fin n → ℝ²) : Set ℝ² := (fun α ↦ ∑ i, α i • f i) '' closed_simplex n
 def open_hull   {n : ℕ} (f : Fin n → ℝ²) : Set ℝ² := (fun α ↦ ∑ i, α i • f i) '' open_simplex n
 
+lemma closed_hull_def {n : ℕ} (f : Fin n → ℝ²) : closed_hull f = (fun α ↦ ∑ i, α i • f i) '' closed_simplex n := by rfl
+lemma open_hull_def {n : ℕ} (f : Fin n → ℝ²) : open_hull f = (fun α ↦ ∑ i, α i • f i) '' open_simplex n := by rfl
 
 noncomputable def triangle_area (T : Triangle) : ℝ :=
   abs (- (T 0 1) * (T 1 0) + (T 0 0) * (T 1 1) + (T 0 1) * (T 2 0) - (T 1 1) * (T 2 0) - (T 0 0) * (T 2 1) + (T 1 0) * (T 2 1)) / 2
@@ -82,6 +89,8 @@ be the absolute value of the determeninant times the original volume. -/
 
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
 def unit_segment : Segment := fun | 0 => (v 0 0) | 1 => (v 1 0)
+lemma unit_triangle_def : unit_triangle = fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1) := by rfl
+lemma unit_segment_def : unit_segment = fun | 0 => (v 0 0) | 1 => (v 1 0)  := by rfl
 
 def open_unit_triangle := open_hull unit_triangle
 def closed_unit_triangle := closed_hull unit_triangle
@@ -96,8 +105,7 @@ lemma lincom_commutes ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ}(a : Fin n → �
 
 
 theorem open_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin n → ℝ²)) : open_hull (L ∘ f ) = Set.image L (open_hull f) := by
-  have hhull : open_hull  f=  (fun a ↦ ∑ i, a i • f i) '' open_simplex n := by rfl
-  rw[hhull, ← Set.image_comp]
+  rw[open_hull_def, open_hull_def, ← Set.image_comp] -- for some reason repeat rw does not work here
   ext x
   constructor
   · rintro ⟨ a ,h1 , h2⟩
@@ -119,10 +127,10 @@ theorem open_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin 
 def translation (a : ℝ²) : (ℝ² → ℝ²) := fun x ↦ x + a
 
 theorem aux_for_translation {n : ℕ }{f: Fin n → ℝ²}{a : Fin n → ℝ }{b : ℝ² }(h1 : a ∈ open_simplex n):   ∑ i : Fin n, a i • (f i + b) =  ∑ i : Fin n, a i • f i + b := by
-  rcases h1 with ⟨h2, h3⟩
+  rcases h1 with ⟨_, h3⟩
   have h4: b = ∑ i : Fin n, a i • b
   rw[← sum_smul, h3, one_smul]
-  nth_rewrite 2[h4]
+  nth_rewrite 2 [h4]
   rw[← sum_add_distrib]
   apply Fintype.sum_congr
   exact fun i ↦ DistribSMul.smul_add (a i) (f i) b
@@ -130,9 +138,8 @@ theorem aux_for_translation {n : ℕ }{f: Fin n → ℝ²}{a : Fin n → ℝ }{b
 
 --Most of the proof now gets copied
 theorem translation_commutes {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : open_hull ( (translation b) ∘ f) = Set.image (translation b) (open_hull f) := by
-  have hhull : open_hull  f=  (fun a ↦ ∑ i, a i • f i) '' open_simplex n := by rfl
   have htrans : translation b = fun x ↦ x + b := by rfl
-  rw[hhull, ← Set.image_comp]
+  rw[open_hull_def, open_hull_def, ← Set.image_comp]
   rw[htrans] at *
   ext x
   constructor
@@ -164,13 +171,13 @@ theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translatio
   ext i j
   fin_cases i <;> fin_cases j <;> simp[translation,linear_transform, f, matrix_transform, Matrix.mulVec, Matrix.vecHead, Matrix.vecTail  ]
 
-
-
-theorem aux ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
+theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
   exact MeasureTheory.Measure.addHaar_image_linearMap MeasureTheory.volume L A
+
+
 --This is some garbage that is not working yet (I want it to be like the above)
--- theorem aux1 (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (fun x ↦ a + x ) A) = MeasureTheory.volume (A) :=
---   by --apply? -- MeasureTheory.volume.IsAddLeftInvariant
+ theorem area_translation (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (fun x ↦ a + x ) A) = MeasureTheory.volume (A) :=   by sorry
+  -- MeasureTheory.volume.IsAddLeftInvariant
 --   sorry
 -- variable (a b : (Fin 2) → ℝ)(G : Type) [AddGroup G] [TopologicalSpace G] [TopologicalAddGroup G] [MeasurableSpace G] [BorelSpace G]  (K₀ : TopologicalSpace.PositiveCompacts G)
 -- #check MeasureTheory.Measure.isAddLeftInvariant_addHaarMeasure K₀
@@ -228,16 +235,32 @@ theorem closed_unit_segment_is_box : (closed_hull unit_segment) = Set.Icc point0
 
 
 
+--#check MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))
+--#check EuclideanSpace.volume_preserving_measurableEquiv
+--#check Set.Icc point0 point1
 
 theorem volume_closed_unit_segment : (MeasureTheory.volume (closed_hull unit_segment)).toReal = 0 := by
-  rw[closed_unit_segment_is_box]
+  -- This first part is essentially showing 0 = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
+  have h0 : ∏ i : (Fin 2), (point1 i - point0 i) = 0
+  rw[ Fin.prod_univ_two]
+  unfold point0 point1
+  linarith
+  rw[ ← h0]
   have h1: point0 ≤ point1
   intro i
-  fin_cases i <;> dsimp <;> rw[ point0, point1] <;> linarith
-  rw[Real.volume_Icc_pi_toReal h1 ]
-  apply?
-
+  fin_cases i <;> dsimp <;> rw[ point0, point1] ; linarith
+  rw[ ← Real.volume_Icc_pi_toReal h1]
+  -- Now I try to show (MeasureTheory.volume (closed_hull unit_segment)).toReal = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
+  -- But the left-hand side Measuretheory.volume is not the same as the right-hand side
+  have h2 : MeasureTheory.Measure.map (⇑(EuclideanSpace.measurableEquiv (Fin 2))) MeasureTheory.volume  (Set.Icc point0 point1) = MeasureTheory.volume (Set.Icc point0 point1)
+  rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
+  rw[ ← h2]
+  rw[ closed_unit_segment_is_box] --This is the theorem stating closed_hull unit_segment = Set.Icc point0 point1
   sorry
+  --rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
+
+
+
 
 
 theorem volume_closed_segment (L : Segment) : (MeasureTheory.volume (closed_hull L)).toReal = 0 := by
