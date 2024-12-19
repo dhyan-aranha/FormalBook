@@ -385,7 +385,6 @@ lemma sign_seg_mem_zero (L : Segment) {v : ℝ²} (hv : v ∈ closed_hull L) :
 
 
 
-
 def Tside (T : Triangle) : Fin 3 → Segment := fun
   | 0 => (fun | 0 => T 1 | 1 => T 2)
   | 1 => (fun | 0 => T 2 | 1 => T 0)
@@ -640,34 +639,113 @@ lemma Tco_line {T : Triangle} {i : Fin 3} (x y : ℝ²) (a : ℝ) :
     Tco T (x  + a • y) i = Tco T x i + a * (det₂ (Oside T i) y) / det T := by
   rw [Tco, sign_seg_line, add_div, ←Tco, ←Oside]
 
-/- Basic lemma about Real.sign. -/
+/- Basic lemmas about Real.sign. -/
 lemma real_sign_mul {x y : ℝ} : Real.sign (x * y) = Real.sign x * Real.sign y := by
   sorry
 
+lemma real_sign_div_self {x : ℝ} (hx : x ≠ 0) : 0 <  Real.sign x / x := by
+  sorry
+
+lemma real_sign_mul_self {x : ℝ} (hx : x ≠ 0) : 0 < (Real.sign x) * x := by
+  sorry
+
+
+/- Some API to make the seg_inter_open statement more pleasant.-/
+/- This lemma is in mathlib but somehow I cannot get it to work unless it is in this form. -/
+lemma forall_in_swap_special {α β : Type} {P : α → β → Prop} {Q : α → Prop} :
+    (∀ a, Q a → ∀ b, P a b) ↔ (∀ b, ∀ a, Q a → P a b) :=
+  Set.forall_in_swap
+
+
+lemma forall_exists_pos_swap {α : Type} [Fintype α] {P : ℝ → α → Prop}
+    (h : ∀ δ a, P δ a → ∀ δ', δ' ≤ δ → P δ' a): (∃ δ > 0, ∀ a, P δ a) ↔ (∀ a, ∃ δ > 0, P δ a) := by
+  constructor
+  · exact fun ⟨δ,Qδ,Pδ⟩ a ↦ ⟨δ, Qδ, Pδ a⟩
+  · intro ha
+    by_cases hα : Nonempty α
+    · choose fδ hfδ using ha
+      have hS : (image fδ univ).Nonempty := by rwa [image_nonempty, univ_nonempty_iff]
+      use min' (image fδ univ) hS
+      refine ⟨?_,?_⟩
+      · rw [gt_iff_lt, Finset.lt_min'_iff]
+        intro y hy
+        have ⟨x,_,hx⟩ := mem_image.1 hy
+        rw [←hx]
+        exact (hfδ x).1
+      · intro x
+        apply h (fδ x) x (hfδ x).2
+        exact min'_le _ _ (mem_image_of_mem fδ (mem_univ x))
+    · simp_all only [gt_iff_lt, not_nonempty_iff, IsEmpty.forall_iff, and_true, implies_true]
+      use 1
+      norm_num
+
+example {a b c : ℝ} (ha : 0 < b) (hb : 0 < c) : - a < 0 ↔ 0 < a  := by
+  exact neg_neg_iff_pos
+  sorry
+
+def real_interval_δ {x: ℝ} (y : ℝ) (hx : 0 < x) : ∃ δ > 0, ∀ a, |a| ≤ δ → 0 < x + a * y := by
+  by_cases hy : y = 0
+  · exact ⟨1, by norm_num, fun a _ ↦ by rwa [hy,mul_zero,add_zero]⟩
+  · use x / (2 * |y|)
+    constructor
+    · field_simp
+      assumption
+    · intro a ha
+      calc
+        0     <   (1/2) * x       := by linarith
+        _     =   x + (- (1/2)*x) := by linarith
+        _     ≤   x + a * y       := by
+          gcongr x + ?_
+          field_simp
+          rw [←neg_le_neg_iff, ←mul_le_mul_left (a := 2) (by norm_num), neg_div',neg_neg,
+              mul_div_cancel₀ _ (by norm_num)]
+          refine le_of_max_le_left (?_ : |2 * -(a * y)| ≤ x)
+          rw [abs_mul,Nat.abs_ofNat, abs_neg, abs_mul,mul_comm,mul_assoc]
+          nth_rw 2 [mul_comm]
+          refine (le_div_iff₀ ?_).mp ha
+          simp_all only [Nat.ofNat_pos, mul_pos_iff_of_pos_left, abs_pos, ne_eq, not_false_eq_true]
 
 
 lemma seg_inter_open {T : Triangle} {x y : ℝ²} {i : Fin 3}
   (hxT : x ∈ open_hull (Tside T i)) (hdet: det T ≠ 0)
   (hdet₂ : det₂ (seg_vec (Tside T i)) y ≠ 0) :
-  ∃ σ ∈ ({-1,1} : Finset ℝ), ∃ δ > 0, (∀ a : ℝ,
-    (0 < a → a ≤ δ → x + a • σ • y ∈ open_hull T)) ∧ ∀ a : ℝ, 0 < a → x + a • (- σ) • y ∉ closed_hull T := by
+  ∃ σ ∈ ({-1,1} : Finset ℝ), (∃ δ > 0, (∀ a : ℝ,
+    (0 < a → a ≤ δ → x + a • σ • y ∈ open_hull T))) ∧ ∀ a : ℝ, 0 < a → x + a • (- σ) • y ∉ closed_hull T := by
   use Real.sign (det T * det₂ (Oside T i) y)
   constructor
   · rw [real_sign_mul,Oside]
     cases' Real.sign_apply_eq_of_ne_zero  _ hdet <;>
     cases' Real.sign_apply_eq_of_ne_zero  _ hdet₂ <;>
     simp_all
-  · use 1, by norm_num
-    constructor
-    · intro a hal hau
-      rw [open_triangle_iff hdet]
-      intro j
-      rw [Tco_line, det₂_mul_last]
-
-
-      sorry
-    · sorry
-
+  · constructor
+    · simp_rw [open_triangle_iff hdet, Tco_line, ←and_imp, forall_in_swap_special]
+      rw [forall_exists_pos_swap]
+      · intro j
+        by_cases hij : j = i
+        · use 1, by norm_num -- Junk value
+          intro a ⟨hapos, _⟩
+          rw [hij, closed_side_to_co hdet (open_sub_closed _ hxT), zero_add, mul_div_assoc]
+          apply mul_pos hapos
+          rw [det₂_mul_last, real_sign_mul, mul_assoc, mul_div_right_comm]
+          exact mul_pos (real_sign_div_self hdet) (real_sign_mul_self (by rwa [Oside]))
+        · have ⟨δ,hδpos, hδa⟩ := real_interval_δ (det₂ (Oside T j) ((det T * det₂ (Oside T i) y).sign • y) / det T) (mem_open_side_other_co hdet hxT j  hij)
+          use δ, hδpos
+          intro a ⟨hapos,haup⟩
+          convert hδa a (by rwa [abs_of_pos hapos]) using 1
+          field_simp
+      · intro δ j ha δ' hδ' a ⟨ha'1, ha'2⟩
+        apply ha
+        simp_all only [ne_eq, and_imp, true_and, Preorder.le_trans a δ' δ ha'2 hδ']
+    · intro a hapos hacl
+      simp_rw [closed_triangle_iff hdet, Tco_line] at hacl
+      specialize hacl i
+      revert hacl
+      simp
+      rw [closed_side_to_co hdet (open_sub_closed _ hxT), zero_add,←neg_smul, det₂_mul_last,
+          ←mul_assoc, ←neg_mul_eq_mul_neg, ←neg_mul_eq_neg_mul, neg_div, neg_neg_iff_pos, mul_assoc,  mul_div_assoc]
+      apply mul_pos hapos
+      rw [real_sign_mul, mul_assoc, mul_div_right_comm]
+      exact mul_pos (real_sign_div_self hdet) (real_sign_mul_self (by rwa [Oside]))
 
 
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
@@ -687,13 +765,13 @@ lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : 
     (hv : ∀ i, T i ∉ open_hull L) : closed_hull L ⊆ closed_hull (Tside T i) := by
   have hdir : det₂ (seg_vec (Tside T i)) (seg_vec L) = 0 := by
     by_contra hcontra
-    have ⟨σ,hσ,δ, hδ, hseg⟩  := seg_inter_open hxT hdet hcontra
+    have ⟨σ, hσ, ⟨δ, hδ, hain⟩, _⟩  := seg_inter_open hxT hdet hcontra
     have ⟨δ', hδ', hseg'⟩ := seg_dir_sub hxL
     rw [Set.eq_empty_iff_forall_not_mem] at hInter
     apply hInter (x + (min δ δ') • σ • seg_vec L)
     rw [@Set.mem_inter_iff]
     constructor
-    · exact hseg.1 _ (lt_min hδ hδ') (min_le_left _ _)
+    · exact hain _ (lt_min hδ hδ') (min_le_left _ _)
     · rw [←mul_smul]
       refine open_sub_closed _ (hseg' (min δ δ' * σ) ?_)
       have hσabs : |σ| = 1 := by
@@ -854,7 +932,7 @@ lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit
     · -- Specialize to the Δᵢ
       have yΔi := hy (Tside Δ i) (by rw [mem_biUnion]; exact ⟨Δ,hΔ,by rw [mem_image]; exact ⟨i, mem_univ _,rfl⟩⟩)
       -- Use this to show that there is a direction of y to move in which does not intersect Δ
-      have ⟨σ, hσ, δ, hδ, hain, haout⟩ := seg_inter_open hxi (hArea Δ hΔ) yΔi
+      have ⟨σ, hσ, ⟨δ, hδ, hain⟩, haout⟩ := seg_inter_open hxi (hArea Δ hΔ) yΔi
       -- We have an epsilon such that x + (1/n) ε • - σ • y lies inside the open triangle for all n ∈ ℕ
       have ⟨ε,hεPos, hn⟩ := open_unit_square_open_dir (- σ • y) (hLunit hLx)
       -- This gives a map from ℕ to S assigning to each such ℕ a triangle that contains it.
@@ -901,9 +979,9 @@ lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit
         have ⟨i'',hi''⟩ := el_in_boundary_imp_side (hArea Δ'' hΔ'') (hLΔ'' (open_sub_closed _ hLx)) (fun i ht ↦ hv Δ'' hΔ'' i (by rwa [←ht]))
         -- We define σ' and σ''
         have yΔi' := hy (Tside Δ' i') (by rw [mem_biUnion]; exact ⟨Δ',hΔ',by rw [mem_image]; exact ⟨i', mem_univ _,rfl⟩⟩)
-        have ⟨σ', hσ', δ',hδ', hain', haout'⟩ := seg_inter_open hi' (hArea Δ' hΔ') yΔi'
+        have ⟨σ', hσ', ⟨δ',hδ', hain'⟩, haout'⟩ := seg_inter_open hi' (hArea Δ' hΔ') yΔi'
         have yΔi'' := hy (Tside Δ'' i'') (by rw [mem_biUnion]; exact ⟨Δ'',hΔ'',by rw [mem_image]; exact ⟨i'', mem_univ _,rfl⟩⟩)
-        have ⟨σ'', hσ'', δ'',hδ'', hain'', haout''⟩ := seg_inter_open hi'' (hArea Δ'' hΔ'') yΔi''
+        have ⟨σ'', hσ'', ⟨δ'',hδ'', hain''⟩, haout''⟩ := seg_inter_open hi'' (hArea Δ'' hΔ'') yΔi''
         -- First we show that σ ≠ σ' The following argument is repeated
         -- three times and could use its own lemma
         have σneq : σ ≠ σ' := by
