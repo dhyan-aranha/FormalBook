@@ -463,10 +463,30 @@ lemma two_co_zero_imp_corner {T : Triangle} {i j : Fin 3} {x : ℝ²} (hdet : de
 
 def boundary {n : ℕ} (P : Fin n → ℝ²) : Set ℝ² := (closed_hull P) \ (open_hull P)
 
-lemma boundary_not_in_open {n : ℕ} (P : Fin n → ℝ²) {x : ℝ²} (hx : x ∈ boundary P) :
+lemma boundary_not_in_open {n : ℕ} {P : Fin n → ℝ²} {x : ℝ²} (hx : x ∈ boundary P) :
     x ∉ open_hull P :=  Set.not_mem_of_mem_diff hx
 
-lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1} := by
+lemma boundary_in_closed {n : ℕ} {P : Fin n → ℝ²} {x : ℝ²} (hx : x ∈ boundary P) :
+    x ∈ closed_hull P := Set.mem_of_mem_diff hx
+
+lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
+    : boundary L = image (fun i ↦ L i) (univ : Finset (Fin 2)) := by
+  ext x
+  constructor
+  · intro hx
+    have ⟨α,hα,hαx⟩ := boundary_in_closed hx
+    have α_non_zero : ∃ i, α i = 0 := by
+      by_contra hcontra; push_neg at hcontra
+      apply boundary_not_in_open hx
+      exact ⟨α,⟨fun i ↦ lt_of_le_of_ne (hα.1 i) (hcontra i).symm,hα.2⟩ ,hαx⟩
+
+    sorry
+  · sorry
+
+/- To make the boundary_seg more useful.-/
+lemma fin2_im {α : Type} {f : Fin 2 → α}
+    : image f (univ : Finset (Fin 2)) = {f 0, f 1} := by
+
   sorry
 
 lemma boundary_iff {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) :
@@ -537,9 +557,11 @@ lemma mem_open_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ 
     have ⟨j,hjneq,hTcoj'⟩ := hEx
     have hTcoj : Tco T x j = 0 := by
       linarith [hTcoj', (closed_triangle_iff hdet).1 hx j]
-    refine boundary_not_in_open (Tside T i) ?_ hxOpen
-    rw [boundary_seg (nondegen_triangle_imp_nondegen_side i hdet), two_co_zero_imp_corner hdet hjneq hTcoj hTcoi]
+    refine boundary_not_in_open (P := Tside T i) ?_ hxOpen
+    rw [boundary_seg (nondegen_triangle_imp_nondegen_side i hdet), fin2_im, two_co_zero_imp_corner hdet hjneq hTcoj hTcoi]
+    simp
     fin_cases i <;> fin_cases j <;> tauto
+
 
 
 lemma mem_open_side_other_co {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²}  {i : Fin 3} (hxOpen : x ∈ open_hull (Tside T i))
@@ -592,6 +614,10 @@ lemma det₂_iff (x y : ℝ²) (hx : x ≠ 0)
   : det₂ x y = 0 ↔ ∃ (α : ℝ), y = α • x := by
   sorry
 
+lemma det₂_mul_last {x y : ℝ²} (a : ℝ)
+  : det₂ x (a • y) = a * det₂ x y := by
+  simp [det₂]; ring
+
 noncomputable def seg_vec (L : Segment) : ℝ² := L 1 - L 0
 noncomputable def Oside (T : Triangle) (i : Fin 3) := seg_vec (Tside T i)
 
@@ -614,16 +640,35 @@ lemma Tco_line {T : Triangle} {i : Fin 3} (x y : ℝ²) (a : ℝ) :
     Tco T (x  + a • y) i = Tco T x i + a * (det₂ (Oside T i) y) / det T := by
   rw [Tco, sign_seg_line, add_div, ←Tco, ←Oside]
 
+/- Basic lemma about Real.sign. -/
+lemma real_sign_mul {x y : ℝ} : Real.sign (x * y) = Real.sign x * Real.sign y := by
+  sorry
+
+
 
 lemma seg_inter_open {T : Triangle} {x y : ℝ²} {i : Fin 3}
   (hxT : x ∈ open_hull (Tside T i)) (hdet: det T ≠ 0)
   (hdet₂ : det₂ (seg_vec (Tside T i)) y ≠ 0) :
   ∃ σ ∈ ({-1,1} : Finset ℝ), ∃ δ > 0, (∀ a : ℝ,
     (0 < a → a ≤ δ → x + a • σ • y ∈ open_hull T)) ∧ ∀ a : ℝ, 0 < a → x + a • (- σ) • y ∉ closed_hull T := by
-  use (Real.sign (det T * det₂ (Oside T i) y))
+  use Real.sign (det T * det₂ (Oside T i) y)
   constructor
-  · sorry
-  · sorry
+  · rw [real_sign_mul,Oside]
+    cases' Real.sign_apply_eq_of_ne_zero  _ hdet <;>
+    cases' Real.sign_apply_eq_of_ne_zero  _ hdet₂ <;>
+    simp_all
+  · use 1, by norm_num
+    constructor
+    · intro a hal hau
+      rw [open_triangle_iff hdet]
+      intro j
+      rw [Tco_line, det₂_mul_last]
+
+
+      sorry
+    · sorry
+
+
 
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
     ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
@@ -750,9 +795,10 @@ constructor
 
 
 
-/- An version that states that the open_unit_square is open. -/
+/- A version that states that the open_unit_square is open. -/
 lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_unit_square) :
     ∃ (ε : ℝ), ε > 0 ∧ ∀ (n : ℕ), x + (1 / (n : ℝ)) • (ε • y) ∈ open_unit_square := by
+
   sorry
 
 /-
@@ -793,7 +839,7 @@ lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit
   : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 2 := by
   -- We first take an element from open_hull L
   have ⟨x, hLx⟩ := open_seg_nonempty L
-  -- First a useful statement:
+  -- A useful statement:
   have hU : ∀ Δ ∈ S, x ∉ open_hull Δ := by
     intro Δ hΔ hxΔ
     have this := Set.mem_inter hxΔ (open_sub_closed _ hLx )
