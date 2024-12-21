@@ -174,112 +174,152 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   sorry
   sorry
 
+def S := {A : Subring ℝ | (1/2) ∉ A}
+def Z := (Int.castRingHom ℝ).range
 
+lemma Z_in_S : Z ∈ S := by
+  have two_eq_two : (Int.castRingHom ℝ) 2 = 2 := by rfl
+  intro half_in_Z
+  simp at half_in_Z
+  rcases half_in_Z with ⟨n, h⟩
+  rw[← two_eq_two] at h
+  have inj : (Int.castRingHom ℝ).toFun.Injective := by
+    exact Isometry.injective fun x1 ↦ congrFun rfl
+  have two_n : (Int.castRingHom ℝ) (2*n) = 1 := by
+    rw[map_mul, h]
+    simp
+  rw[← (Int.castRingHom ℝ).map_one] at two_n
+  have two_n_eq_one : 2*n = 1 := by
+    exact (inj two_n)
+  have n_two_eq_one : n*2 = 1 := by
+    rw[← two_n_eq_one]
+    exact Int.mul_comm n 2
+  have two_unit : ∃two : ℤˣ, two = (2:ℤ) := by
+    refine CanLift.prf 2 ?_
+    rw[isUnit_iff_exists]
+    use n
+  rcases two_unit with ⟨two, H⟩
+  cases' (Int.units_eq_one_or two) with l l <;> (rw[l] at H; tauto)
 
-  -- let Balpha2 := Balpha.toSubring
-  -- let Balpha'2 := Balpha'.toSubring
-  -- have range : Set.range ↑(algebraMap B ℝ) = B := by
-  --   ext x
-  --   constructor
-  --   . intro h
+lemma sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
+-- Idea: The upper bound is the union of the subrings.
+  intro c subset chain
+  by_cases emp_or_not : c ≠ ∅
+  let subring_to_set_of_sets : Set (Set ℝ) :=
+    {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
+  let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets
+  let ub : Subring ℝ :=
+    { carrier := union_of_sets,
+      zero_mem' := by
+        have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
+        cases' in_c with t in_c
+        exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.zero_mem'⟩
+      one_mem' := by
+        have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
+        cases' in_c with t in_c
+        exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.one_mem'⟩
+      add_mem' := by
+        intro a b a_in_carrier b_in_carrier
+        refine Set.mem_sUnion.mpr ?_
+        rcases a_in_carrier with ⟨cara, hypa, a_in_cara⟩
+        rcases b_in_carrier with ⟨carb, hypb, b_in_carb⟩
+        have hypa' := hypa
+        have hypb' := hypb
+        rcases hypa with ⟨ringa, H1a, H2a⟩
+        rcases hypb with ⟨ringb, H1b, H2b⟩
+        have antisymm : ringa ≤ ringb ∨ ringb ≤ ringa := by
+          exact IsChain.total chain H1a H1b
+        cases' antisymm with l r
+        . use carb
+          have cara_subset_carb : cara ≤ carb := by
+            rwa[H2a, H2b]
+          have a_and_b_in_carb : a ∈ ringb ∧ b ∈ ringb := by
+            repeat rw[← Subring.mem_carrier]
+            rw[← H2b]
+            exact ⟨cara_subset_carb a_in_cara, b_in_carb⟩
+          have a_plus_b_in_ringb : a+b ∈ ringb := by
+            exact (ringb.add_mem' a_and_b_in_carb.1 a_and_b_in_carb.2)
+          exact ⟨hypb', by rwa[H2b]⟩
+        . use cara
+          have carb_subset_cara : carb ≤ cara := by
+            rwa[H2b, H2a]
+          have a_and_b_in_cara : a ∈ ringa ∧ b ∈ ringa := by
+            repeat rw[← Subring.mem_carrier]
+            rw[← H2a]
+            exact ⟨a_in_cara, carb_subset_cara b_in_carb⟩
+          have a_plus_b_in_ringa : a+b ∈ ringa := by
+            exact (ringa.add_mem' a_and_b_in_cara.1 a_and_b_in_cara.2)
+          exact ⟨hypa', by rwa[H2a]⟩,
+      mul_mem' := by
+        intro a b a_in_carrier b_in_carrier
+        refine Set.mem_sUnion.mpr ?_
+        rcases a_in_carrier with ⟨cara, hypa, a_in_cara⟩
+        rcases b_in_carrier with ⟨carb, hypb, b_in_carb⟩
+        have hypa' := hypa
+        have hypb' := hypb
+        rcases hypa with ⟨ringa, H1a, H2a⟩
+        rcases hypb with ⟨ringb, H1b, H2b⟩
+        have antisymm : ringa ≤ ringb ∨ ringb ≤ ringa := by
+          exact IsChain.total chain H1a H1b
+        cases' antisymm with l r
+        . use carb
+          have cara_subset_carb : cara ≤ carb := by
+            rwa[H2a, H2b]
+          have a_and_b_in_carb : a ∈ ringb ∧ b ∈ ringb := by
+            repeat rw[← Subring.mem_carrier]
+            rw[← H2b]
+            exact ⟨cara_subset_carb a_in_cara, b_in_carb⟩
+          have a_plus_b_in_ringb : a*b ∈ ringb := by
+            exact (ringb.mul_mem' a_and_b_in_carb.1 a_and_b_in_carb.2)
+          exact ⟨hypb', by rwa[H2b]⟩
+        . use cara
+          have carb_subset_cara : carb ≤ cara := by
+            rwa[H2b, H2a]
+          have a_and_b_in_cara : a ∈ ringa ∧ b ∈ ringa := by
+            repeat rw[← Subring.mem_carrier]
+            rw[← H2a]
+            exact ⟨a_in_cara, carb_subset_cara b_in_carb⟩
+          have a_plus_b_in_ringa : a*b ∈ ringa := by
+            exact (ringa.mul_mem' a_and_b_in_cara.1 a_and_b_in_cara.2)
+          exact ⟨hypa', by rwa[H2a]⟩,
+      neg_mem' := by
+        intro a a_in_carrier
+        rcases a_in_carrier with ⟨cara, hypa, a_in_cara⟩
+        have hypa' := hypa
+        rcases hypa with ⟨ringa, H1a, H2a⟩
+        refine Set.mem_sUnion.mpr ?intro.intro.intro.intro.a
+        use cara
+        constructor
+        . exact hypa'
+        . rw[H2a, Subring.mem_carrier]
+          rw[H2a, Subring.mem_carrier] at a_in_cara
+          exact Subring.neg_mem ringa a_in_cara}
 
-  --     sorry
-  --   . intro h
-  --     have x_is_y : ∃ y : B, y = x := CanLift.prf x h
-  --     cases' x_is_y with y x_is_y'
-  --     have H : (algebraMap B ℝ) y = x := x_is_y'
-  --     rw[Set.mem_range]
-  --     use y
-  -- have closure : Balpha2 = Subring.closure (B ∪ {α}) := by
-  --   rw[← range]
-  --   exact adjoin_eq_ring_closure {α}
-
--- There exists a valuation subring of ℝ not containing 1/2.
+  have ub_carrier_non_half : 1/2 ∉ ub.carrier := by
+    intro half_in
+    rw[Set.mem_sUnion] at half_in
+    rcases half_in with ⟨t, h, g⟩
+    rcases h with ⟨ringt, H2, H3⟩
+    have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) (subset H2)
+    tauto
+  have ub_mem_S : ub ∈ S := by
+    exact ub_carrier_non_half
+  use ub
+  constructor
+  · exact ub_mem_S
+  · intro z hz x hx
+    exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, hz, by rfl⟩, hx⟩)
+  simp at emp_or_not
+  use Z
+  constructor
+  . exact Z_in_S
+  . rw[emp_or_not, Set.forall_mem_empty]
+    trivial
 
 lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
-  let S := {A : Subring ℝ | (1/2) ∉ A}
-  let Z := (Int.castRingHom ℝ).range
-  have two_eq_two : (Int.castRingHom ℝ) 2 = 2 := by rfl
-  have int_in_S : Z ∈ S := by
-    intro half_in_Z
-    simp at half_in_Z
-    rcases half_in_Z with ⟨n, h⟩
-    rw[← two_eq_two] at h
-    have inj : (Int.castRingHom ℝ).toFun.Injective := by
-      exact Isometry.injective fun x1 ↦ congrFun rfl
-    have two_n : (Int.castRingHom ℝ) (2*n) = 1 := by
-      rw[map_mul, h]
-      simp
-    rw[← (Int.castRingHom ℝ).map_one] at two_n
-    have two_n_eq_one : 2*n = 1 := by
-      exact (inj two_n)
-    have n_two_eq_one : n*2 = 1 := by
-      rw[← two_n_eq_one]
-      exact Int.mul_comm n 2
-    have two_unit : ∃two : ℤˣ, two = (2:ℤ) := by
-      refine CanLift.prf 2 ?_
-      rw[isUnit_iff_exists]
-      use n
-    rcases two_unit with ⟨two, H⟩
-    have := Int.units_eq_one_or two
-    cases' this with l r
-    . rw[l] at H
-      tauto
-    . rw[r] at H
-      tauto
-  have sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
-    -- Idea: The upper bound is the union of the subrings.
-    intro c subset chain
-    by_cases emp_or_not : c ≠ ∅
-    let subring_to_set_of_sets : Set (Set ℝ) :=
-      {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
-    let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets
-    let ub : Subring ℝ :=
-      { carrier := union_of_sets,
-        zero_mem' := by
-          have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
-          cases' in_c with t in_c
-          exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.zero_mem'⟩
-        one_mem' := by
-          have in_c : ∃(t : Subring ℝ), t ∈ c := by exact Set.nonempty_iff_ne_empty.mpr emp_or_not
-          cases' in_c with t in_c
-          exact Set.mem_sUnion.mpr ⟨t.carrier, ⟨t, in_c, by rfl⟩, t.one_mem'⟩
-        add_mem' := by
-          intro a b a_in_carrier b_in_carrier
-          refine Set.mem_sUnion.mpr ?_
-          -- have a_in_ring_c : ∃(s : Subring ℝ), (s ∈ c ∧ a ∈ s) := by apply?
-          rcases a_in_carrier with ⟨cara, hypa, a_in_car⟩
-          rcases b_in_carrier with ⟨carb, hypb, b_in_car⟩
-          rcases hypa with ⟨ringa, H1a, H2a⟩
-          rcases hypb with ⟨ringb, H1b, H2b⟩
-          have antisymm : ringa ≤ ringb ∨ ringb ≤ ringa := by
-            exact IsChain.total chain H1a H1b
-          cases' antisymm with l r
-          use carb
-          sorry
-          sorry,
-        mul_mem' := by sorry,
-        neg_mem' := by sorry }
-    have ub_carrier_non_half : 1/2 ∉ ub.carrier := by
-      intro half_in
-      rw[Set.mem_sUnion] at half_in
-      rcases half_in with ⟨t, h, g⟩
-      rcases h with ⟨ringt, H2, H3⟩
-      have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) (subset H2)
-      tauto
-    have ub_mem_S : ub ∈ S := by
-      exact ub_carrier_non_half
-    use ub
-    constructor
-    · exact ub_mem_S
-    · intro z hz x hx
-      exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, hz, by rfl⟩, hx⟩)
-    sorry
   have h2 := zorn_le₀ S sUnion_is_ub
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
-    -- Idea: This is exactly hr, so maybe change statement of
-    -- inclusion_maximal_valuation to have hr as hypothesis.
     rintro y ⟨h6, h7⟩
     have h8 : y ∈ S := by
       exact h7
@@ -288,10 +328,6 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   have h4 := inclusion_maximal_valuation B hl h3
   cases' h4 with D hd
   use D
-  -- Idea: B ∈ S so (1/2) ∉ B. D=B implies (1/2) ∉ D.
-  -- Maybe again try to change statement of inclusion_maximal_valuation to:
-  -- B is a valuation ring.
-  -- have B_no_half : 1/2 ∉ B := hl
   have D_no_half : 1/2 ∉ D.toSubring := by
     rwa[hd]
   exact D_no_half
