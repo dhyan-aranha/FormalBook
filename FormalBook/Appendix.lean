@@ -156,20 +156,63 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 
   have lower_degree : (n-1) ∈ degree := by
     have two_eq_constant : C (2:B) = (2 : Polynomial ↥B) := by rfl
-    have two_p_eval : (aeval α) (2 * p) = 1 := by
-      rw[← two_eq_constant, map_mul, aeval_C, algebramap 2, p_eval]
-      simp
-      exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
     have constant_in_poly :
       ∀(b : B), ∀(p : Polynomial B), (aeval α) ((C b) * p) = b * (aeval α) p := by
         intro b p
         rw[map_mul, aeval_C, algebramap b]
+    have two_p_eval : (aeval α) (2 * p) = 1 := by
+      rw[← two_eq_constant, (constant_in_poly 2 p), p_eval]
+      simp
+      exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
     have one_minus_two_v₀_eq : (aeval α) ((C one_minus_two_v₀) * (2*p)) = one_minus_two_v₀ := by
       rw[constant_in_poly one_minus_two_v₀ (2*p), two_p_eval]
       simp
     have one_eq : 1 = (aeval α) ((C one_minus_two_v₀) * (2*p) + (C two_v₀)) := by
       rw[← Eq.symm (aeval_add α), aeval_C, algebramap (two_v₀), one_minus_two_v₀_eq]
       exact sub_eq_iff_eq_add.mp rfl
+    let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
+    have nth_coeff : q1.coeff n = v₀ := by
+      sorry
+    have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by
+      rw[pow_sub₀]
+      intro h1
+      have zero_in_B : α ∈ B := by
+        rw[h1]
+        exact Subring.zero_mem B
+      tauto
+      exact h
+    have this : α^n * ((aeval α⁻¹) q) = (aeval α) q1 := by
+      rw[aeval_eq_sum_range, Finset.mul_sum]
+      simp
+      rw[n_eq_degree_q, _root_.map_sum]
+      simp
+      apply Finset.sum_congr
+      . rfl
+      . intro x in_Finset
+        rw[algebramap]
+        have x_le_n : x ≤ n := by
+          rw[Finset.mem_range] at in_Finset
+          exact Nat.le_of_lt_succ in_Finset
+        rw[equation x x_le_n]
+        rfl
+    have this2 : α^n = 2 * (aeval α) q1 := by
+      rw[← this, q_eval]
+      ring
+    have this3 : q1.erase n = q1 + - monomial n v₀ := by
+      nth_rewrite 2 [← (Polynomial.monomial_add_erase q1 n)]
+      rw[nth_coeff]
+      ring
+    have this4 : (aeval α) q1 = (aeval α) (q1.erase n) + v₀*α^n := by
+      rw[this3, aeval_add α]
+      simp
+      rw[algebramap v₀]
+      ring
+    have this5 : (1 - 2 * v₀) * α^n = 2 * (aeval α) (q1.erase n) := by
+      sorry
+
+    -- Polynomial.degree_eraseLead_lt
+    -- Polynomial.eraseLead_add_C_mul_X_pow
+
     sorry
   sorry
   sorry
