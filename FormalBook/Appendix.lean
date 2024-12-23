@@ -6,6 +6,44 @@ open ValuationSubring
 open Algebra
 open Polynomial
 
+lemma lemma1 {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) : C 2 * erase n p = erase n (C 2 * p) := by
+  have one := Polynomial.monomial_add_erase p n
+  have two := Polynomial.monomial_add_erase (C 2 * p) n
+  have three : erase n (C 2 * p) = (C 2 * p) - (monomial n) ((C 2 * p).coeff n) := by
+    exact eq_sub_of_add_eq' two
+  have four : erase n p = p - (monomial n) (p.coeff n) := by
+    exact eq_sub_of_add_eq' one
+  rw[three]
+  rw[four]
+  nth_rewrite 3 [mul_comm]
+  rw[coeff_mul_C]
+  rw[← monomial_mul_C]
+  ring
+
+lemma lemma2 (R : Type) [CommRing R] (p : Polynomial R)
+    (n : ℕ) (h1 : n > 0) (h2 : p.natDegree ≤ n) : (p.erase n).natDegree < n := by
+  rw[le_iff_lt_or_eq] at h2
+  cases' h2 with lt eq
+  . have n_not_in_support : n ∉ p.support := by
+      intro n_in_support
+      have := eq_natDegree_of_le_mem_support (Nat.le_of_succ_le lt) n_in_support
+      rw[this] at lt
+      apply lt_irrefl at lt
+      exact lt
+    have equal : Finsupp.erase n p.toFinsupp = p.toFinsupp := by
+      exact Finsupp.erase_of_not_mem_support n_not_in_support
+    have equal1 : (erase n p).toFinsupp = p.toFinsupp := by
+      rw[toFinsupp_erase]
+      exact equal
+    have equal2 : erase n p = p := by exact toFinsupp_inj.mp equal1
+    rwa[equal2]
+  . cases' eraseLead_natDegree_lt_or_eraseLead_eq_zero p with lt2 zero
+    . rw[← eq]
+      exact lt2
+    . have def1 : p.eraseLead = p.erase p.natDegree := by rfl
+      rw[← eq, ← def1, zero, eq]
+      exact h1
+
 -- Any maximal subring of ℝ not containing 1/2 is a valuation ring.
 lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 (h2 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C) : ∃(D : ValuationSubring ℝ), D.toSubring = B := by
@@ -149,72 +187,223 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     exact SetLike.coe_mem x
 
   let v₀ := coeff q 0
-  let two_v₀ := 2*v₀
-  let one_minus_two_v₀ := 1-two_v₀
 
   by_cases leq : n ≤ m
 
-  have lower_degree : (n-1) ∈ degree := by
-    have two_eq_constant : C (2:B) = (2 : Polynomial ↥B) := by rfl
-    have constant_in_poly :
-      ∀(b : B), ∀(p : Polynomial B), (aeval α) ((C b) * p) = b * (aeval α) p := by
-        intro b p
-        rw[map_mul, aeval_C, algebramap b]
-    have two_p_eval : (aeval α) (2 * p) = 1 := by
-      rw[← two_eq_constant, (constant_in_poly 2 p), p_eval]
+  have two_eq_constant : C (2:B) = (2 : Polynomial ↥B) := by rfl
+  have constant_in_poly :
+    ∀(b : B), ∀(p : Polynomial B), (aeval α) ((C b) * p) = b * (aeval α) p := by
+      intro b p
+      rw[map_mul, aeval_C, algebramap b]
+  have two_p_eval : (aeval α) (2 * p) = 1 := by
+    rw[← two_eq_constant, (constant_in_poly 2 p), p_eval]
+    simp
+    exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
+  have one_minus_two_v₀_eq : (aeval α) ((C (1 - 2*v₀)) * (2*p)) = (1 - 2*v₀) := by
+    rw[constant_in_poly (1 - 2*v₀) (2*p), two_p_eval]
+    simp
+    left
+    rfl
+  let p1 := (C (1 - 2*v₀)) * (2*p) + (C (2*v₀))
+  have one_eq : 1 = (aeval α) (p1) := by
+    rw[← Eq.symm (aeval_add α), aeval_C, algebramap (2*v₀), (one_minus_two_v₀_eq)]
+    exact sub_eq_iff_eq_add.mp rfl
+
+  have this6 : p1.erase m + (monomial m (2*(1 - 2*v₀)*p.coeff m)) = p1 := by
+    rw[add_comm]
+    nth_rewrite 2 [← monomial_add_erase p1 m]
+    simp
+    rw[monomial_eq_monomial_iff]
+    left
+    constructor
+    . rfl
+    . rw[coeff_add, coeff_C_ne_zero zero_lt_m, coeff_C_mul, ← two_eq_constant, coeff_C_mul]
+      ring
+
+  let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
+  have rest_zero : ∑ k ∈ Finset.range n, ((monomial (n - (k + 1))) (q.coeff (k + 1))).coeff n = 0 := by
+    apply Finset.sum_eq_zero
+    intro x in_Finset
+    rw[Finset.mem_range] at in_Finset
+    have lt_n : n - (x + 1) < n := by
+      norm_num
+      exact Nat.zero_lt_of_ne_zero zero_lt_n
+    have ne_n : n - (x + 1) ≠ n := by
+      exact Nat.ne_of_lt lt_n
+    exact Polynomial.coeff_monomial_of_ne (q.coeff (x + 1)) ne_n
+  have nth_coeff : q1.coeff n = q.coeff 0 := by
+    rw[Polynomial.finset_sum_coeff, Finset.sum_range_succ', Nat.sub_zero, coeff_monomial_same n (q.coeff 0), rest_zero]
+    ring
+  have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by
+    rw[pow_sub₀]
+    intro h1
+    have zero_in_B : α ∈ B := by
+      rw[h1]
+      exact Subring.zero_mem B
+    tauto
+    exact h
+  have this : α^n * ((aeval α⁻¹) q) = (aeval α) q1 := by
+    rw[aeval_eq_sum_range, Finset.mul_sum]
+    simp
+    rw[n_eq_degree_q, _root_.map_sum]
+    simp
+    apply Finset.sum_congr
+    . rfl
+    . intro x in_Finset
+      rw[algebramap]
+      have x_le_n : x ≤ n := by
+        rw[Finset.mem_range] at in_Finset
+        exact Nat.le_of_lt_succ in_Finset
+      rw[equation x x_le_n]
+      rfl
+  have this2 : α^n = 2 * (aeval α) q1 := by
+    rw[← this, q_eval]
+    ring
+  have this3 : q1.erase n = q1 + - monomial n v₀ := by
+    nth_rewrite 2 [← (Polynomial.monomial_add_erase q1 n)]
+    rw[nth_coeff]
+    ring
+  have this4 : (aeval α) q1 - v₀*α^n  = (aeval α) (q1.erase n) := by
+    rw[this3, aeval_add α]
+    simp
+    rw[algebramap v₀]
+    ring
+  have this5 : (1 - 2 * v₀) * α^n = 2 * (aeval α) (q1.erase n) := by
+    rw[← this4]
+    ring_nf
+    simp
+    rw[this2]
+    ring
+  have coeff_erase_neq_zero : coeff (q1.erase n) 0 = (coeff q) n := by
+    rw[erase_ne q1 n 0 zero_lt_n.symm, finset_sum_coeff, Finset.sum_range_succ,
+                Nat.sub_self, coeff_monomial_same 0 (q.coeff n), add_left_eq_self]
+    apply Finset.sum_eq_zero
+    intro x in_Finset
+    have n_sub_x : n - x ≠ 0 := by
+      rw[Finset.mem_range] at in_Finset
+      rwa[Nat.sub_ne_zero_iff_lt]
+    apply coeff_monomial_of_ne
+    exact n_sub_x
+  have erase_neq_zero : q1.erase n ≠ 0 := by
+    rw[← support_nonempty]
+    use 0
+    rw[mem_support_iff]
+    rw[coeff_erase_neq_zero]
+    intro eq_zero4
+    rw[← n_eq_degree_q] at eq_zero4
+    simp at eq_zero4
+    have zero_lt_natDegree : 0 < q.natDegree := by
+      calc
+        0 < n           := by exact Nat.zero_lt_of_ne_zero zero_lt_n
+        _ = q.natDegree := by exact n_eq_degree_q.symm
+    have q_neq_zero : q ≠ 0 := by
+      exact Polynomial.ne_zero_of_natDegree_gt (zero_lt_natDegree)
+    tauto
+  have deg1 : q1.natDegree ≤ n := by
+    apply natDegree_sum_le_of_forall_le
+    intro x x_in_Finset
+    calc
+      ((monomial (n - x)) (q.coeff x)).natDegree ≤ n - x  := by exact natDegree_monomial_le (q.coeff x)
+                                                _ ≤ n      := by exact Nat.sub_le n x
+  have deg2 : (q1.erase n).natDegree < n ∨ (q1.erase n).natDegree = 0 := by
+    rw[le_iff_lt_or_eq] at deg1
+    cases' deg1 with lt eq
+    . left
+      calc
+        (erase n q1).natDegree ≤ q1.natDegree := by exact natDegree_le_natDegree (degree_erase_le q1 n)
+                            _ < n            := by exact lt
+    . rw[← eq]
+      by_cases gt_or_eq : q1.natDegree > 0
+      . left
+        calc
+          (q1.erase q1.natDegree).natDegree ≤ q1.natDegree - 1 := by exact eraseLead_natDegree_le q1
+                                          _ < q1.natDegree     := by exact Nat.sub_one_lt_of_lt gt_or_eq
+      . right
+        have eq_zero2 : q1.natDegree = 0 := by exact Nat.eq_zero_of_not_pos gt_or_eq
+        rw[← Nat.le_zero_eq, ← eq_zero2]
+        exact eraseLead_natDegree_le_aux
+  have deg3 : (monomial (m-n) 1 * q1.erase n).natDegree < m := by
+    cases' deg2 with lt eq
+    . rw[Polynomial.natDegree_mul]
+      nth_rewrite 2 [← tsub_add_cancel_of_le leq]
       simp
-      exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
-    have one_minus_two_v₀_eq : (aeval α) ((C one_minus_two_v₀) * (2*p)) = one_minus_two_v₀ := by
-      rw[constant_in_poly one_minus_two_v₀ (2*p), two_p_eval]
+      exact lt
       simp
-    have one_eq : 1 = (aeval α) ((C one_minus_two_v₀) * (2*p) + (C two_v₀)) := by
-      rw[← Eq.symm (aeval_add α), aeval_C, algebramap (two_v₀), one_minus_two_v₀_eq]
-      exact sub_eq_iff_eq_add.mp rfl
-    let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
-    have nth_coeff : q1.coeff n = v₀ := by
-      sorry
-    have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by
-      rw[pow_sub₀]
-      intro h1
-      have zero_in_B : α ∈ B := by
-        rw[h1]
-        exact Subring.zero_mem B
+      exact erase_neq_zero
+    . rw[Polynomial.natDegree_mul]
+      rw[eq]
+      simp
+      exact ⟨Nat.zero_lt_of_ne_zero zero_lt_m, Nat.zero_lt_of_ne_zero zero_lt_n⟩
+      simp
+      exact erase_neq_zero
+  have this10 : ((1 - 2 * v₀):B) * α^m = 2 * (aeval α) (monomial (m-n) 1 * q1.erase n) := by
+    rw[aeval_mul]
+    nth_rewrite 4 [mul_comm]
+    rw[← mul_assoc, ← this5, Polynomial.aeval_monomial, algebramap 1]
+    norm_num
+    rw[mul_assoc]
+    rw[← pow_add]
+    rw[Nat.add_sub_of_le leq]
+    simp
+    left
+    left
+    abel
+  have deg4 : ((C (1 - 2*v₀)) * p + (C v₀)).natDegree ≤ m := by
+    by_cases eq_zero5 : (1 - 2*v₀) = 0
+    . rw[eq_zero5]
+      simp
+    . rw[natDegree_add_C, natDegree_C_mul]
+      calc
+        p.natDegree = m := by exact m_eq_degree_p
+                  _ ≤ m := by exact Nat.le_refl m
+      simp
       tauto
-      exact h
-    have this : α^n * ((aeval α⁻¹) q) = (aeval α) q1 := by
-      rw[aeval_eq_sum_range, Finset.mul_sum]
-      simp
-      rw[n_eq_degree_q, _root_.map_sum]
-      simp
-      apply Finset.sum_congr
-      . rfl
-      . intro x in_Finset
-        rw[algebramap]
-        have x_le_n : x ≤ n := by
-          rw[Finset.mem_range] at in_Finset
-          exact Nat.le_of_lt_succ in_Finset
-        rw[equation x x_le_n]
-        rfl
-    have this2 : α^n = 2 * (aeval α) q1 := by
-      rw[← this, q_eval]
-      ring
-    have this3 : q1.erase n = q1 + - monomial n v₀ := by
-      nth_rewrite 2 [← (Polynomial.monomial_add_erase q1 n)]
-      rw[nth_coeff]
-      ring
-    have this4 : (aeval α) q1 = (aeval α) (q1.erase n) + v₀*α^n := by
-      rw[this3, aeval_add α]
-      simp
-      rw[algebramap v₀]
-      ring
-    have this5 : (1 - 2 * v₀) * α^n = 2 * (aeval α) (q1.erase n) := by
-      sorry
-
-    -- Polynomial.degree_eraseLead_lt
-    -- Polynomial.eraseLead_add_C_mul_X_pow
-
-    sorry
-  sorry
+  have deg5 : (((C (1 - 2*v₀)) * p + (C v₀)).erase m).natDegree < m := by
+    exact (lemma2 B ((C (1 - 2*v₀)) * p + (C v₀)) m (Nat.zero_lt_of_ne_zero zero_lt_m) deg4)
+  let pq := ((C (1 - 2*v₀)) * p + (C v₀)).erase m + C 2 * C (p.coeff m) * (monomial (m-n) 1) * q1.erase n
+  have this11 (p : Polynomial B) : 2 * (aeval α) p = (aeval α) (2 * p) := by
+    exact Eq.symm (Real.ext_cauchy (congrArg Real.cauchy (constant_in_poly (↑2) p)))
+  have this13 : 1 = 2 * (aeval α) (pq) := by
+    rw[this11, left_distrib, aeval_add]
+    nth_rewrite 2 [← this11]
+    rw[mul_assoc]
+    nth_rewrite 2 [aeval_mul]
+    rw[← mul_assoc]
+    nth_rewrite 5 [mul_comm]
+    rw[mul_assoc, ← this10, ← algebramap (1 - 2*v₀), ← aeval_monomial, ← aeval_mul]
+    nth_rewrite 4 [mul_comm]
+    rw[← C_mul, monomial_mul_C, ← mul_assoc]
+    nth_rewrite 5 [mul_comm]
+    rw[← two_eq_constant, lemma1, left_distrib, ← C_mul, ← mul_assoc]
+    nth_rewrite 2 [mul_comm]
+    rw[mul_assoc, two_eq_constant, ← aeval_add, this6]
+    exact one_eq
+  let m' := pq.natDegree
+  have deg7 : (C 2 * C (p.coeff m) * (monomial (m-n) 1) * q1.erase n).natDegree < m := by
+    rw[← C_mul]
+    rw[mul_assoc]
+    rw[natDegree_C_mul]
+    exact deg3
+    simp
+    rw[← m_eq_degree_p]
+    simp
+    have zero_lt_natDegree : 0 < m := by exact Nat.zero_lt_of_ne_zero zero_lt_m
+    rw[← m_eq_degree_p] at zero_lt_natDegree
+    exact ne_zero_of_natDegree_gt zero_lt_natDegree
+  have deg6 : m' < m := by
+    rw[← Nat.le_sub_one_iff_lt (Nat.zero_lt_of_ne_zero zero_lt_m)]
+    rw[← Nat.le_sub_one_iff_lt (Nat.zero_lt_of_ne_zero zero_lt_m)] at deg5
+    rw[← Nat.le_sub_one_iff_lt (Nat.zero_lt_of_ne_zero zero_lt_m)] at deg7
+    exact (natDegree_add_le_of_degree_le deg5 deg7)
+  have main : m' ∈ degree := by
+    use pq
+    constructor
+    . rfl
+    . exact eq_one_div_of_mul_eq_one_right (_root_.id (Eq.symm this13))
+  have ge : m' ≥ m := by
+    exact WellFounded.min_le wellFounded_lt main
+  rw[lt_iff_not_ge] at deg6
+  tauto
   sorry
 
 def S := {A : Subring ℝ | (1/2) ∉ A}
