@@ -123,6 +123,25 @@ theorem open_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin 
     · have h3 : (fun α ↦ ∑ i : Fin n, α i • (⇑L ∘ f) i) a =  (∑ i : Fin n, a i • L (f i)) := by rfl
       rw[ h3, lincom_commutes L a f, h2]
 
+theorem closed_hull_lin_trans ( L : ℝ² →ₗ[ℝ ]  ℝ²){n : ℕ }(f : (Fin n → ℝ²)) : closed_hull (L ∘ f ) = Set.image L (closed_hull f) := by
+  rw[closed_hull_def, closed_hull_def, ← Set.image_comp] -- for some reason repeat rw does not work here
+  ext x
+  constructor
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · have h3 : (⇑L ∘ fun a ↦ ∑ i : Fin n, a i • f i) a = L  (∑ i : Fin n, a i • f i) :=by rfl
+      rw[ h3, ← lincom_commutes L a f, h2]
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    use a
+    constructor
+    · exact h1
+    · have h3 : (fun α ↦ ∑ i : Fin n, α i • (⇑L ∘ f) i) a =  (∑ i : Fin n, a i • L (f i)) := by rfl
+      rw[ h3, lincom_commutes L a f, h2]
+
 --Now do something similar for translations (I really hope this matches with Leans stuff)
 def translation (a : ℝ²) : (ℝ² → ℝ²) := fun x ↦ x + a
 
@@ -149,6 +168,30 @@ theorem translation_commutes {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : ope
   · rintro ⟨ a ,h1 , h2⟩
     dsimp at h2
     exact ⟨ a, h1, by dsimp ; rwa[ aux_for_translation h1]⟩
+
+theorem aux_for_translation_closed {n : ℕ }{f: Fin n → ℝ²}{a : Fin n → ℝ }{b : ℝ² }(h1 : a ∈ closed_simplex n):   ∑ i : Fin n, a i • (f i + b) =  ∑ i : Fin n, a i • f i + b := by
+  rcases h1 with ⟨_, h3⟩
+  have h4: b = ∑ i : Fin n, a i • b
+  rw[← sum_smul, h3, one_smul]
+  nth_rewrite 2 [h4]
+  rw[← sum_add_distrib]
+  apply Fintype.sum_congr
+  exact fun i ↦ DistribSMul.smul_add (a i) (f i) b
+
+
+--Most of the proof now gets copied
+theorem translation_commutes_closed {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²) : closed_hull ( (translation b) ∘ f) = Set.image (translation b) (closed_hull f) := by
+  have htrans : translation b = fun x ↦ x + b := by rfl
+  rw[closed_hull_def, closed_hull_def, ← Set.image_comp]
+  rw[htrans] at *
+  ext x
+  constructor
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    exact ⟨ a, h1, by dsimp ; rwa[← aux_for_translation_closed h1]⟩
+  · rintro ⟨ a ,h1 , h2⟩
+    dsimp at h2
+    exact ⟨ a, h1, by dsimp ; rwa[ aux_for_translation_closed h1]⟩
 
 --These maps tell us hows to transform from the unit triangle to the an arbitrary triangle
 def matrix_transform ( T : Triangle) : Matrix (Fin 2) (Fin 2) ℝ :=![ ![T 1 0 - T 0 0, T 2 0 - T 0 0], ![T 1 1 - T 0 1, T 2 1 - T 0 1]]
@@ -191,47 +234,47 @@ theorem volume_open_unit_triangle : (MeasureTheory.volume open_unit_triangle).to
 theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal = triangle_area (T : Triangle) := by
   sorry
 
-def point0 : (Fin 2 → ℝ ) := fun | 0 => 0 | 1 => 0
-def point1 : (Fin 2 → ℝ ) := fun | 0 => 1 | 1 => 0
+-- def point0 : (Fin 2 → ℝ ) := fun | 0 => 0 | 1 => 0
+-- def point1 : (Fin 2 → ℝ ) := fun | 0 => 1 | 1 => 0
 
-theorem closed_unit_segment_is_box : (closed_hull unit_segment) = Set.Icc point0 point1 := by
-  have hunit_segment : unit_segment = fun | 0 => (v 0 0) | 1 => (v 1 0) := by rfl
-  have hp0 : point0 = fun | 0 => 0 | 1 => 0 := by rfl
-  have hp1 : point1 = fun | 0 => 1 | 1 => 0 := by rfl
-  ext x
-  constructor
-  · rintro ⟨ a ,⟨ h1,h3⟩  , h2⟩
-    rw[hunit_segment] at h2
-    simp at *
-    rw[← h2]
-    constructor
-    · intro i
-      rw[hp0]
-      fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
-    · intro i -- this part is directly copied except there is hp1 instead of hp0
-      rw[hp1]
-      fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
-  · rintro ⟨ h1, h2⟩
-    use (fun | 0 =>  (1 - x 0) | 1 => x 0)
-    rw[hp0,hp1] at *
-    dsimp at *
-    constructor
-    · specialize h1 0
-      specialize h2 0
-      dsimp at *
-      constructor
-      · intro i
-        fin_cases i <;> dsimp <;> linarith[h1, h1]
-      · simp
-    · ext i
-      rw[hunit_segment]
-      fin_cases i
-      · simp
-      · simp
-        specialize h1 1
-        specialize h2 1
-        dsimp at *
-        linarith
+-- theorem closed_unit_segment_is_box : (closed_hull unit_segment) = Set.Icc point0 point1 := by
+--   have hunit_segment : unit_segment = fun | 0 => (v 0 0) | 1 => (v 1 0) := by rfl
+--   have hp0 : point0 = fun | 0 => 0 | 1 => 0 := by rfl
+--   have hp1 : point1 = fun | 0 => 1 | 1 => 0 := by rfl
+--   ext x
+--   constructor
+--   · rintro ⟨ a ,⟨ h1,h3⟩  , h2⟩
+--     rw[hunit_segment] at h2
+--     simp at *
+--     rw[← h2]
+--     constructor
+--     · intro i
+--       rw[hp0]
+--       fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
+--     · intro i -- this part is directly copied except there is hp1 instead of hp0
+--       rw[hp1]
+--       fin_cases i <;> dsimp <;> linarith[h1 0, h1 1]
+--   · rintro ⟨ h1, h2⟩
+--     use (fun | 0 =>  (1 - x 0) | 1 => x 0)
+--     rw[hp0,hp1] at *
+--     dsimp at *
+--     constructor
+--     · specialize h1 0
+--       specialize h2 0
+--       dsimp at *
+--       constructor
+--       · intro i
+--         fin_cases i <;> dsimp <;> linarith[h1, h1]
+--       · simp
+--     · ext i
+--       rw[hunit_segment]
+--       fin_cases i
+--       · simp
+--       · simp
+--         specialize h1 1
+--         specialize h2 1
+--         dsimp at *
+--         linarith
 
 
 
@@ -239,32 +282,161 @@ theorem closed_unit_segment_is_box : (closed_hull unit_segment) = Set.Icc point0
 --#check EuclideanSpace.volume_preserving_measurableEquiv
 --#check Set.Icc point0 point1
 
+
+
+-- theorem volume_closed_unit_segment : (MeasureTheory.volume (closed_hull unit_segment)).toReal = 0 := by
+--   -- This first part is essentially showing 0 = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
+--   have h0 : ∏ i : (Fin 2), (point1 i - point0 i) = 0
+--   rw[ Fin.prod_univ_two]
+--   unfold point0 point1
+--   linarith
+--   rw[ ← h0]
+--   have h1: point0 ≤ point1
+--   intro i
+--   fin_cases i <;> dsimp <;> rw[ point0, point1] ; linarith
+--   rw[ ← Real.volume_Icc_pi_toReal h1]
+--   -- Now I try to show (MeasureTheory.volume (closed_hull unit_segment)).toReal = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
+--   -- But the left-hand side Measuretheory.volume is not the same as the right-hand side
+--   have h2 : MeasureTheory.Measure.map (⇑(EuclideanSpace.measurableEquiv (Fin 2))) MeasureTheory.volume  (Set.Icc point0 point1) = MeasureTheory.volume (Set.Icc point0 point1)
+--   rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
+--   rw[ ← h2]
+--   rw[ closed_unit_segment_is_box] --This is the theorem stating closed_hull unit_segment = Set.Icc point0 point1
+--   sorry
+--   --rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
+
+def y_axis : Submodule ℝ ℝ² := Submodule.span ℝ (Set.range unit_segment )
+theorem y_axis_def :  y_axis = Submodule.span ℝ (Set.range unit_segment ) := by rfl
+
+
+theorem closed_unit_segment_subset : closed_hull unit_segment ⊆ y_axis := by
+  intro x
+  rintro ⟨  a ,⟨ h1,h3⟩  , h2⟩
+  rw[y_axis]
+  --this is to get rid of the annoying coercion
+  have h :(x ∈ (Submodule.span ℝ (Set.range unit_segment))) →  x ∈ ↑(Submodule.span ℝ (Set.range unit_segment))
+  intro h1
+  exact h1
+  apply h
+
+  rw[ mem_span_range_iff_exists_fun]
+  use a
+
+theorem Ennreal_zero_real_zero (A : ENNReal) :  (A = 0) → A.toReal = 0 := by
+  intro h
+  rw[h]
+  rw [ENNReal.zero_toReal]
+
+--This argument can probably be a lot cleaner
 theorem volume_closed_unit_segment : (MeasureTheory.volume (closed_hull unit_segment)).toReal = 0 := by
-  -- This first part is essentially showing 0 = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
-  have h0 : ∏ i : (Fin 2), (point1 i - point0 i) = 0
-  rw[ Fin.prod_univ_two]
-  unfold point0 point1
+  apply Ennreal_zero_real_zero
+  apply MeasureTheory.measure_mono_null (closed_unit_segment_subset )
+  apply MeasureTheory.Measure.addHaar_submodule
+  intro h
+  have h3 : (fun | 0 => 0 | 1 => 1) ∉ y_axis
+  intro h1
+  rw[y_axis] at h1
+  rw[ mem_span_range_iff_exists_fun] at h1
+  cases' h1 with c h1
+  rw[Fin.sum_univ_two, unit_segment_def] at h1
+  simp at h1
+  apply congrFun at h1
+  specialize h1 1
+  dsimp at h1
+  have h2 : c 0 * 0 + c 1 * 0 = 0
   linarith
-  rw[ ← h0]
-  have h1: point0 ≤ point1
-  intro i
-  fin_cases i <;> dsimp <;> rw[ point0, point1] ; linarith
-  rw[ ← Real.volume_Icc_pi_toReal h1]
-  -- Now I try to show (MeasureTheory.volume (closed_hull unit_segment)).toReal = (MeasureTheory.volume (Set.Icc point0 point1)).toReal
-  -- But the left-hand side Measuretheory.volume is not the same as the right-hand side
-  have h2 : MeasureTheory.Measure.map (⇑(EuclideanSpace.measurableEquiv (Fin 2))) MeasureTheory.volume  (Set.Icc point0 point1) = MeasureTheory.volume (Set.Icc point0 point1)
-  rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
-  rw[ ← h2]
-  rw[ closed_unit_segment_is_box] --This is the theorem stating closed_hull unit_segment = Set.Icc point0 point1
-  sorry
-  --rw[ MeasureTheory.MeasurePreserving.map_eq (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2))]
+  rw[h2] at h1
+  apply zero_ne_one at h1
+  exact h1
+  rw[h] at h3
+  apply h3
+  trivial
+
+
+def matrix_transform_segment ( L : Segment) : Matrix (Fin 2) (Fin 2) ℝ :=![ ![L 1 0 - L 0 0, 0], ![L 1 1 - L 0 1, 0]]
+def linear_transform_segment ( L : Segment) := Matrix.toLin' (matrix_transform_segment L)
+def segment_translation ( L : Segment) := translation (L 0)
+
+theorem unit_segment_to_segment ( L : Segment) : Set.image (segment_translation L) (Set.image (linear_transform_segment L) (closed_hull unit_segment)) = closed_hull L := by
+  have h1 : segment_translation L = translation (L 0) := by rfl
+  let f : (Fin 2 → ℝ²) := fun | 0 => (v 0 0) | 1 => (v 1 0)
+  have hunit_segment : unit_segment = f :=by rfl
+  rw[hunit_segment, h1]
+  have h2 : closed_hull (linear_transform_segment L ∘ f )= ⇑(linear_transform_segment L) '' closed_hull f
+  exact closed_hull_lin_trans (linear_transform_segment L) f
+  rw[← h2]
+  --rw[← open_hull_lin_trans (linear_transform T) f] Why doesnt this work!??
+  rw[← translation_commutes_closed]
+  apply congrArg
+  --This part of the proof says that the linear transformation and translation of the unit triangle give the triangle we want
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp[translation,linear_transform_segment, f, matrix_transform_segment, Matrix.mulVec, Matrix.vecHead, Matrix.vecTail  ]
+
+-- theorem segment_subset_affine_space (L : Segment) : closed_hull L ⊆ line[ℝ, (L 0), (L 1)] := by
+--   intro x
+--   rintro ⟨  a ,⟨ h1,h3⟩  , h2⟩
+--   use L 0
+--   constructor
+--   · left
+--     rfl
+--   · use a 1 • (L 1 - L 0)
+--     constructor
+--     · apply mem_vectorSpan_pair_rev.mpr
+--       use a 1
+--       rfl
+--     · dsimp at * -- I thought this could done by some linarith or simp, but it seems I have to do it by hand
+--       rw[Fin.sum_univ_two] at h2 h3
+--       have h4 : L 0 = (1: ℝ ) • L 0 := Eq.symm (MulAction.one_smul (L 0))
+--       nth_rewrite 2 [h4]
+--       rw[← h3,← h2 ,smul_sub (a 1) (L 1) (L 0), Module.add_smul (a 0) (a 1) (L 0)]
+--       have h5: a 1 •  L 1 - a 1 • L 0 = a 1 • L 1 + (- a 1) • L 0
+--       simp
+--       exact rfl
+--       rw[h5]
+--       have h6: a 1 • L 1 + -a 1 • L 0 + (a 0 • L 0 + a 1 • L 0) = a 1 • L 1 + (-a 1 • L 0 + a 0 • L 0 + a 1 • L 0)
+--       rw[add_assoc]
+--       nth_rewrite 2 [← add_assoc]
+--       rfl
+--       rw[h6]
+--       simp
+--       rw[add_comm]
 
 
 
+-- lemma equality_implies_subset (A B : Type) (f g : A → B): f = g → (∀ x, f x = g x)    := by
+--   exact fun a x ↦ congrFun a x
+
+-- #check vadd_left_mem_affineSpan_pair.mp
+-- theorem volume_closed_segment (L : Segment) : (MeasureTheory.volume (closed_hull L)).toReal = 0 := by
+--   apply Ennreal_zero_real_zero
+--   apply MeasureTheory.measure_mono_null (segment_subset_affine_space L )
+--   apply MeasureTheory.Measure.addHaar_affineSubspace
+--   apply lt_top_iff_ne_top.mp
+--   apply (AffineSubspace.lt_iff_le_and_exists (affineSpan ℝ {L 0, L 1}) ⊤).mpr
+--   constructor
+--   · exact fun ⦃a⦄ a ↦ trivial
+--   · by_cases hL : L 0 ≠ L 1
+--     · let a : ℝ² := (fun | 0 => - (L 1 - L 0) 1 | 1 => (L 1 - L 0) 0 )
+--       have ha : a = (fun | 0 => - (L 1 - L 0) 1 | 1 => (L 1 - L 0) 0 ) := by rfl
+--       use  a +ᵥ L 0
+--       constructor
+--       · trivial
+--       · intro h
+--         apply vadd_left_mem_affineSpan_pair.mp at h
+--         cases' h with r h
+--         rw[ha] at h
+--         dsimp at h
+--         apply fun a x ↦ congrFun a x at h
+--         have h1 := h 0
+--         have h2 := h 1
+--         simp at *
+
+--     · sorry
+--         --rw[ha]
 
 
-theorem volume_closed_segment (L : Segment) : (MeasureTheory.volume (closed_hull L)).toReal = 0 := by
-  sorry
+--     --use vadd_left_mem_affineSpan_pair
+
+
 
 --We additionally want its flipped version
 
