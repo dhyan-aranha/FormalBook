@@ -195,6 +195,7 @@ theorem translation_commutes_closed {n : ℕ }(f : (Fin n → ℝ²)) (b : ℝ²
 
 --These maps tell us hows to transform from the unit triangle to the an arbitrary triangle
 noncomputable def our_basis : Basis (Fin 2) ℝ ℝ² :=  PiLp.basisFun 2 ℝ (Fin 2)
+noncomputable def our_basis_ortho : OrthonormalBasis (Fin 2) ℝ ℝ² :=   EuclideanSpace.basisFun (Fin 2) ℝ
 noncomputable def basis_transform (T: Triangle ) : (Fin 2 → ℝ²) := (fun | 0 => (T 1 - T 0) | 1 => (T 2 -T 0)) --I think I was forced to use this definition to ensure it is the correct type
 noncomputable def linear_transform (T : Triangle) := our_basis.constr ℝ (basis_transform T)
 -- def matrix_transform ( T : Triangle) : Matrix (Fin 2) (Fin 2) ℝ :=![ ![T 1 0 - T 0 0, T 2 0 - T 0 0], ![T 1 1 - T 0 1, T 2 1 - T 0 1]]
@@ -226,9 +227,18 @@ theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translatio
 theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
   exact MeasureTheory.Measure.addHaar_image_linearMap MeasureTheory.volume L A
 
+theorem meas_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) : Measurable L := by
+  have K := LinearMap.toContinuousLinearMap L
+  have h := ContinuousLinearMap.measurable K
+  sorry
 
---This is some garbage that is not working yet (I want it to be like the above)
- theorem area_translation (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (translation a) A) = MeasureTheory.volume (A) :=   by sorry
+ theorem area_translation (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (translation a) A) = MeasureTheory.volume (A) :=   by
+  unfold translation
+  simp
+
+theorem meas_translation ( a : ℝ²) : Measurable (translation a) := by
+  unfold translation
+  exact Measurable.add_const (fun ⦃t⦄ a ↦ a) a
 
 
 
@@ -236,12 +246,18 @@ theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureT
 
 -- I think it is easiest for now to leave this in ENNReal
 theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triangle)) = 1/2 := by sorry
+theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_triangle)).toReal = 1/2 := by sorry
+
+theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by sorry
+
+theorem half_is_half : (2⁻¹ : ENNReal) = ENNReal.ofReal (2⁻¹ : ℝ ) := by
+  have h1: (2:ℝ)  > 0
+  norm_num
+  rw[ENNReal.ofReal_inv_of_pos h1]
+  norm_num
 
 
-
-
-
-theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal = triangle_area (T : Triangle) := by
+theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal =  (triangle_area (T : Triangle)) := by
   rw[← unit_triangle_to_triangle T ,triangle_translation_def]
   rw[ area_translation, area_lin_map, volume_open_unit_triangle]
   rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform T ) ]
@@ -250,8 +266,24 @@ theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull
   rw[linear_transform_def, basis_transform_def, our_basis_def, triangle_area ]
   repeat rw[LinearMap.toMatrix_apply]
   simp
+
   ring_nf
 
+theorem volume_open_triangle1 ( T : Triangle ) : (MeasureTheory.volume (open_hull T)) =  ENNReal.ofReal (triangle_area (T : Triangle)) := by
+  rw[← unit_triangle_to_triangle T ,triangle_translation_def]
+  rw[ area_translation, area_lin_map, volume_open_unit_triangle]
+  rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform T ) ]
+  rw[LinearMap.det_toLin our_basis ((LinearMap.toMatrix our_basis our_basis) (linear_transform T))]
+  rw[Matrix.det_fin_two]
+  rw[linear_transform_def, basis_transform_def, our_basis_def, triangle_area ]
+  repeat rw[LinearMap.toMatrix_apply]
+
+  simp
+  rw[half_is_half]
+  have h2 : ((0:ℝ) ≤ 2⁻¹ )
+  norm_num
+  rw[← ENNReal.ofReal_mul' h2]
+  ring_nf
 
 def y_axis : Submodule ℝ ℝ² := Submodule.span ℝ (Set.range unit_segment )
 theorem y_axis_def :  y_axis = Submodule.span ℝ (Set.range unit_segment ) := by rfl
@@ -324,7 +356,7 @@ theorem unit_segment_to_segment ( L : Segment) : Set.image (segment_translation 
   fin_cases i <;> fin_cases j <;> simp[translation, linear_transform_segment, basis_transform_segment,f, our_basis]
 
 
-theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hull L)).toReal = 0 := by
+theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hull L)) = 0 := by
   rw[←  unit_segment_to_segment L ,segment_translation_def]
   rw[ area_translation, area_lin_map, volume_closed_unit_segment]
   rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform_segment L ) ]
@@ -334,7 +366,107 @@ theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hul
   repeat rw[LinearMap.toMatrix_apply]
   simp
 
+def edges_triangle (T : Triangle) : (Fin 3 → Segment ) := fun | 0 => (fun | 0 => T 0 | 1 => T 1) | 1 => (fun | 0 => T 1 | 1 => T 2) | 2 => (fun | 0 => T 2 | 1 => T 0)
+theorem edges_triangle_def (T : Triangle) : edges_triangle T = fun | 0 => (fun | 0 => T 0 | 1 => T 1) | 1 => (fun | 0 => T 1 | 1 => T 2) | 2 => (fun | 0 => T 2 | 1 => T 0)  := by rfl
 
+theorem closed_triangle_is_union (T : Triangle) : closed_hull T = open_hull T ∪ closed_hull (edges_triangle T 0) ∪ closed_hull (edges_triangle T 1) ∪ closed_hull (edges_triangle T 2) := by
+  sorry
+
+
+theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
+  ext x
+  constructor
+  · rw[mem_parallelepiped_iff , unit_square, closed_hull]
+    rintro ⟨ t, ⟨ ⟨ h0,h1⟩ , h2⟩⟩
+    use (fun | 0 => 1 + max 0 (t 0 + t 1 -1) - t 0 - t 1 | 1  => t 0 - ( max 0 (t 0 + t 1 -1)) | 2 =>  max 0 (t 0 + t 1 -1) | 3 => t 1 - ( max 0 (t 0 + t 1 -1)))
+    constructor
+    · constructor
+      . intro i
+        fin_cases i <;> simp
+        sorry
+        sorry
+        sorry
+
+      · rw[Fin.sum_univ_four]
+        simp
+        ring
+    · simp
+      rw[h2, Fin.sum_univ_two, Fin.sum_univ_four]
+      simp[Psquare, our_basis_ortho]
+      ext i
+      fin_cases i <;> simp
+
+  · rw[mem_parallelepiped_iff , unit_square, closed_hull]
+    rintro ⟨ a ,⟨ h11,h12⟩  , h2⟩
+    use (fun | 0 => a 1 + a 2 | 1 => a 3 + a 2  )
+    constructor
+    · simp
+
+      sorry
+    · rw[← h2]
+      simp[our_basis_ortho, Fin.sum_univ_four , Psquare]
+      ext i
+      fin_cases i <;> simp
+      linarith
+
+theorem volume_box : (MeasureTheory.volume (unit_square)).toReal = 1 := by
+  rw[← box_equal_to_pare]
+  rw[OrthonormalBasis.volume_parallelepiped our_basis_ortho]
+  rfl
+
+--This seems useful, because it does not require any  measurability
+theorem volume_zero ( A B: Set ℝ² ) (h : MeasureTheory.volume B = 0) : MeasureTheory.volume (A ∪ B) = MeasureTheory.volume A := by
+  symm
+  apply MeasureTheory.measure_eq_measure_of_null_diff
+  exact Set.subset_union_left
+  have h1 : ((A ∪ B) \ A) ⊆ B
+  exact Set.diff_subset_iff.mpr fun ⦃a⦄ a ↦ a
+  exact MeasureTheory.measure_mono_null h1 h
+
+--Looks like null measurable does not imply measurable, but that is okay because everything will still work with null measurabililty
+theorem null_measurable_segment (L : Segment): MeasureTheory.NullMeasurableSet (closed_hull L) := by
+  exact MeasureTheory.NullMeasurableSet.of_null (volume_closed_segment L)
+
+--this is not very clean, also because this theorem is also proved earlier when translating the triangles
+theorem det_of_triangle_transform ( T : Triangle): |LinearMap.det (linear_transform T)|/2 = triangle_area T := by
+  rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform T ) ]
+  rw[LinearMap.det_toLin our_basis ((LinearMap.toMatrix our_basis our_basis) (linear_transform T))]
+  rw[Matrix.det_fin_two]
+  rw[linear_transform_def, basis_transform_def, our_basis_def ,triangle_area]
+  repeat rw[LinearMap.toMatrix_apply]
+  simp
+  ring_nf
+
+theorem nondegen_triangle_lin_inv ( T : Triangle) (h : triangle_area T ≠ 0) : LinearMap.det (linear_transform T) ≠ 0 := by
+  intro h2
+  rw[← det_of_triangle_transform] at h
+  rw[h2] at h
+  simp at h
+
+--theorem nondegen_triangle_inversion ( T : Triangle) (h : triangle_area ≠ 0) : Set.image (triangle_translation (-T)) (Set.image (linear_transform T) (open_hull unit_triangle)) = open_hull T
+--We show this by the fact it is a preimage of a measurable map
+theorem nondegen_triangle_meas ( T : Triangle) (h : triangle_area T ≠ 0) : MeasurableSet (open_hull T) := by
+
+  sorry
+theorem helpthing_for_below (a : ENNReal) (h :a.toReal = 0) (h1 : a ≠ ⊤): (a = 0) := by
+  refine Eq.symm ((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp) ?hx h1 (id (Eq.symm h)))
+  norm_num
+
+theorem null_meas_triangle (T : Triangle) : MeasureTheory.NullMeasurableSet (open_hull T) := by
+  by_cases h : triangle_area T > 0
+  · have h1 : triangle_area T ≠  0
+    exact Ne.symm (ne_of_lt h)
+    exact MeasurableSet.nullMeasurableSet (nondegen_triangle_meas T h1)
+  · simp at h
+    apply ENNReal.zero_eq_ofReal.mpr at h
+    rw[← volume_open_triangle1 T] at h
+    apply MeasureTheory.NullMeasurableSet.of_null
+    symm
+    exact h
+
+  --MeasureTheory.NullMeasurableSet.of_null
+
+--MeasureTheory.measure_iUnion₀
 -- def point0 : (Fin 2 → ℝ ) := fun | 0 => 0 | 1 => 0
 -- def point1 : (Fin 2 → ℝ ) := fun | 0 => 1 | 1 => 0
 
