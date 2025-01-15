@@ -228,9 +228,10 @@ theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureT
   exact MeasureTheory.Measure.addHaar_image_linearMap MeasureTheory.volume L A
 
 theorem meas_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) : Measurable L := by
-  have K := LinearMap.toContinuousLinearMap L
+  let K := LinearMap.toContinuousLinearMap L
   have h := ContinuousLinearMap.measurable K
-  sorry
+  exact h
+
 
  theorem area_translation (a : ℝ²)(A : Set ℝ²) :  MeasureTheory.volume (Set.image (translation a) A) = MeasureTheory.volume (A) :=   by
   unfold translation
@@ -250,7 +251,7 @@ theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_trian
 
 theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by sorry
 
-theorem half_is_half : (2⁻¹ : ENNReal) = ENNReal.ofReal (2⁻¹ : ℝ ) := by
+lemma half_is_half : (2⁻¹ : ENNReal) = ENNReal.ofReal (2⁻¹ : ℝ ) := by
   have h1: (2:ℝ)  > 0
   norm_num
   rw[ENNReal.ofReal_inv_of_pos h1]
@@ -368,7 +369,7 @@ theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hul
 
 def edges_triangle (T : Triangle) : (Fin 3 → Segment ) := fun | 0 => (fun | 0 => T 0 | 1 => T 1) | 1 => (fun | 0 => T 1 | 1 => T 2) | 2 => (fun | 0 => T 2 | 1 => T 0)
 theorem edges_triangle_def (T : Triangle) : edges_triangle T = fun | 0 => (fun | 0 => T 0 | 1 => T 1) | 1 => (fun | 0 => T 1 | 1 => T 2) | 2 => (fun | 0 => T 2 | 1 => T 0)  := by rfl
-
+--This stuff has already be done by Pjotr
 theorem closed_triangle_is_union (T : Triangle) : closed_hull T = open_hull T ∪ closed_hull (edges_triangle T 0) ∪ closed_hull (edges_triangle T 1) ∪ closed_hull (edges_triangle T 2) := by
   sorry
 
@@ -443,14 +444,59 @@ theorem nondegen_triangle_lin_inv ( T : Triangle) (h : triangle_area T ≠ 0) : 
   rw[h2] at h
   simp at h
 
+
+noncomputable def bij_linear_transform ( T : Triangle) (h : triangle_area T ≠ 0) := (LinearMap.equivOfDetNeZero (linear_transform T) (nondegen_triangle_lin_inv T h))
+def inv_triangle_translation (T : Triangle) := translation ( - T 0)
+
+lemma linear_transform_bij ( T : Triangle) (h : triangle_area T ≠ 0) : Function.Bijective (linear_transform T ) := by
+  exact LinearEquiv.bijective (bij_linear_transform ( T : Triangle) (h : triangle_area T ≠ 0))
+
+lemma translation_bijective (a : ℝ² ): Function.Bijective (translation a) := by
+  unfold translation
+  constructor
+  · intro x y
+    simp
+  · intro x
+    use x - a
+    norm_num
+
+lemma triangle_translation_bijective (T : Triangle) : Function.Bijective (triangle_translation T) := by
+  unfold triangle_translation
+  exact translation_bijective (T 0)
+
+
+lemma linear_transform_bij_left_inf ( T : Triangle) (h : triangle_area T ≠ 0) : Function.LeftInverse (linear_transform T) ((bij_linear_transform T h).symm) := by
+  exact ((bij_linear_transform T h).symm).left_inv
+
+lemma inv_translation_left ( T : Triangle) :  Function.LeftInverse (triangle_translation T) (inv_triangle_translation T) := by
+  intro x
+  rw[inv_triangle_translation, triangle_translation, translation,translation]
+  norm_num
+
+theorem pre_unit_triangle_to_triangle (T : Triangle) (h : triangle_area T ≠ 0):  (linear_transform T) ⁻¹' ( (triangle_translation T)⁻¹'(open_hull T)) = open_hull unit_triangle:= by
+  rw[Set.preimage_eq_iff_eq_image  (linear_transform_bij  T  h )]
+  rw[Set.preimage_eq_iff_eq_image (triangle_translation_bijective T)]
+  symm
+  exact unit_triangle_to_triangle (T : Triangle)
+
+theorem pre_triangle_to_unit_triangle (T : Triangle) (h : triangle_area T ≠ 0) :(inv_triangle_translation T)⁻¹'  ((bij_linear_transform T h).symm⁻¹' (open_hull unit_triangle)) = open_hull T := by
+  rw[← pre_unit_triangle_to_triangle T h]
+  rw[Function.LeftInverse.preimage_preimage (linear_transform_bij_left_inf T h) (triangle_translation T ⁻¹' open_hull T)]
+  rw[Function.LeftInverse.preimage_preimage (inv_translation_left T) ]
+
+
+--Function.Surjective.image_preimage
 --theorem nondegen_triangle_inversion ( T : Triangle) (h : triangle_area ≠ 0) : Set.image (triangle_translation (-T)) (Set.image (linear_transform T) (open_hull unit_triangle)) = open_hull T
 --We show this by the fact it is a preimage of a measurable map
-theorem nondegen_triangle_meas ( T : Triangle) (h : triangle_area T ≠ 0) : MeasurableSet (open_hull T) := by
+lemma meas_inv_triangle_translation(T : Triangle) : Measurable (inv_triangle_translation T) := by
+  unfold inv_triangle_translation
+  exact meas_translation (- T 0)
 
-  sorry
-theorem helpthing_for_below (a : ENNReal) (h :a.toReal = 0) (h1 : a ≠ ⊤): (a = 0) := by
-  refine Eq.symm ((fun {x y} hx hy ↦ (ENNReal.toReal_eq_toReal_iff' hx hy).mp) ?hx h1 (id (Eq.symm h)))
-  norm_num
+theorem nondegen_triangle_meas ( T : Triangle) (h : triangle_area T ≠ 0) : MeasurableSet (open_hull T) := by
+  rw[← pre_triangle_to_unit_triangle T h]
+  have h1 : MeasurableSet ((bij_linear_transform T h).symm ⁻¹' open_hull unit_triangle) := measurableSet_preimage (meas_lin_map (bij_linear_transform T h).symm) measurable_unit_triangle
+  exact measurableSet_preimage (meas_inv_triangle_translation T) h1
+
 
 theorem null_meas_triangle (T : Triangle) : MeasureTheory.NullMeasurableSet (open_hull T) := by
   by_cases h : triangle_area T > 0
