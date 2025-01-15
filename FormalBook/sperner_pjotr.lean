@@ -1596,6 +1596,16 @@ lemma scale_disjoint' {X₁ X₂ : Set ℝ²} {a : ℝ} (ha : a ≠ 0)
   )
 
 
+/-
+lemma scale_triangle_inverse {a : ℝ} {Δ : Triangle} (ha : a ≠ 0)
+    : scale_triangle a⁻¹ (scale_triangle a Δ) = Δ := by
+  sorry
+
+lemma scale_triangle_injective {a : ℝ} (ha : a ≠ 0)
+    : (fun x ↦ scale_triangle a x).Injective :=
+  Function.RightInverse.injective (g := (fun x ↦ scale_triangle a⁻¹ x)) (fun _ ↦ scale_triangle_inverse ha)
+-/
+
 /- Elementary stuff about translating (only in the y direction).-/
 
 def translate_vector (a : ℝ) (x : ℝ²) : ℝ² := fun | 0 => x 0 | 1 => a + x 1
@@ -1741,15 +1751,13 @@ lemma cover_nontrivial_open {S : Set Triangle} (h : covers S (closed_hull Psquar
 
 
 
-
-
-
 lemma disjoint_set_scale {a : ℝ} (ha : a ≠ 0) {S : Set Triangle}
     (hX : disjoint_set S open_hull) : disjoint_set (scale_triangle a '' S) open_hull := by
   intro Δ₁ Δ₂ ⟨Δ₁',hΔ₁',hΔ₁Δ₁'⟩ ⟨Δ₂',hΔ₂',hΔ₂Δ₂'⟩ hneq
   specialize hX Δ₁' Δ₂' hΔ₁' hΔ₂' ?_
-  ·
-    sorry
+  · intro hContra
+    apply hneq
+    rw [←hΔ₁Δ₁',←hΔ₂Δ₂',hContra]
   · rw [←hΔ₁Δ₁', ←hΔ₂Δ₂', open_hull_scale, open_hull_scale]
     exact scale_disjoint ha hX
 
@@ -1757,8 +1765,9 @@ lemma disjoint_set_translate {a : ℝ} {S : Set Triangle}
     (hS : disjoint_set S open_hull) : disjoint_set (translate_triangle a '' S) open_hull := by
   intro Δ₁ Δ₂ ⟨Δ₁',hΔ₁',hΔ₁Δ₁'⟩ ⟨Δ₂',hΔ₂',hΔ₂Δ₂'⟩ hneq
   specialize hS Δ₁' Δ₂' hΔ₁' hΔ₂' ?_
-  ·
-    sorry
+  · intro hContra
+    apply hneq
+    rw [←hΔ₁Δ₁',←hΔ₂Δ₂',hContra]
   · rw [←hΔ₁Δ₁', ←hΔ₂Δ₂', open_hull_translate, open_hull_translate]
     exact translate_disjoint hS
 
