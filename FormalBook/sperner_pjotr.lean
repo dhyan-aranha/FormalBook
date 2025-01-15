@@ -1762,23 +1762,36 @@ lemma disjoint_set_translate {a : ℝ} {S : Set Triangle}
   · rw [←hΔ₁Δ₁', ←hΔ₂Δ₂', open_hull_translate, open_hull_translate]
     exact translate_disjoint hS
 
-lemma disjoint_aux {α β : Type} (S₁ S₂ : Set α) (f : α → Set β) (h₁ : disjoint_set S₁ f)
-    (h₂ : disjoint_set S₂ f) (h₃ : ∀ a₁ a₂, a₁ ∈ S₁ → a₂ ∈ S₂ → Disjoint (f a₁) (f a₂)) : disjoint_set (S₁ ∪ S₂) f := by
-
-  sorry
 
 lemma disjoint_folded_square {a : ℝ} (hal : 0 < a) (hau: a < 1)
     : Disjoint (scale_vector a '' open_hull Psquare) (translate_vector a '' (scale_vector (1-a) '' open_hull Psquare)) := by
+  simp_rw [Set.disjoint_iff_forall_ne, open_unit_square_eq]
+  intro x₁ ⟨y, hy, hyx₁⟩ x₂ ⟨z, ⟨w, hw, hwz⟩, hzx₂⟩
+  have hx₁Bound : x₁ 1 < a := by
+    simp_rw [←hyx₁, scale_vector]
+    calc
+      a * y 1 < a * 1 := by gcongr; exact (hy 1).2
+      _       = a     := by ring
+  have hx₂Bound : a < x₂ 1 := by
+    simp_rw [←hzx₂, ←hwz, translate_vector, scale_vector]
+    apply lt_add_of_pos_right _
+    exact mul_pos (by linarith) (hw 1).1
+  intro hcontra
+  rw [@PiLp.ext_iff] at hcontra
+  specialize hcontra 1
+  linarith
 
-  sorry
-
+lemma disjoint_aux {α β : Type} (S₁ S₂ : Set α) (f : α → Set β) (h₁ : disjoint_set S₁ f)
+    (h₂ : disjoint_set S₂ f) (h₃ : ∀ a₁ a₂, a₁ ∈ S₁ → a₂ ∈ S₂ → Disjoint (f a₁) (f a₂)) : disjoint_set (S₁ ∪ S₂) f := by
+  intro a₁ a₂ ha₁ ha₂ hneq
+  cases' ha₁ with ha₁ ha₁ <;> cases' ha₂ with ha₂ ha₂
+  · exact h₁ a₁ a₂ ha₁ ha₂ hneq
+  · exact h₃ a₁ a₂ ha₁ ha₂
+  · exact (h₃ a₂ a₁ ha₂ ha₁ ).symm
+  · exact h₂ a₁ a₂ ha₁ ha₂ hneq
 
 /- Two covers of the unit square can be combined to a new cover.-/
-/-
-  Warning: The following statement is likely not true.
-  Because of degenerate triangles and the way open_hull is defined
-  the combination of the covers might not be 'open-hull'-disjoint.
--/
+
 lemma combine_disjoint_covers {S₁ S₂ : Set Triangle} (h₁ : is_cover (closed_hull Psquare) S₁)
     (h₂ : is_cover (closed_hull Psquare) S₂) (h₁NonDegen : ∀ Δ ∈ S₁, det Δ ≠ 0) (h₂NonDegen : ∀ Δ ∈ S₂, det Δ ≠ 0)
     {a : ℝ} (hal : 0 < a) (hau : a < 1)
@@ -1794,6 +1807,8 @@ lemma combine_disjoint_covers {S₁ S₂ : Set Triangle} (h₁ : is_cover (close
       refine Set.disjoint_of_subset ?_ ?_ (disjoint_folded_square hal hau)
       · exact Set.image_mono (cover_nontrivial_open h₁.1 h₁NonDegen _ hΔ₁S₁)
       · exact Set.image_mono (Set.image_mono (cover_nontrivial_open h₂.1 h₂NonDegen _ hΔ₂S₂))
+
+
 
 
 
