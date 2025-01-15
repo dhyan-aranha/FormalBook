@@ -1767,6 +1767,12 @@ lemma disjoint_aux {α β : Type} (S₁ S₂ : Set α) (f : α → Set β) (h₁
 
   sorry
 
+lemma disjoint_folded_square {a : ℝ} (hal : 0 < a) (hau: a < 1)
+    : Disjoint (scale_vector a '' open_hull Psquare) (translate_vector a '' (scale_vector (1-a) '' open_hull Psquare)) := by
+
+  sorry
+
+
 /- Two covers of the unit square can be combined to a new cover.-/
 /-
   Warning: The following statement is likely not true.
@@ -1784,11 +1790,15 @@ lemma combine_disjoint_covers {S₁ S₂ : Set Triangle} (h₁ : is_cover (close
     · exact disjoint_set_scale (by linarith) h₁.2
     · exact disjoint_set_translate (disjoint_set_scale (by linarith) h₂.2)
     · intro Δ₁ Δ₂ ⟨Δ₁', hΔ₁S₁, hΔ₁Δ₁'⟩ ⟨t,  ⟨Δ₂', hΔ₂S₂, hΔ₂Δ₂'⟩ , ht⟩
+      rw [←hΔ₁Δ₁', ←ht, ←hΔ₂Δ₂', open_hull_scale, open_hull_translate, open_hull_scale]
+      refine Set.disjoint_of_subset ?_ ?_ (disjoint_folded_square hal hau)
+      · exact Set.image_mono (cover_nontrivial_open h₁.1 h₁NonDegen _ hΔ₁S₁)
+      · exact Set.image_mono (Set.image_mono (cover_nontrivial_open h₂.1 h₂NonDegen _ hΔ₂S₂))
 
-      sorry
 
 
-
+example {α : Type}  {X Y Z : Set α} {hXY : X ⊆ Y} (h : Disjoint Y Z) : Disjoint X Z := by
+  exact Set.disjoint_of_subset hXY (fun ⦃a⦄ a ↦ a) h
 
 
 
