@@ -24,7 +24,7 @@ noncomputable def triangle_area (T : Triangle) : ℝ :=
 
 def is_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
   (X = ⋃ (Δ ∈ S), closed_hull Δ) ∧
-  (∀ Δ₁ ∈ S, ∀ Δ₂ ∈ S, Δ₁ ≠ Δ₂ → open_hull Δ₁ ∩ open_hull Δ₂ = ∅)
+  (∀ Δ₁ ∈ S, ∀ Δ₂ ∈ S, Δ₁ ≠ Δ₂ → Disjoint (open_hull Δ₁) (open_hull Δ₂))
 
 def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
   is_cover X S ∧
@@ -56,10 +56,6 @@ lemma v₀_val {x y : ℝ} : (v x y) 0 = x := rfl
 @[simp]
 lemma v₁_val {x y : ℝ} : (v x y) 1 = y := rfl
 
-
-/- These two triangles dissect the square and have equal area.-/
-def Δ₀  : Triangle  := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
-def Δ₀' : Triangle  := fun | 0 => (v 1 0) | 1 => (v 0 1) | 2 => (v 1 1)
 
 /- Corner of the standard simplex.-/
 def simplex_vertex {n : ℕ} (i : Fin n) : Fin n → ℝ :=
@@ -828,7 +824,7 @@ lemma is_cover_open_el_imp_eq {S : Finset Triangle} {X : Set ℝ²} (hCover : is
     Δ₁ = Δ₂ := by
   by_contra hΔ₁₂
   have hx := Set.mem_inter hx₁ hx₂
-  rwa [hCover.2 Δ₁ hΔ₁ Δ₂ hΔ₂ hΔ₁₂] at hx
+  rwa [Disjoint.inter_eq (hCover.2 Δ₁ hΔ₁ Δ₂ hΔ₂ hΔ₁₂)] at hx
 
 lemma cover_mem_side {S : Finset Triangle} {X : Set ℝ²} (hCover : is_cover X S)
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) {x : ℝ²} (hx : x ∈ X) (hInt: ∀ Δ ∈ S, x ∉ (open_hull Δ))
@@ -1396,6 +1392,406 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_cover
     specialize hεΔ (min ε ε') (lt_min hε hε') (min_le_left ε ε')
     specialize hεΔ' (min ε ε') (lt_min hε hε') (min_le_right ε ε')
     exact is_cover_open_el_imp_eq hCover hΔ' hΔ hεΔ' hεΔ
+
+
+
+
+
+/-
+  The square can be covered by an even number of triangles.
+-/
+
+/- These two triangles dissect the square and have equal area.-/
+def Δ₀  : Triangle  := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
+def Δ₀' : Triangle  := fun | 0 => (v 1 0) | 1 => (v 0 1) | 2 => (v 1 1)
+
+lemma Δ₀_det : det Δ₀ ≠ 0 := by
+  simp_rw [det, Δ₀, v]
+  norm_num
+
+lemma Δ₀'_det : det Δ₀' ≠ 0 := by
+  simp_rw [det, Δ₀', v]
+  norm_num
+
+lemma areaΔ₀ : triangle_area Δ₀ = 1 / 2 := by
+  simp [triangle_area, Δ₀]
+
+lemma areaΔ₀' : triangle_area Δ₀' = 1 / 2 := by
+  simp [triangle_area, Δ₀']
+
+lemma Δ₀_Tco₀ (x : ℝ²) : Tco Δ₀ x 0 = 1 - (x 0 + x 1):= by
+  simp [Tco, sign_seg, det, Tside, Δ₀]; ring
+
+lemma Δ₀_Tco₁ (x : ℝ²) : Tco Δ₀ x 1 = x 0 := by
+  simp [Tco, sign_seg, det, Tside, Δ₀]
+
+lemma Δ₀_Tco₂ (x : ℝ²) : Tco Δ₀ x 2 = x 1 := by
+  simp [Tco, sign_seg, det, Tside, Δ₀]
+
+lemma Δ₀_open_halfspace {x : ℝ²} (hx : x ∈ open_hull Δ₀) : x 0 + x 1 < 1 := by
+  have hx := (open_triangle_iff Δ₀_det).1 hx 0
+  rw [Δ₀_Tco₀] at hx
+  linarith
+
+lemma Δ₀'_Tco₀ (x : ℝ²) : Tco Δ₀' x 0 = 1 - x 1:= by
+  simp [Tco, sign_seg, det, Tside, Δ₀']; ring
+
+lemma Δ₀'_Tco₁ (x : ℝ²) : Tco Δ₀' x 1 = 1 - x 0:= by
+  simp [Tco, sign_seg, det, Tside, Δ₀']; ring
+
+lemma Δ₀'_Tco₂ (x : ℝ²) : Tco Δ₀' x 2 = (x 0 + x 1) - 1:= by
+  simp [Tco, sign_seg, det, Tside, Δ₀']; ring
+
+lemma Δ₀'_open_halfspace {x : ℝ²} (hx : x ∈ open_hull Δ₀') : x 0 + x 1 > 1 := by
+  have hx := (open_triangle_iff Δ₀'_det).1 hx 2
+  rw [Δ₀'_Tco₂] at hx
+  linarith
+
+lemma Δ₀_Δ₀'_disj : Disjoint (open_hull Δ₀) (open_hull Δ₀') := by
+  refine Set.disjoint_iff_forall_ne.mpr ?_
+  intro x hx y hy hxy
+  rw [hxy] at hx
+  linarith [Δ₀_open_halfspace hx, Δ₀'_open_halfspace hy]
+
+lemma Δ₀_sub_square : closed_hull Δ₀ ⊆ closed_hull Psquare := by
+  intro x hx
+  rw [closed_unit_square_eq]
+  rw [closed_triangle_iff Δ₀_det] at hx
+  have hx₀ := hx 0; simp [Δ₀_Tco₀] at hx₀
+  have hx₁ := hx 1; simp [Δ₀_Tco₁] at hx₁
+  have hx₂ := hx 2; simp [Δ₀_Tco₂] at hx₂
+  intro i
+  constructor <;> fin_cases i <;> (simp; linarith)
+
+lemma Δ₀'_sub_square : closed_hull Δ₀' ⊆ closed_hull Psquare := by
+  intro x hx
+  rw [closed_unit_square_eq]
+  rw [closed_triangle_iff Δ₀'_det] at hx
+  have hx₀ := hx 0; simp [Δ₀'_Tco₀] at hx₀
+  have hx₁ := hx 1; simp [Δ₀'_Tco₁] at hx₁
+  have hx₂ := hx 2; simp [Δ₀'_Tco₂] at hx₂
+  intro i
+  constructor <;> fin_cases i <;> (simp; linarith)
+
+lemma Δ₀Δ₀'_cover_square : is_cover (closed_hull Psquare) {Δ₀, Δ₀'} := by
+  constructor
+  simp
+  · ext x
+    constructor
+    · intro hx
+      rw [closed_unit_square_eq] at hx
+      by_cases hxbound : x 0 + x 1 ≤ 1
+      · left
+        rw [closed_triangle_iff Δ₀_det]
+        intro i; fin_cases i
+        · simp [Δ₀_Tco₀, hxbound]
+        · simp [Δ₀_Tco₁, hx 0]
+        · simp [Δ₀_Tco₂, hx 1]
+      · right
+        rw [closed_triangle_iff Δ₀'_det]
+        intro i; fin_cases i
+        · simp [Δ₀'_Tco₀, hx 1]
+        · simp [Δ₀'_Tco₁, hx 0]
+        · simp [Δ₀'_Tco₂]; linarith
+    · intro hx
+      obtain (hx | hx) := hx
+      · exact Δ₀_sub_square hx
+      · exact Δ₀'_sub_square hx
+  · intro Δ₁ hΔ₁ Δ₂ hΔ₂ hneq
+    simp_all
+    cases hΔ₁ <;> cases hΔ₂ <;> simp_all [Disjoint.symm, Δ₀_Δ₀'_disj]
+
+lemma Δ₀Δ₀'_equal_cover_square : is_equal_area_cover (closed_hull Psquare) {Δ₀, Δ₀'} := by
+  refine ⟨Δ₀Δ₀'_cover_square,?_⟩
+  use 1 / 2
+  intro _ hΔ
+  simp at hΔ
+  cases' hΔ with hΔ hΔ <;> rw [hΔ]
+  · exact areaΔ₀
+  · exact areaΔ₀'
+
+lemma Δ₀_neq_Δ₀' : Δ₀ ≠ Δ₀' := by
+  intro heq
+  have heq₀ := congrFun (congrFun heq 0) 0
+  simp [Δ₀, Δ₀'] at heq₀
+
+lemma Δ₀Δ₀'_finset_size : ({Δ₀, Δ₀'} : Finset Triangle).card = 2 :=
+  card_pair (Δ₀_neq_Δ₀')
+
+lemma exists_equal_area_cover_size_two
+    : (∃ (S : Finset Triangle), is_equal_area_cover (closed_hull Psquare) S ∧ S.card = 2) := by
+  exact ⟨{Δ₀, Δ₀'}, by convert Δ₀Δ₀'_equal_cover_square; simp, Δ₀Δ₀'_finset_size⟩
+
+
+/- Now we show how a cover of size two implies a cover of any even size.-/
+
+/- Elementary stuff about scaling (only in the y direction).-/
+
+def scale_vector (a : ℝ) (y : ℝ²) : ℝ² := fun | 0 => y 0 | 1 => a * y 1
+
+def scale_triangle (a : ℝ) (T : Triangle) : Triangle := fun i ↦ scale_vector a (T i)
+
+lemma scale_triangle_area (a : ℝ) (T : Triangle)
+    : triangle_area (scale_triangle a T) = |a| * (triangle_area T) := by
+  simp [triangle_area, scale_triangle, scale_vector, ←abs_mul, ←mul_div_assoc]
+  congr; ring
+
+lemma open_hull_scale {a : ℝ} (T : Triangle)
+    : open_hull (scale_triangle a T) = (scale_vector a) '' (open_hull T) := by
+  ext x
+  constructor
+  · intro ⟨α,hα,hαx⟩
+    use (∑ i, α i • T i)
+    refine ⟨by use α;,?_⟩
+    rw [←hαx]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
+  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
+    use α, hα
+    rw [←hyx, ←hαy]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
+
+lemma closed_hull_scale {a : ℝ} (T : Triangle)
+    : closed_hull (scale_triangle a T) = (scale_vector a) '' (closed_hull T) := by
+  ext x
+  constructor
+  · intro ⟨α,hα,hαx⟩
+    use (∑ i, α i • T i)
+    refine ⟨by use α;,?_⟩
+    rw [←hαx]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
+  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
+    use α, hα
+    rw [←hyx, ←hαy]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
+
+lemma scale_inverse {a : ℝ} {x : ℝ²} (ha : a ≠ 0) : scale_vector a⁻¹ (scale_vector a x) = x := by
+  ext i; fin_cases i <;> simp [scale_vector]
+  rw [←mul_assoc, inv_mul_cancel₀ ha, one_mul]
+
+lemma scale_inverse' {a : ℝ} {x : ℝ²} (ha : a ≠ 0) : scale_vector a (scale_vector a⁻¹ x) = x := by
+  convert scale_inverse (a := a⁻¹) (inv_ne_zero ha)
+  exact Eq.symm (DivisionMonoid.inv_inv a)
+
+lemma scale_injective {a : ℝ} (ha : a ≠ 0) : (fun x ↦ scale_vector a x).Injective :=
+  Function.RightInverse.injective (g := (fun x ↦ scale_vector a⁻¹ x)) (fun _ ↦ scale_inverse ha)
+
+lemma scale_disjoint {X₁ X₂ : Set ℝ²} {a : ℝ} (ha : a ≠ 0) (h₁₂ : Disjoint X₁ X₂)
+    : Disjoint ((scale_vector a) '' X₁) ((scale_vector a) '' X₂) :=
+  (Set.disjoint_image_iff (scale_injective ha)).mpr h₁₂
+
+lemma scale_union {α : Type} {f : α → Set ℝ²} {S : Set α} {a : ℝ}
+    : ⋃ X ∈ S, (scale_vector a) '' (f X) = (scale_vector a) '' (⋃ X ∈ S, (f X)) :=
+  Eq.symm (Set.image_iUnion₂ _ fun i _ => f i)
+
+lemma scale_disjoint' {X₁ X₂ : Set ℝ²} {a : ℝ} (ha : a ≠ 0)
+    (h₁₂ : Disjoint ((scale_vector a) '' X₁) ((scale_vector a) '' X₂)) : Disjoint X₁ X₂ := by
+  convert scale_disjoint (X₁ := ((scale_vector a) '' X₁)) (X₂ := ((scale_vector a) '' X₂)) (a := a⁻¹) (inv_ne_zero ha) h₁₂ <;> (
+    rw [Set.image_image]
+    conv => rhs; lhs; intro x; rw [scale_inverse ha]
+    simp only [Set.image_id']
+  )
+
+
+/- Elementary stuff about translating (only in the y direction).-/
+
+def translate_vector (a : ℝ) (x : ℝ²) : ℝ² := fun | 0 => x 0 | 1 => a + x 1
+def translate_triangle (a : ℝ) (T : Triangle) : Triangle := fun i ↦ translate_vector a (T i)
+
+lemma trianslate_triangle_area (a : ℝ) (T : Triangle)
+    : triangle_area (translate_triangle a T) = (triangle_area T) := by
+  simp [triangle_area, translate_triangle, translate_vector]
+  congr 2; ring
+
+lemma open_hull_translate {a : ℝ} (T : Triangle)
+    : open_hull (translate_triangle a T) = (translate_vector a) '' (open_hull T) := by
+  ext x
+  constructor
+  · intro ⟨α,hα,hαx⟩
+    use (∑ i, α i • T i)
+    refine ⟨by use α;,?_⟩
+    rw [←hαx]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
+    nth_rw 1 [←mul_one a, ←hα.2, Fin.sum_univ_three]
+    ring
+  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
+    use α, hα
+    rw [←hyx, ←hαy]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
+    nth_rw 4 [←mul_one a]
+    simp [←hα.2, Fin.sum_univ_three]
+    ring
+
+lemma closed_hull_translate {a : ℝ} (T : Triangle)
+    : closed_hull (translate_triangle a T) = (translate_vector a) '' (closed_hull T) := by
+  ext x
+  constructor
+  · intro ⟨α,hα,hαx⟩
+    use (∑ i, α i • T i)
+    refine ⟨by use α;,?_⟩
+    rw [←hαx]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
+    nth_rw 1 [←mul_one a, ←hα.2, Fin.sum_univ_three]
+    ring
+  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
+    use α, hα
+    rw [←hyx, ←hαy]
+    ext i
+    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
+    nth_rw 4 [←mul_one a]
+    simp [←hα.2, Fin.sum_univ_three]
+    ring
+
+lemma translate_inverse {a : ℝ} {x : ℝ²} : translate_vector (-a) (translate_vector a x) = x := by
+  ext i; fin_cases i <;> simp [translate_vector]
+
+example (f₁ f₂ : ℝ² → ℝ²) (X : Set ℝ²) : f₁ '' (f₂ '' X) = (fun x ↦ f₁ (f₂ x)) '' X := by
+  exact Set.image_image f₁ f₂ X
+
+lemma translate_inverse' {a : ℝ} {x : ℝ²} : translate_vector a (translate_vector (-a) x) = x := by
+  convert translate_inverse (a := -a); exact (neg_neg a).symm
+
+lemma translate_injective {a : ℝ} : (fun x ↦ translate_vector a x).Injective :=
+  Function.RightInverse.injective (g := (fun x ↦ translate_vector (-a) x)) (fun _ ↦ translate_inverse)
+
+lemma translate_disjoint {X₁ X₂ : Set ℝ²} {a : ℝ} (h₁₂ : Disjoint X₁ X₂)
+    : Disjoint ((translate_vector a) '' X₁) ((translate_vector a) '' X₂) :=
+  (Set.disjoint_image_iff translate_injective).mpr h₁₂
+
+lemma translate_disjoint' {X₁ X₂ : Set ℝ²} {a : ℝ}
+    (h₁₂ : Disjoint ((translate_vector a) '' X₁) ((translate_vector a) '' X₂)) : Disjoint X₁ X₂ := by
+  convert translate_disjoint (X₁ := ((translate_vector a) '' X₁)) (X₂ := ((translate_vector a) '' X₂)) (a := -a) h₁₂ <;> (
+    rw [Set.image_image]
+    conv => rhs; lhs; intro x; rw [translate_inverse]
+    simp only [Set.image_id']
+  )
+
+lemma translate_union {α : Type} {f : α → Set ℝ²} {S : Set α} {a : ℝ}
+    : ⋃ X ∈ S, (translate_vector a) '' (f X) = (translate_vector a) '' (⋃ X ∈ S, (f X)) := by
+  exact Eq.symm (Set.image_iUnion₂ (translate_vector a) fun i j => f i)
+
+
+/- This rewriting is for convenience. -/
+def disjoint_set {α β : Type} (X : Set α) (f : α → Set β) := ∀ a₁ a₂, a₁ ∈ X → a₂ ∈ X → a₁ ≠ a₂ → Disjoint (f a₁) (f a₂)
+def covers {α β} (X : Set α) (Y : Set β) (f : α → Set β) := Y = ⋃ a ∈ X, f a
+
+lemma is_cover_iff (X : Set ℝ²) (S : Set Triangle)
+    : is_cover X S ↔ covers S X closed_hull ∧ disjoint_set S open_hull := by
+  simp [is_cover,covers, disjoint_set]
+  intro _
+  constructor
+  · intro h Δ₁ Δ₂ hΔ₁ hΔ₂ hneq
+    exact h Δ₁ hΔ₁ Δ₂ hΔ₂ hneq
+  · intro h Δ₁ hΔ₁ Δ₂ hΔ₂ hneq
+    exact h Δ₁ Δ₂ hΔ₁ hΔ₂ hneq
+
+lemma unit_square_fold {a : ℝ} (hal : 0 < a) (hau: a < 1)
+    : closed_hull Psquare = (scale_vector a '' closed_hull Psquare) ∪ (translate_vector a '' (scale_vector (1-a) '' closed_hull Psquare)) := by
+  have h₁ := inv_pos_of_pos hal
+  have h₂ : 0 < 1 - a := by linarith
+  have h₃ := inv_pos_of_pos h₂
+  ext x
+  simp [closed_unit_square_eq]
+  constructor
+  · intro hx
+    by_cases ha : x 1 ≤ a
+    · left; use scale_vector a⁻¹ x
+      refine ⟨?_, scale_inverse' (by linarith)⟩
+      intro i; fin_cases i <;> simp [scale_vector, hx 0]
+      exact ⟨(mul_nonneg_iff_of_pos_left h₁).mpr (hx 1).1, (inv_mul_le_iff₀ hal).mpr (by linarith)⟩
+    · right; use scale_vector (1 - a)⁻¹ (translate_vector (-a) x)
+      refine ⟨?_, by rw [scale_inverse' (by linarith), translate_inverse']⟩
+      intro i; fin_cases i <;> simp [scale_vector, translate_vector, hx 0]
+      exact ⟨(le_inv_mul_iff₀' h₂).mpr (by linarith),(inv_mul_le_iff₀ h₂).mpr (by linarith [hx 1])⟩
+  · intro hx
+    cases' hx with hx hx <;> (
+      have ⟨y, hy, hyx⟩ := hx
+      rw [←hyx]
+      intro i; fin_cases i <;> simp [scale_vector, translate_vector, hy 0, hy 1]
+    )
+    · refine ⟨(mul_nonneg_iff_of_pos_left hal).mpr (hy 1).1,?_⟩
+      calc
+        a * y 1 ≤ 1 * y 1 := by gcongr; exact (hy 1).1
+        _       ≤ 1 * 1   := by gcongr; exact (hy 1).2
+        _       = 1       := by norm_num
+    · refine ⟨Left.add_nonneg (by linarith) ((mul_nonneg_iff_of_pos_left h₂).mpr (hy 1).1), ?_⟩
+      calc
+        a + (1 - a) * y 1 ≤ a + (1 - a) * 1  := by gcongr; exact (hy 1).2
+        _                 = 1                := by ring
+
+lemma combine_covers {S₁ S₂ : Set Triangle} (h₁ : covers S₁ (closed_hull Psquare) closed_hull)
+    (h₂ : covers S₂ (closed_hull Psquare) closed_hull) {a : ℝ} (hal : 0 < a) (hau : a < 1)
+    : covers ((scale_triangle a '' S₁) ∪ (translate_triangle a '' (scale_triangle (1-a) '' S₂))) (closed_hull Psquare) closed_hull := by
+  unfold covers at h₁ h₂
+  rw [covers, Set.biUnion_union, Set.biUnion_image, Set.biUnion_image, Set.biUnion_image]
+  simp_rw [closed_hull_translate, closed_hull_scale, translate_union, scale_union, ←h₁, ←h₂]
+  exact unit_square_fold hal hau
+
+lemma cover_nontrivial_open {S : Set Triangle} (h : covers S (closed_hull Psquare) closed_hull)
+    (hNonDegenerate : ∀ Δ ∈ S, det Δ ≠ 0) : ∀ Δ ∈ S, open_hull Δ ⊆ open_hull Psquare := by
+  intro Δ hΔ x hx
+  sorry
+
+
+
+
+
+
+
+lemma disjoint_set_scale {a : ℝ} (ha : a ≠ 0) {S : Set Triangle}
+    (hX : disjoint_set S open_hull) : disjoint_set (scale_triangle a '' S) open_hull := by
+  intro Δ₁ Δ₂ ⟨Δ₁',hΔ₁',hΔ₁Δ₁'⟩ ⟨Δ₂',hΔ₂',hΔ₂Δ₂'⟩ hneq
+  specialize hX Δ₁' Δ₂' hΔ₁' hΔ₂' ?_
+  ·
+    sorry
+  · rw [←hΔ₁Δ₁', ←hΔ₂Δ₂', open_hull_scale, open_hull_scale]
+    exact scale_disjoint ha hX
+
+lemma disjoint_set_translate {a : ℝ} {S : Set Triangle}
+    (hS : disjoint_set S open_hull) : disjoint_set (translate_triangle a '' S) open_hull := by
+  intro Δ₁ Δ₂ ⟨Δ₁',hΔ₁',hΔ₁Δ₁'⟩ ⟨Δ₂',hΔ₂',hΔ₂Δ₂'⟩ hneq
+  specialize hS Δ₁' Δ₂' hΔ₁' hΔ₂' ?_
+  ·
+    sorry
+  · rw [←hΔ₁Δ₁', ←hΔ₂Δ₂', open_hull_translate, open_hull_translate]
+    exact translate_disjoint hS
+
+lemma disjoint_aux {α β : Type} (S₁ S₂ : Set α) (f : α → Set β) (h₁ : disjoint_set S₁ f)
+    (h₂ : disjoint_set S₂ f) (h₃ : ∀ a₁ a₂, a₁ ∈ S₁ → a₂ ∈ S₂ → Disjoint (f a₁) (f a₂)) : disjoint_set (S₁ ∪ S₂) f := by
+
+  sorry
+
+/- Two covers of the unit square can be combined to a new cover.-/
+/-
+  Warning: The following statement is likely not true.
+  Because of degenerate triangles and the way open_hull is defined
+  the combination of the covers might not be 'open-hull'-disjoint.
+-/
+lemma combine_disjoint_covers {S₁ S₂ : Set Triangle} (h₁ : is_cover (closed_hull Psquare) S₁)
+    (h₂ : is_cover (closed_hull Psquare) S₂) (h₁NonDegen : ∀ Δ ∈ S₁, det Δ ≠ 0) (h₂NonDegen : ∀ Δ ∈ S₂, det Δ ≠ 0)
+    {a : ℝ} (hal : 0 < a) (hau : a < 1)
+    : is_cover (closed_hull Psquare) ((scale_triangle a '' S₁) ∪ (translate_triangle a '' (scale_triangle (1-a) '' S₂))) := by
+  rw [is_cover_iff] at *
+  constructor
+  · exact combine_covers h₁.1 h₂.1 hal hau
+  · refine disjoint_aux _ _ _ ?_ ?_ ?_
+    · exact disjoint_set_scale (by linarith) h₁.2
+    · exact disjoint_set_translate (disjoint_set_scale (by linarith) h₂.2)
+    · intro Δ₁ Δ₂ ⟨Δ₁', hΔ₁S₁, hΔ₁Δ₁'⟩ ⟨t,  ⟨Δ₂', hΔ₂S₂, hΔ₂Δ₂'⟩ , ht⟩
+
+      sorry
+
+
+
+
+
+
 
 
 /-
