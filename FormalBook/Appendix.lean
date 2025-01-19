@@ -6,7 +6,9 @@ open ValuationSubring
 open Algebra
 open Polynomial
 
+-- multiplying a polynomial by 2 doesn't commutes with deleting a power
 lemma lemma1 {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) : C 2 * erase n p = erase n (C 2 * p) := by
+  -- Now we use that a polynomial deleting the n-th term aand adding it back in is the same as doing nothing
   have one := Polynomial.monomial_add_erase p n
   have two := Polynomial.monomial_add_erase (C 2 * p) n
   have three : erase n (C 2 * p) = (C 2 * p) - (monomial n) ((C 2 * p).coeff n) := by
@@ -20,11 +22,13 @@ lemma lemma1 {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) : C 2 * erase 
   rw[← monomial_mul_C]
   ring
 
+-- deleting the highest order term of a polynomial of degree at most n leads to a polynomial of degree less than n
 lemma lemma2 (R : Type) [CommRing R] (p : Polynomial R)
     (n : ℕ) (h1 : n > 0) (h2 : p.natDegree ≤ n) : (p.erase n).natDegree < n := by
   rw[le_iff_lt_or_eq] at h2
   cases' h2 with lt eq
-  . have n_not_in_support : n ∉ p.support := by
+  . -- If the dergee of p is less than n
+    have n_not_in_support : n ∉ p.support := by
       intro n_in_support
       have := eq_natDegree_of_le_mem_support (Nat.le_of_succ_le lt) n_in_support
       rw[this] at lt
@@ -37,18 +41,21 @@ lemma lemma2 (R : Type) [CommRing R] (p : Polynomial R)
       exact equal
     have equal2 : erase n p = p := by exact toFinsupp_inj.mp equal1
     rwa[equal2]
-  . cases' eraseLead_natDegree_lt_or_eraseLead_eq_zero p with lt2 zero
+  . -- If the degree is n
+    cases' eraseLead_natDegree_lt_or_eraseLead_eq_zero p with lt2 zero
     . rw[← eq]
       exact lt2
     . have def1 : p.eraseLead = p.erase p.natDegree := by rfl
       rw[← eq, ← def1, zero, eq]
       exact h1
 
+-- If we have polynomials p and q of degrees m and n and a α∈ ℝ such that α, α⁻¹∉ B a subring of ℝ and
+-- p(α)=1/2 and q(α⁻¹)=1/2 then there is an m' < m such that there is a polynomial pq of degree m' such that pq(α)=1/2.
 lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α⁻¹ ∉ B) (p : Polynomial B)
   (q : Polynomial B) (m_eq_degree_p : p.natDegree = m) (n_eq_degree_q : q.natDegree = n)
   (zero_lt_m : m ≠ 0) (zero_lt_n : n ≠ 0) (p_eval : (aeval α) p = 1 / 2)
   (q_eval : (aeval α⁻¹) q = 1 / 2) (leq : n ≤ m) : ∃(m' : ℕ) (pq : Polynomial B), m' < m ∧ (aeval α) pq = 1/2 ∧ m' = pq.natDegree := by
-  have algebramap : ∀x : B, (algebraMap ↥B ℝ) x = x := by
+  have algebramap : ∀x : B, (algebraMap ↥B ℝ) x = x := by -- the identity algebra map
     intro x
     rfl
   let v₀ := coeff q 0
@@ -57,11 +64,11 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     ∀(b : B), ∀(p : Polynomial B), (aeval α) ((C b) * p) = b * (aeval α) p := by
       intro b p
       rw[map_mul, aeval_C, algebramap b]
-  have two_p_eval : (aeval α) (2 * p) = 1 := by
+  have two_p_eval : (aeval α) (2 * p) = 1 := by -- (2p)(α)=1
     rw[← two_eq_constant, (constant_in_poly 2 p), p_eval]
     simp
     exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
-  have one_minus_two_v₀_eq : (aeval α) ((C (1 - 2*v₀)) * (2*p)) = (1 - 2*v₀) := by
+  have one_minus_two_v₀_eq : (aeval α) ((C (1 - 2*v₀)) * (2*p)) = (1 - 2*v₀) := by -- multiplying by a constant
     rw[constant_in_poly (1 - 2*v₀) (2*p), two_p_eval]
     simp
     left
@@ -70,7 +77,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
   have one_eq : 1 = (aeval α) (p1) := by
     rw[← Eq.symm (aeval_add α), aeval_C, algebramap (2*v₀), (one_minus_two_v₀_eq)]
     exact sub_eq_iff_eq_add.mp rfl
-
+  -- The m-th coefficient of (1-2v₀)(2p)+ 2v₀ is 2(1-2v₀) times the m-th coefficient of p
   have this6 : p1.erase m + (monomial m (2*(1 - 2*v₀)*p.coeff m)) = p1 := by
     rw[add_comm]
     nth_rewrite 2 [← monomial_add_erase p1 m]
@@ -81,7 +88,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     . rfl
     . rw[coeff_add, coeff_C_ne_zero zero_lt_m, coeff_C_mul, ← two_eq_constant, coeff_C_mul]
       ring
-
+  -- sum of monomials of degree n-k with as coefficient the k-th coefficient of q.
   let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
   have rest_zero : ∑ k ∈ Finset.range n, ((monomial (n - (k + 1))) (q.coeff (k + 1))).coeff n = 0 := by
     apply Finset.sum_eq_zero
