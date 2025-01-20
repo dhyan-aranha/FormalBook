@@ -596,7 +596,7 @@ lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : 
       linarith [hj, hTyi x (open_sub_closed _ hxL)]
     · exact ⟨α,hαSimp,rfl⟩
   refine (mem_closed_side hdet hy₂ i).1 (hTyi y hy)
-  
+
 
 
 lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L 1)
@@ -639,7 +639,7 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
   rw [closed_triangle_iff hdet]
   by_contra hContra; push_neg at hContra
   have ⟨i,hi⟩ := hContra
-  
+
 
   sorry
 
@@ -914,9 +914,8 @@ theorem complete_is_splitting: ∀ (X : SegmentSet), HasComplements X ∧ NonDeg
         · rw [Decidable.not_forall] at hr
           cases' hr with T hT
           use T
-          refine ⟨coe_mem T, ?_⟩
           rw [Mathlib.Tactic.PushNeg.not_implies_eq, ← Set.ssubset_iff_subset_ne] at hT
-          exact hT
+          exact ⟨coe_mem T, hT⟩
       cases' hT with T₁ hT₁
       have hComp : closed_hull T₁ ⊂ closed_hull S → ∃ S' : Y,
           (closed_hull S = closed_hull T₁ ∪ closed_hull S'.val ∧
@@ -936,7 +935,7 @@ theorem complete_is_splitting: ∀ (X : SegmentSet), HasComplements X ∧ NonDeg
           rw [mem_filter] at h'
           apply ssubset_irrefl (closed_hull S)
           calc closed_hull S = closed_hull T₁ ∪ closed_hull T₂.val := hT₂.1
-            _⊆ closed_hull T₁ ∪ closed_hull T₁ := by exact Set.union_subset_union_right (closed_hull T₁) h'.2
+            _⊆ closed_hull T₁ ∪ closed_hull T₁ := Set.union_subset_union_right (closed_hull T₁) h'.2
             _= closed_hull T₁ := Set.union_eq_self_of_subset_left fun ⦃a⦄ a ↦ a
             _⊂ closed_hull S := hT₁.2
         rw [h] at h₂
@@ -976,7 +975,7 @@ theorem complete_is_splitting: ∀ (X : SegmentSet), HasComplements X ∧ NonDeg
           have hxT₁ : x ∈ closed_hull T₁ := by
             unfold closed_hull
             simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image]
-            use fun i ↦ ((1 : ℝ) / (2 : ℝ))
+            use fun _ ↦ ((1 : ℝ) / (2 : ℝ))
             constructor
             · unfold closed_simplex
               simp only [Fin.sum_univ_two, Fin.isValue, one_div, Set.mem_setOf_eq, inv_nonneg,
@@ -1049,13 +1048,145 @@ def NonDegenerate (S : Segment) := S 0 ≠ S 1
 def NoDuplicates {n : ℕ} (T : Fin n → X) :=
     ∀ i j, i ≠ j → open_hull (T i).val ∩ open_hull (T j).val = ∅
 
+def I : Set ℝ := {x : ℝ | 0 ≤ x ∧ x ≤ 1}
+
+
+lemma exists_ordered_embedding' (X : Finset I) :
+    ∃ n : ℕ, ∃ f : Fin n → I,
+    StrictMono f ∧ Finset.image f ⊤ = X := by
+  let e := monoEquivOfFin X rfl
+  use Fintype.card { x // x ∈ X }, Subtype.val ∘ e
+  constructor
+  · apply StrictMono.comp (fun _ _ h ↦ h) e.strictMono
+  · ext x
+    simp only [Finset.top_eq_univ, Finset.mem_image, Finset.mem_univ, Function.comp_apply, true_and]
+    constructor
+    · rintro ⟨a, rfl⟩
+      simp
+    · intro h
+      use e.symm ⟨x, h⟩
+      simp
+
+lemma n_geq2_iff_exists_m {n : ℕ} (h : n ≥ 2) : ∃ m : ℕ, m + 2 = n := by
+  cases' n with k hk
+  · tauto
+  · cases' k with l hl
+    · tauto
+    · use l
+
+theorem Fin2_elements (i : Fin 2) : i = 0 ∨ i = 1 := by
+  cases' i with n hn
+  cases' n with m hm
+  · left
+    tauto
+  · right
+    cases' m with k hk <;> tauto
+
+lemma exists_ordered_embedding'' (X : Finset I) (h : Fintype.card {x // x ∈ X} ≥ 2) :
+    ∃ n : ℕ, ∃ f : Fin (n + 2) → I,
+    StrictMono f ∧ Finset.image f ⊤ = X := by
+  let e := monoEquivOfFin X rfl
+  have h2 : ∃ m : ℕ, m + 2 = Fintype.card {x // x ∈ X} := n_geq2_iff_exists_m h
+  cases' h2 with m hm
+  rw [← hm] at e
+  use m, Subtype.val ∘ e
+  constructor
+  · apply StrictMono.comp (fun _ _ h ↦ h) e.strictMono
+  · ext x
+    simp only [Finset.top_eq_univ, Finset.mem_image, Finset.mem_univ, Function.comp_apply, true_and]
+    constructor
+    · rintro ⟨a, rfl⟩
+      simp only [coe_mem]
+    · intro h
+      use e.symm ⟨x, h⟩
+      simp only [OrderIso.apply_symm_apply]
+
+
+
+-- There is a linear order on closed_simplex 2 by setting α < β iff α 0 < β 0
+instance partialorder : LinearOrder (closed_simplex 2) where
+  le := fun α ↦ (fun β ↦ ((α.val 0) ≤ (β.val 0)))
+  le_refl := by
+    intro α
+    simp only [Fin.isValue, le_refl]
+  le_trans := by
+    intro α β γ hαβ hβγ
+    simp only [Fin.isValue]
+    calc α.val 0 ≤ β.val 0 := hαβ
+      _ ≤ γ.val 0 := hβγ
+  le_antisymm := by sorry
+  le_total := by
+    intro α β
+    simp only [Fin.isValue]
+    exact LinearOrder.le_total (α.val 0) (β.val 0)
+  decidableLE := by sorry
+  lt_iff_le_not_le := by sorry
+
+
 theorem has_chains (S : X) (hX : IsSplitting X) (hS : NonDegenerate S) :
-    ∃ n : ℕ, ∃ T : Fin (n + 1) → X, ∀ i, IsBasic X (T i).val ∧ NoDuplicates X T ∧
+    ∃ n : ℕ, ∃ T : Fin (n + 1) → X, (∀ i, IsBasic X (T i).val) ∧ NoDuplicates X T ∧
     ∀ i : Fin n, (T i).val 1 = (T (i + 1)).val 0 := by
   -- start with a covering of S by basis segments, need to find an ordering. Evident way:
   -- look at the order in which the points occur under the standard mapping [0,1] → closed_segment S
   -- We can use Finset.orderEmbOfFin to construct the map T
-  sorry
+  cases' hX S.val S.prop with C hC
+  let A := (Finset.biUnion C (fun T ↦ {T 0, T 1}))
+  let f : (closed_simplex 2) → ℝ² := (fun α ↦ ∑ i, α.val i • S.val i)
+  have hA : ↑A ⊆ closed_hull S.val := by
+    intro x hx
+    unfold_let A at hx
+    rw [Finset.mem_coe, Finset.mem_biUnion] at hx
+    cases' hx with T hT
+
+    sorry
+  have hinj B : Set.InjOn f (f ⁻¹' B) := by
+    sorry
+  let A' := {α : closed_simplex 2 | ∑ i, α.val i • S.val i ∈ A}
+  let A'' := Finset.preimage A f (hinj A)
+  let (A''' : Finset I) := Finset.image (fun x ↦ (⟨x.val 0, by
+    sorry
+    ⟩))  A''
+  have hA''' : Fintype.card {x // x ∈ A'''} ≥ 2 := by
+    sorry
+  have h_emb := exists_ordered_embedding'' A''' hA'''
+  rcases h_emb with ⟨n, g, hg⟩
+  use n
+  let (g₂ : Fin (n + 2) → closed_simplex 2) := (fun (y : ↑I) ↦ ⟨v y (1 - y), by
+    unfold closed_simplex
+    simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_setOf_eq, v₀_val, v₁_val, add_sub_cancel,
+      and_true]
+    intro i
+    unfold I at y
+    have hi : i = 0 ∨ i = 1 := Fin2_elements i
+    cases' hi with h1 h2
+    · rw [h1, v₀_val]
+      exact y.prop.1
+    · rw [h2, v₁_val, le_sub_iff_add_le, zero_add]
+      exact y.prop.2
+    ⟩) ∘ g
+  let g₃ := f ∘ g₂
+  let (T : Fin (n + 1) → X) := fun i ↦ ⟨fun | 0 => (g₃ i) | 1 => (g₃ (i + 1)), by
+    sorry
+    ⟩
+  use T
+
+  -- having constructed the desired chain T, we now prove it has the right properties
+  -- we start by proving that each T i is in C
+  have hTC : ∀ i, (T i).val ∈ C := by
+    intro i
+    sorry
+  constructor
+  · intro i
+    exact hC.2 ↑(T i) (hTC i)
+  · constructor
+    · intro i j hij
+      sorry
+    · intro i
+
+      sorry
+
+
+noncomputable example (S : Segment) : Finset ℝ² := {S 0, S 1}
 
 variable (O : Type) [LinearOrder O]
 example (A : Finset O) : ∃ n : ℕ, ∃ f : Fin n → O, f '' ⊤ = A ∧ ∀ i j : Fin n, i < j → f i < f j
