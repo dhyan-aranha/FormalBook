@@ -6,8 +6,9 @@ open ValuationSubring
 open Algebra
 open Polynomial
 
--- multiplying a polynomial by 2 doesn't commutes with deleting a power
-lemma lemma1 {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) : C 2 * erase n p = erase n (C 2 * p) := by
+-- multiplying a polynomial by 2 commutes with deleting a power
+lemma mul_del_commute {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) :
+ C 2 * erase n p = erase n (C 2 * p) := by
   -- Now we use that a polynomial deleting the n-th term aand adding it back in is the same as doing nothing
   have one := Polynomial.monomial_add_erase p n
   have two := Polynomial.monomial_add_erase (C 2 * p) n
@@ -22,12 +23,13 @@ lemma lemma1 {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) : C 2 * erase 
   rw[← monomial_mul_C]
   ring
 
--- deleting the highest order term of a polynomial of degree at most n leads to a polynomial of degree less than n
-lemma lemma2 (R : Type) [CommRing R] (p : Polynomial R)
-    (n : ℕ) (h1 : n > 0) (h2 : p.natDegree ≤ n) : (p.erase n).natDegree < n := by
+-- Deleting the highest order term of a polynomial of degree at most n
+-- leads to a polynomial of degree less than n
+lemma erase_degree_leq_n (R : Type) [CommRing R] (p : Polynomial R) (n : ℕ) (h1 : n > 0)
+(h2 : p.natDegree ≤ n) : (p.erase n).natDegree < n := by
   rw[le_iff_lt_or_eq] at h2
   cases' h2 with lt eq
-  . -- If the dergee of p is less than n
+  . -- If the degree of p is less than n the nth coefficient is 0
     have n_not_in_support : n ∉ p.support := by
       intro n_in_support
       have := eq_natDegree_of_le_mem_support (Nat.le_of_succ_le lt) n_in_support
@@ -49,12 +51,14 @@ lemma lemma2 (R : Type) [CommRing R] (p : Polynomial R)
       rw[← eq, ← def1, zero, eq]
       exact h1
 
--- If we have polynomials p and q of degrees m and n and a α∈ ℝ such that α, α⁻¹∉ B a subring of ℝ and
--- p(α)=1/2 and q(α⁻¹)=1/2 then there is an m' < m such that there is a polynomial pq of degree m' such that pq(α)=1/2.
+-- If we have polynomials p and q of degrees m and n and an α∈ ℝ such that α, α⁻¹∉ B,
+-- a subring of ℝ, p(α)=1/2 and q(α⁻¹)=1/2 then there is an m' < m such that
+-- there exists a polynomial pq of degree m' such that pq(α)=1/2.
 lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α⁻¹ ∉ B) (p : Polynomial B)
   (q : Polynomial B) (m_eq_degree_p : p.natDegree = m) (n_eq_degree_q : q.natDegree = n)
   (zero_lt_m : m ≠ 0) (zero_lt_n : n ≠ 0) (p_eval : (aeval α) p = 1 / 2)
-  (q_eval : (aeval α⁻¹) q = 1 / 2) (leq : n ≤ m) : ∃(m' : ℕ) (pq : Polynomial B), m' < m ∧ (aeval α) pq = 1/2 ∧ m' = pq.natDegree := by
+  (q_eval : (aeval α⁻¹) q = 1 / 2) (leq : n ≤ m) :
+  ∃(m' : ℕ) (pq : Polynomial B), m' < m ∧ (aeval α) pq = 1/2 ∧ m' = pq.natDegree := by
   have algebramap : ∀x : B, (algebraMap ↥B ℝ) x = x := by -- the identity algebra map
     intro x
     rfl
@@ -68,16 +72,17 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     rw[← two_eq_constant, (constant_in_poly 2 p), p_eval]
     simp
     exact CommGroupWithZero.mul_inv_cancel 2 (Ne.symm (NeZero.ne' 2))
-  have one_minus_two_v₀_eq : (aeval α) ((C (1 - 2*v₀)) * (2*p)) = (1 - 2*v₀) := by -- multiplying by a constant
+  have one_minus_two_v₀_eq : (aeval α) ((C (1 - 2*v₀)) * (2*p)) = (1 - 2*v₀) := by
+    -- multiplying by a constant 1-2v₀ where it is seen as a polynomial of degree 0.
     rw[constant_in_poly (1 - 2*v₀) (2*p), two_p_eval]
     simp
     left
     rfl
-  let p1 := (C (1 - 2*v₀)) * (2*p) + (C (2*v₀))
+  let p1 := (C (1 - 2*v₀)) * (2*p) + (C (2*v₀)) -- Define polynomial p1 = (1-2v₀)2p+2v₀
   have one_eq : 1 = (aeval α) (p1) := by
     rw[← Eq.symm (aeval_add α), aeval_C, algebramap (2*v₀), (one_minus_two_v₀_eq)]
     exact sub_eq_iff_eq_add.mp rfl
-  -- The m-th coefficient of (1-2v₀)(2p)+ 2v₀ is 2(1-2v₀) times the m-th coefficient of p
+  -- For m>0 the m-th coefficient of (1-2v₀)(2p)+ 2v₀ is 2(1-2v₀) times the m-th coefficient of p
   have this6 : p1.erase m + (monomial m (2*(1 - 2*v₀)*p.coeff m)) = p1 := by
     rw[add_comm]
     nth_rewrite 2 [← monomial_add_erase p1 m]
@@ -91,9 +96,10 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
   -- sum of monomials of degree n-k with as coefficient the k-th coefficient of q over k≤ n.
   -- proving a finite sum of polynomials is a polynomial
   let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
-  have rest_zero : ∑ k ∈ Finset.range n, ((monomial (n - (k + 1))) (q.coeff (k + 1))).coeff n = 0 := by
+  have rest_zero : ∑ k ∈ Finset.range n,
+  ((monomial (n - (k + 1))) (q.coeff (k + 1))).coeff n = 0 := by
     apply Finset.sum_eq_zero
-    intro x in_Finset
+    intro x in_Finset -- x is a natural number less than n
     rw[Finset.mem_range] at in_Finset
     have lt_n : n - (x + 1) < n := by
       norm_num
@@ -102,9 +108,11 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
       exact Nat.ne_of_lt lt_n
     exact Polynomial.coeff_monomial_of_ne (q.coeff (x + 1)) ne_n
   have nth_coeff : q1.coeff n = q.coeff 0 := by
-    rw[Polynomial.finset_sum_coeff, Finset.sum_range_succ', Nat.sub_zero, coeff_monomial_same n (q.coeff 0), rest_zero]
+    rw[Polynomial.finset_sum_coeff, Finset.sum_range_succ',
+     Nat.sub_zero, coeff_monomial_same n (q.coeff 0), rest_zero]
     ring
-  have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by -- exponentiation works as expected
+  have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by
+    -- exponentiation works as expected
     rw[pow_sub₀]
     intro h1
     have zero_in_B : α ∈ B := by
@@ -129,7 +137,8 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
   have this2 : α^n = 2 * (aeval α) q1 := by
     rw[← this, q_eval]
     ring
-  have this3 : q1.erase n = q1 + - monomial n v₀ := by -- the leading coefficient of q_1
+  have this3 : q1.erase n = q1 + - monomial n v₀ := by
+  -- the leading coefficient of q_1
     nth_rewrite 2 [← (Polynomial.monomial_add_erase q1 n)]
     rw[nth_coeff]
     ring
@@ -238,13 +247,15 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
       simp
       tauto
   have deg5 : (((C (1 - 2*v₀)) * p + (C v₀)).erase m).natDegree < m := by
-    exact (lemma2 B ((C (1 - 2*v₀)) * p + (C v₀)) m (Nat.zero_lt_of_ne_zero zero_lt_m) deg4)
+    exact (erase_degree_leq_n B ((C (1 - 2*v₀)) * p + (C v₀)) m
+    (Nat.zero_lt_of_ne_zero zero_lt_m) deg4)
   -- Here we define a new polynomial which here we call pq (this is not the product of the two)
-  let pq := ((C (1 - 2*v₀)) * p + (C v₀)).erase m + C 2 * C (p.coeff m) * (monomial (m-n) 1) * q1.erase n
+  let pq := ((C (1 - 2*v₀)) * p + (C v₀)).erase m +
+  C 2 * C (p.coeff m) * (monomial (m-n) 1) * q1.erase n
   have this11 (p : Polynomial B) : 2 * (aeval α) p = (aeval α) (2 * p) := by
     exact Eq.symm (Real.ext_cauchy (congrArg Real.cauchy (constant_in_poly (↑2) p)))
   -- The polynomial pq evaluated at α multiplied by 2 equals 1
-  have this13 : 1 = 2 * (aeval α) (pq) := by
+  have this12 : 1 = 2 * (aeval α) (pq) := by
     rw[this11, left_distrib, aeval_add]
     nth_rewrite 2 [← this11]
     rw[mul_assoc]
@@ -255,7 +266,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     nth_rewrite 4 [mul_comm]
     rw[← C_mul, monomial_mul_C, ← mul_assoc]
     nth_rewrite 5 [mul_comm]
-    rw[← two_eq_constant, lemma1, left_distrib, ← C_mul, ← mul_assoc]
+    rw[← two_eq_constant, mul_del_commute, left_distrib, ← C_mul, ← mul_assoc]
     nth_rewrite 2 [mul_comm]
     rw[mul_assoc, two_eq_constant, ← aeval_add, this6]
     exact one_eq
@@ -276,7 +287,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     rw[← Nat.le_sub_one_iff_lt (Nat.zero_lt_of_ne_zero zero_lt_m)] at deg5
     rw[← Nat.le_sub_one_iff_lt (Nat.zero_lt_of_ne_zero zero_lt_m)] at deg7
     exact (natDegree_add_le_of_degree_le deg5 deg7)
-  exact ⟨m', pq, deg6, eq_one_div_of_mul_eq_one_right (_root_.id (Eq.symm this13)), by rfl⟩
+  exact ⟨m', pq, deg6, eq_one_div_of_mul_eq_one_right (_root_.id (Eq.symm this12)), by rfl⟩
 
 -- Any maximal subring of ℝ not containing 1/2 is a valuation ring.
 lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
@@ -354,10 +365,12 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     rw[← false_iff] at one_last
     rwa[one_last]
 
-  let degree : Set ℕ := {n : ℕ | ∃(p : Polynomial B), p.natDegree = n ∧ (Polynomial.aeval α) p = 1/2}
-  let degree' : Set ℕ := {n : ℕ | ∃(p : Polynomial B), p.natDegree = n ∧ (Polynomial.aeval α⁻¹) p = 1/2}
+  let degree : Set ℕ := {n : ℕ | ∃(p : Polynomial B),
+   p.natDegree = n ∧ (Polynomial.aeval α) p = 1/2}
+  let degree' : Set ℕ := {n : ℕ | ∃(p : Polynomial B),
+   p.natDegree = n ∧ (Polynomial.aeval α⁻¹) p = 1/2}
 
-  -- any element of B[α] can be written as a polynomial in α with variables in B
+  -- Any element of B[α] can be written as a polynomial in α with variables in B
   have contains_half : 1/2 ∈ ((Polynomial.aeval α).range : Subalgebra ↥B ℝ) := by
     rw[← adjoin_singleton_eq_range_aeval B α]
     exact Balpha_contains_half
@@ -373,7 +386,7 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
   have nonempty : degree.Nonempty := by
     exact Set.nonempty_iff_ne_empty.mpr is_nonempty
 
-  -- any element of B[α⁻¹] can be written as a polynomial in α⁻¹ with variables in B
+  -- Any element of B[α⁻¹] can be written as a polynomial in α⁻¹ with coefficients in B
   have contains_half' : 1/2 ∈ ((Polynomial.aeval α⁻¹).range : Subalgebra ↥B ℝ) := by
     rw[← adjoin_singleton_eq_range_aeval B α⁻¹]
     exact Balpha'_contains_half
@@ -422,7 +435,8 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 
   by_cases leq : n ≤ m
 
-  rcases (lower_degree B α m n H p q m_eq_degree_p n_eq_degree_q zero_lt_m zero_lt_n p_eval q_eval leq) with ⟨m', pq, deg, eval, deg2⟩
+  rcases (lower_degree B α m n H p q m_eq_degree_p n_eq_degree_q
+   zero_lt_m zero_lt_n p_eval q_eval leq) with ⟨m', pq, deg, eval, deg2⟩
 
   have main : m' ∈ degree := by
     exact ⟨pq, deg2.symm, eval⟩
@@ -440,7 +454,8 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
     rw[← one_div]
     exact p_eval
 
-  rcases (lower_degree B α⁻¹ n m H3 q p n_eq_degree_q m_eq_degree_p zero_lt_n zero_lt_m q_eval p_eval2 leq2) with ⟨m', pq, deg, eval, deg2⟩
+  rcases (lower_degree B α⁻¹ n m H3 q p n_eq_degree_q m_eq_degree_p
+   zero_lt_n zero_lt_m q_eval p_eval2 leq2) with ⟨m', pq, deg, eval, deg2⟩
   have main : m' ∈ degree' := by
     exact ⟨pq, deg2.symm, eval⟩
   have ge : m' ≥ n := by
@@ -620,8 +635,8 @@ lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
   exact D_no_half
 
 
-lemma non_archimedean (Γ₀ : Type) [LinearOrderedCommGroupWithZero Γ₀] (K : Type) [Field K] (v : Valuation K Γ₀) :
-  (∀(x y : K), v x ≠ v y → v (x + y) = max (v x) (v y)) := by
+lemma non_archimedean (Γ₀ : Type) [LinearOrderedCommGroupWithZero Γ₀] (K : Type) [Field K]
+(v : Valuation K Γ₀) :(∀(x y : K), v x ≠ v y → v (x + y) = max (v x) (v y)) := by
   exact fun x y a ↦ Valuation.map_add_of_distinct_val v a
 
 
