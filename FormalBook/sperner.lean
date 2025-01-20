@@ -165,8 +165,124 @@ lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : F
 
 lemma open_segment_sub {L₁ L₂ : Segment} (hsub: ∀ i : Fin 2, L₁ i ∈ closed_hull L₂) (hL₁ : L₁ 0 ≠ L₁ 1) :
     open_hull L₁ ⊆ open_hull L₂ := by
+  intro x ⟨α,hα,hx⟩
+  refine (Set.mem_image (fun α ↦ ∑ i : Fin 2, α i • L₂ i) (open_simplex 2) x).mpr ?_
+  have h1: ∃ α₁ ∈ closed_simplex 2, L₁ 0 = ∑ i : Fin 2, α₁ i • L₂ i := by
+    rcases hsub 0 with ⟨β, hβ₁, β₁₀⟩
+    have h1': (fun α ↦ ∑ i : Fin 2, α i • L₂ i) β = ∑ i : Fin 2, β i • L₂ i := by
+      simp only [Fin.sum_univ_two, Fin.isValue]
+    have h1'': ∑ i : Fin 2, β i • L₂ i = L₁ 0 := by
+      rw [←h1']
+      exact β₁₀
+    use β
+    constructor
+    · apply hβ₁
+    · exact h1''.symm
+  have h2: ∃ α₂ ∈ closed_simplex 2, L₁ 1 = ∑ i : Fin 2, α₂ i • L₂ i := by
+    rcases hsub 1 with ⟨β, hβ₁, β₁₀⟩
+    have h2': (fun α ↦ ∑ i : Fin 2, α i • L₂ i) β = ∑ i : Fin 2, β i • L₂ i := by
+      simp only [Fin.sum_univ_two, Fin.isValue]
+    have h2'': ∑ i : Fin 2, β i • L₂ i = L₁ 1 := by
+      rw [←h2']
+      exact β₁₀
+    use β
+    constructor
+    · apply hβ₁
+    · exact h2''.symm
+  rcases h1 with ⟨α₁,hα₁,hL₁₀⟩
+  rcases h2 with ⟨α₂,hα₂,hL₁₁⟩
+  have pos : ∀ i, 0 < α i := by
+    apply hα.1
+  have pos1 : ∀ i, 0 ≤  α₁ i := by
+    apply hα₁.1
+  have pos2 : ∀ i, 0 ≤ α₂ i := by
+    apply hα₂.1
+  let x₁ : Fin 2 → ℝ := fun i => match i with
+    | 0 => (α 0 * α₁ 0 + α 1 * α₂ 0)
+    | 1 => (α 0 * α₁ 1 + α 1 * α₂ 1)
 
-  sorry
+  have hαx₁ : x₁ ∈ open_simplex 2 := by
+    constructor
+    have x₁0_pos : x₁ 0 > 0 := by
+      simp [x₁, pos, pos1, pos2]
+      by_contra h
+      simp at h
+      have p : α₁ 0 = 0 := by
+        by_contra hα₁0
+        have p' : α 0 * α₁ 0 + α 1 * α₂ 0 > 0 := by
+          simp only [add_pos_of_pos_of_nonneg,mul_pos (pos 0),lt_of_le_of_ne (pos1 0) (Ne.symm hα₁0),
+          mul_nonneg (pos 1).le (hα₂.1 0)]
+        linarith [p', h]
+      have q : α₂ 0 = 0 := by
+          by_contra hα₂0
+          have q' : α 0 * α₁ 0 + α 1 * α₂ 0 > 0 := by
+            simp only [add_pos_of_nonneg_of_pos, mul_nonneg (pos 0).le (hα₁.1 0), mul_pos (pos 1),
+            lt_of_le_of_ne (pos2 0) (Ne.symm hα₂0)]
+          linarith [q', h]
+      have r : α₁ 1 = 1 := by
+        by_contra
+        rcases hα₁ with ⟨_,hα₁₂⟩
+        rw [Fin.sum_univ_two, p, zero_add] at hα₁₂
+        contradiction
+      have  s : α₂ 1 = 1 := by
+        by_contra
+        rcases hα₂ with ⟨_,hα₂₂⟩
+        rw [Fin.sum_univ_two, q, zero_add] at hα₂₂
+        contradiction
+      simp [p,q,r,s] at hL₁₀ hL₁₁
+      rw [← hL₁₁] at hL₁₀
+      absurd hL₁
+      exact hL₁₀
+    have x₁1_pos : x₁ 1 > 0 := by
+      simp [x₁, pos, pos1, pos2]
+      by_contra h
+      simp only [Fin.isValue, not_lt] at h
+      have t : α₁ 1 = 0 := by
+        by_contra hα₁0
+        have t' : α 0 * α₁ 1 + α 1 * α₂ 1 > 0 := by
+          simp only [add_pos_of_pos_of_nonneg,mul_pos (pos 0),lt_of_le_of_ne (pos1 1) (Ne.symm hα₁0),
+          mul_nonneg (pos 1).le (hα₂.1 1)]
+        linarith [t', h]
+      have u : α₂ 1 = 0 := by
+          by_contra hα₂0
+          have u' : α 0 * α₁ 1 + α 1 * α₂ 1 > 0 := by
+            simp only [add_pos_of_nonneg_of_pos, mul_nonneg (pos 0).le (hα₁.1 1), mul_pos (pos 1),
+            lt_of_le_of_ne (pos2 1) (Ne.symm hα₂0)]
+          linarith [u', h]
+      have v : α₁ 0 = 1 := by
+        by_contra
+        rcases hα₁ with ⟨_,hα₁₂⟩
+        rw [Fin.sum_univ_two, t, add_zero] at hα₁₂
+        contradiction
+      have  w : α₂ 0 = 1 := by
+        by_contra
+        rcases hα₂ with ⟨_,hα₂₂⟩
+        rw [Fin.sum_univ_two, u, add_zero] at hα₂₂
+        contradiction
+      simp [t,u,v,w] at hL₁₀ hL₁₁
+      rw [← hL₁₁] at hL₁₀
+      absurd hL₁
+      exact hL₁₀
+
+    · exact fun i ↦ by
+        fin_cases i
+        all_goals (simp [x₁, x₁0_pos, x₁1_pos, pos, pos1, pos2])
+    · simp only [x₁, hα.2, hα₁.2, hα₂.2]
+      rcases hα with ⟨_,h₂⟩
+      rcases hα₁ with ⟨hα₁₁,hα₁₂⟩
+      rcases hα₂ with ⟨hα₂₁,hα₂₂⟩
+      simp [← add_assoc, add_comm, ← mul_add, add_assoc]
+      rw [Fin.sum_univ_two] at hα₁₂ hα₂₂ h₂
+      simp [hα₁₂,hα₂₂, mul_one, mul_one, h₂]
+  use x₁
+  constructor
+  · exact hαx₁
+  · simp only [Fin.sum_univ_two, Fin.isValue, hL₁₀, smul_add, hL₁₁, ← add_assoc, add_comm] at hx
+    simp only [Fin.isValue, Fin.sum_univ_two, add_smul, mul_smul, ← add_assoc, x₁]
+    exact hx
+
+
+
 
 
 /- A basic lemma about sums that I want to use but that I cannot find.-/
@@ -621,9 +737,18 @@ lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L
 lemma finset_infinite_pigeonhole {α β : Type} [Infinite α] {f : α → β} {B : Finset β}
     (hf : ∀ a, f a ∈ B)
     : ∃ b ∈ B, Set.Infinite (f⁻¹' {b}) := by
+have : Finite B := by exact Finite.of_fintype { x // x ∈ B }
+let f_B := fun (a : α) => (⟨f a, hf a⟩ : B)
+have ⟨b, hb⟩ := Finite.exists_infinite_fiber f_B
+use b
+constructor
+· exact Finset.coe_mem b
+· convert Set.infinite_coe_iff.mp hb
+  ext a
+  cases b
+  simp [f_B]
 
 
-  sorry
 
 /- An version that states that the open_unit_square is open. -/
 lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_unit_square) :
