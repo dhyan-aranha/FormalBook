@@ -1311,12 +1311,16 @@ theorem has_chains (S : X) (hX : IsSplitting X) (hS : NonDegenerate S) :
       sorry
 
 
-noncomputable example (S : Segment) : Finset ℝ² := {S 0, S 1}
+theorem has_chains' (S : X) (hX : IsSplitting X) (hS : NonDegenerate S) :
+    ∃ n : ℕ, ∃ T : Fin (n + 1) → X, (∀ i, IsBasic X (T i).val) ∧ NoDuplicates X T ∧
+    ∀ i : Fin n, (T i).val 1 = (T (i + 1)).val 0 := by
+  -- maybe try a more direct proof, where we directly order the elements of C by their smallest
+  -- first coordinate
+  cases' hX S.val S.prop with C hC
 
-variable (O : Type) [LinearOrder O]
-example (A : Finset O) : ∃ n : ℕ, ∃ f : Fin n → O, f '' ⊤ = A ∧ ∀ i j : Fin n, i < j → f i < f j
-  := by
-  sorry -- Use Finset.orderEmbOfFin
+  sorry
+
+
 
 
 
