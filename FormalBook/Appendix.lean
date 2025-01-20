@@ -88,7 +88,8 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     . rfl
     . rw[coeff_add, coeff_C_ne_zero zero_lt_m, coeff_C_mul, ← two_eq_constant, coeff_C_mul]
       ring
-  -- sum of monomials of degree n-k with as coefficient the k-th coefficient of q.
+  -- sum of monomials of degree n-k with as coefficient the k-th coefficient of q over k≤ n.
+  -- proving a finite sum of polynomials is a polynomial
   let q1 : Polynomial B := ∑ (k ∈ Finset.range (n+1)), monomial (n-k) (coeff q k)
   have rest_zero : ∑ k ∈ Finset.range n, ((monomial (n - (k + 1))) (q.coeff (k + 1))).coeff n = 0 := by
     apply Finset.sum_eq_zero
@@ -103,7 +104,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
   have nth_coeff : q1.coeff n = q.coeff 0 := by
     rw[Polynomial.finset_sum_coeff, Finset.sum_range_succ', Nat.sub_zero, coeff_monomial_same n (q.coeff 0), rest_zero]
     ring
-  have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by
+  have equation (x : ℕ) (h : x ≤ n) : α ^ n * (α ^ x)⁻¹ = α^(n-x) := by -- exponentiation works as expected
     rw[pow_sub₀]
     intro h1
     have zero_in_B : α ∈ B := by
@@ -128,7 +129,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
   have this2 : α^n = 2 * (aeval α) q1 := by
     rw[← this, q_eval]
     ring
-  have this3 : q1.erase n = q1 + - monomial n v₀ := by
+  have this3 : q1.erase n = q1 + - monomial n v₀ := by -- the leading coefficient of q_1
     nth_rewrite 2 [← (Polynomial.monomial_add_erase q1 n)]
     rw[nth_coeff]
     ring
@@ -138,12 +139,14 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     rw[algebramap v₀]
     ring
   have this5 : (1 - 2 * v₀) * α^n = 2 * (aeval α) (q1.erase n) := by
+    -- (1-2v₀)α^n = 2 q'(α) where q'=q1 dropping the x^n term
     rw[← this4]
     ring_nf
     simp
     rw[this2]
     ring
   have coeff_erase_neq_zero : coeff (q1.erase n) 0 = (coeff q) n := by
+    -- the constant term of q' is the n-th coefficient of q
     rw[erase_ne q1 n 0 zero_lt_n.symm, finset_sum_coeff, Finset.sum_range_succ,
                 Nat.sub_self, coeff_monomial_same 0 (q.coeff n), add_left_eq_self]
     apply Finset.sum_eq_zero
@@ -154,14 +157,16 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     apply coeff_monomial_of_ne
     exact n_sub_x
   have erase_neq_zero : q1.erase n ≠ 0 := by
+    -- the constant term of q' is nonzero
     rw[← support_nonempty]
-    use 0
+    use 0 -- we have shown the constant term is nonzero
     rw[mem_support_iff]
     rw[coeff_erase_neq_zero]
     intro eq_zero4
     rw[← n_eq_degree_q] at eq_zero4
     simp at eq_zero4
     have zero_lt_natDegree : 0 < q.natDegree := by
+      -- by assumption
       calc
         0 < n           := by exact Nat.zero_lt_of_ne_zero zero_lt_n
         _ = q.natDegree := by exact n_eq_degree_q.symm
@@ -169,12 +174,15 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
       exact Polynomial.ne_zero_of_natDegree_gt (zero_lt_natDegree)
     tauto
   have deg1 : q1.natDegree ≤ n := by
+    -- degree of sum is ≤ highest degree of summands
     apply natDegree_sum_le_of_forall_le
     intro x x_in_Finset
     calc
       ((monomial (n - x)) (q.coeff x)).natDegree ≤ n - x  := by exact natDegree_monomial_le (q.coeff x)
                                                 _ ≤ n      := by exact Nat.sub_le n x
   have deg2 : (q1.erase n).natDegree < n ∨ (q1.erase n).natDegree = 0 := by
+    -- erasing the logically axiomatic second possibility as 0 < n
+    -- leads to a problem un the cases'of the proof of deg3
     rw[le_iff_lt_or_eq] at deg1
     cases' deg1 with lt eq
     . left
@@ -218,10 +226,12 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     left
     abel
   have deg4 : ((C (1 - 2*v₀)) * p + (C v₀)).natDegree ≤ m := by
+    -- We show this by considering two different cases:
+    -- (1-2v₀) = 0 and (1-2v₀) ≠ 0.
     by_cases eq_zero5 : (1 - 2*v₀) = 0
-    . rw[eq_zero5]
+    . rw[eq_zero5] -- the case (1-2v₀) = 0
       simp
-    . rw[natDegree_add_C, natDegree_C_mul]
+    . rw[natDegree_add_C, natDegree_C_mul] -- the case (1-2v₀) ≠ 0
       calc
         p.natDegree = m := by exact m_eq_degree_p
                   _ ≤ m := by exact Nat.le_refl m
@@ -229,9 +239,11 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
       tauto
   have deg5 : (((C (1 - 2*v₀)) * p + (C v₀)).erase m).natDegree < m := by
     exact (lemma2 B ((C (1 - 2*v₀)) * p + (C v₀)) m (Nat.zero_lt_of_ne_zero zero_lt_m) deg4)
+  -- Here we define a new polynomial which here we call pq (this is not the product of the two)
   let pq := ((C (1 - 2*v₀)) * p + (C v₀)).erase m + C 2 * C (p.coeff m) * (monomial (m-n) 1) * q1.erase n
   have this11 (p : Polynomial B) : 2 * (aeval α) p = (aeval α) (2 * p) := by
     exact Eq.symm (Real.ext_cauchy (congrArg Real.cauchy (constant_in_poly (↑2) p)))
+  -- The polynomial pq evaluated at α multiplied by 2 equals 1
   have this13 : 1 = 2 * (aeval α) (pq) := by
     rw[this11, left_distrib, aeval_add]
     nth_rewrite 2 [← this11]
