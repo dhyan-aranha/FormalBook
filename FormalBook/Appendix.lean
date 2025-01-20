@@ -451,15 +451,19 @@ lemma inclusion_maximal_valuation (B : Subring ℝ) (h1 : (1/2) ∉ B)
 def S := {A : Subring ℝ | (1/2) ∉ A}
 def Z := (Int.castRingHom ℝ).range
 
+-- This lemma shows that the subring of integers in ℝ lies in the set S
 lemma Z_in_S : Z ∈ S := by
+  -- Now follows the to us trivial notion that the elements
+  -- represented by 2 in ℤ and ℝ are the same under coercion
   have two_eq_two : (Int.castRingHom ℝ) 2 = 2 := by rfl
   intro half_in_Z
   simp at half_in_Z
   rcases half_in_Z with ⟨n, h⟩
   rw[← two_eq_two] at h
+  -- Here we use injectivity of coercion
   have inj : (Int.castRingHom ℝ).toFun.Injective := by
     exact Isometry.injective fun x1 ↦ congrFun rfl
-  have two_n : (Int.castRingHom ℝ) (2*n) = 1 := by
+  have two_n : (Int.castRingHom ℝ) (2*n) = 1 := by-- 2n=1∈ ℤ
     rw[map_mul, h]
     simp
   rw[← (Int.castRingHom ℝ).map_one] at two_n
@@ -468,20 +472,26 @@ lemma Z_in_S : Z ∈ S := by
   have n_two_eq_one : n*2 = 1 := by
     rw[← two_n_eq_one]
     exact Int.mul_comm n 2
-  have two_unit : ∃two : ℤˣ, two = (2:ℤ) := by
+  have two_unit : ∃two : ℤˣ, two = (2:ℤ) := by-- implying 2 is a unit in ℤ
     refine CanLift.prf 2 ?_
     rw[isUnit_iff_exists]
     use n
   rcases two_unit with ⟨two, H⟩
+  -- We will now use that the only units in ℤ are ±1
   cases' (Int.units_eq_one_or two) with l l <;> (rw[l] at H; tauto)
 
 lemma sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z ∈ c, z ≤ ub := by
 -- Idea: The upper bound is the union of the subrings.
   intro c subset chain
+  -- we want to treat the empty chain seperately
   by_cases emp_or_not : c ≠ ∅
+  -- Here we have to fiddle around a bit to get our desired upper bound
+  -- we do this by first only treating the carriers and showing that that is a subring
+  -- Here we send the subrings of c to their carriers (the underlying subset of ℝ)
   let subring_to_set_of_sets : Set (Set ℝ) :=
     {Rset : Set ℝ | ∃R : Subring ℝ, R ∈ c ∧ Rset = R.carrier}
   let union_of_sets : Set ℝ := ⋃₀ subring_to_set_of_sets
+  -- Here we show that ub is actually a subring of ℝ
   let ub : Subring ℝ :=
     { carrier := union_of_sets,
       zero_mem' := by
@@ -568,7 +578,7 @@ lemma sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z 
         . rw[H2a, Subring.mem_carrier]
           rw[H2a, Subring.mem_carrier] at a_in_cara
           exact Subring.neg_mem ringa a_in_cara}
-
+  -- Now we show that 1/2∉ ub
   have ub_carrier_non_half : 1/2 ∉ ub.carrier := by
     intro half_in
     rw[Set.mem_sUnion] at half_in
@@ -576,22 +586,25 @@ lemma sUnion_is_ub : ∀ c ⊆ S, IsChain (· ≤ ·) c → ∃ ub ∈ S, ∀ z 
     rcases h with ⟨ringt, H2, H3⟩
     have half_not_in_t : 1/2 ∉ t := by exact Eq.mpr_not (congrFun H3 (1 / 2)) (subset H2)
     tauto
+  -- So ub ∈ S
   have ub_mem_S : ub ∈ S := by
     exact ub_carrier_non_half
-  use ub
+  use ub -- here we tell lean to use the ub we constructed
   constructor
   · exact ub_mem_S
   · intro z hz x hx
     exact Subring.mem_carrier.mp (Set.mem_sUnion.mpr ⟨z, ⟨z, hz, by rfl⟩, hx⟩)
   simp at emp_or_not
-  use Z
+  use Z -- as Z lies in S, S is nonempty
   constructor
   . exact Z_in_S
   . rw[emp_or_not, Set.forall_mem_empty]
     trivial
 
+-- This lemma shows that there is a valuation ring of ℝ
+-- such that 1/2 does not lie in it
 lemma valuation_ring_no_half : ∃(B : ValuationSubring ℝ), (1/2) ∉ B := by
-  have h2 := zorn_le₀ S sUnion_is_ub
+  have h2 := zorn_le₀ S sUnion_is_ub -- use Zorn's lemma
   rcases h2 with ⟨B, hl, hr⟩
   have h3 : ∀(C : Subring ℝ), (B ≤ C) ∧ (1/2) ∉ C → B = C := by
     rintro y ⟨h6, h7⟩
