@@ -10,6 +10,12 @@ open Finset
 -- Shorthand for defining an element of ℝ²
 def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
+@[simp]
+lemma v₀_val {x y : ℝ} : (v x y) 0 = x := rfl
+@[simp]
+lemma v₁_val {x y : ℝ} : (v x y) 1 = y := rfl
+
+
 -- Definition of an n-dimensional standard simplex.
 def closed_simplex (n : ℕ)  : Set (Fin n → ℝ) := {α | (∀ i, 0 ≤ α i) ∧ ∑ i, α i = 1}
 def open_simplex   (n : ℕ)  : Set (Fin n → ℝ) := {α | (∀ i, 0 < α i) ∧ ∑ i, α i = 1}

@@ -288,7 +288,6 @@ lemma reverse_segment_open_hull {L : Segment}
   exact Set.Subset.antisymm (by convert haux (reverse_segment L); exact reverse_segment_involution.symm) (haux L)
 
 
-
 lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
   have ⟨h₁,h₂⟩ := h
   exact ⟨h₁.symm, by rwa [←reverse_segment_open_hull, reverse_segment_to_segment]⟩
