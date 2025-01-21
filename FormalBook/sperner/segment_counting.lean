@@ -42,5 +42,4 @@ theorem segment_decomposition (X : Finset ℝ²) (A : Set ℝ²) {S : Segment}
     ∃ (C : Chain (S 0) (S 1)), S = chain_to_big_segment C ∧
     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
-
     sorry

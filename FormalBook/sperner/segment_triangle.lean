@@ -33,6 +33,8 @@ def sign_seg (L : Segment) (v : ℝ²) : ℝ := det (fun | 0 => L 0 | 1 => L 1 |
 
 def to_segment (a b : ℝ²) : Segment := fun | 0 => a | 1 => b
 
+def reverse_segment (L : Segment) : Segment := to_segment (L 1) (L 0)
+
 def colin (u v w : ℝ²) : Prop := u ≠ w ∧ v ∈ open_hull (to_segment u w)
 
 /- Tside i defines the 'directed' opposite side of T i.-/
