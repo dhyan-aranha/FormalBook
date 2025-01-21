@@ -31,6 +31,8 @@ noncomputable def seg_vec (L : Segment) : ℝ² := L 1 - L 0
 
 def sign_seg (L : Segment) (v : ℝ²) : ℝ := det (fun | 0 => L 0 | 1 => L 1 | 2 => v)
 
+def to_segment (a b : ℝ²) : Segment := fun | 0 => a | 1 => b
+
 /- Tside i defines the 'directed' opposite side of T i.-/
 def Tside (T : Triangle) : Fin 3 → Segment := fun
   | 0 => (fun | 0 => T 1 | 1 => T 2)

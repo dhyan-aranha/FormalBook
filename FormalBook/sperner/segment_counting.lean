@@ -1,5 +1,6 @@
 import Mathlib
 import FormalBook.sperner.simplex_basic
+import FormalBook.sperner.segment_triangle
 
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
@@ -12,7 +13,6 @@ open BigOperators
 open Finset
 
 
-def to_segment (a b : ℝ²) : Segment := fun | 0 => a | 1 => b
 
 noncomputable def segment_set (X : Finset ℝ²) : Finset Segment :=
     Finset.image (fun (a,b) ↦ to_segment a b) ((Finset.product X X).filter (fun (a,b) ↦ a ≠ b))
