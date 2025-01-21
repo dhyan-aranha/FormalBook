@@ -255,6 +255,48 @@ lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L
     field_simp
     linarith
 
+
+@[simp]
+lemma reverse_segment_to_segment {u v : ℝ²}
+  : reverse_segment (to_segment u v) = to_segment v u := rfl
+
+@[simp]
+lemma reverse_segment_involution {L : Segment}
+    : reverse_segment (reverse_segment L) = L := by
+  ext i _
+  fin_cases i <;> simp [reverse_segment, to_segment]
+
+
+lemma reverse_segment_closed_hull {L : Segment}
+    : closed_hull (reverse_segment L) = closed_hull L := by
+  have haux : ∀ L', closed_hull L' ⊆ closed_hull (reverse_segment L') := by
+    intro L x ⟨α,hα,hαx⟩
+    refine ⟨fun | 0 => α 1 | 1 => α 0, ⟨?_,?_⟩ ,?_⟩
+    · exact fun i ↦ by fin_cases i <;> linarith [hα.1 0, hα.1 1]
+    · simp_rw [←hα.2, Fin.sum_univ_two, add_comm]
+    · simp_rw [←hαx, Fin.sum_univ_two, reverse_segment, to_segment, add_comm]
+  exact Set.Subset.antisymm (haux (reverse_segment L)) (haux L)
+
+lemma reverse_segment_open_hull {L : Segment}
+    : open_hull (reverse_segment L) = open_hull L := by
+  have haux : ∀ L', open_hull L' ⊆ open_hull (reverse_segment L') := by
+    intro L x ⟨α,hα,hαx⟩
+    refine ⟨fun | 0 => α 1 | 1 => α 0, ⟨?_,?_⟩ ,?_⟩
+    · exact fun i ↦ by fin_cases i <;> linarith [hα.1 0, hα.1 1]
+    · simp_rw [←hα.2, Fin.sum_univ_two, add_comm]
+    · simp_rw [←hαx, Fin.sum_univ_two, reverse_segment, to_segment, add_comm]
+  exact Set.Subset.antisymm (by convert haux (reverse_segment L); exact reverse_segment_involution.symm) (haux L)
+
+
+
+lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
+  have ⟨h₁,h₂⟩ := h
+  exact ⟨h₁.symm, by rwa [←reverse_segment_open_hull, reverse_segment_to_segment]⟩
+
+
+
+
+
 /- Triangles -/
 
 /-
