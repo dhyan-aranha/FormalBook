@@ -77,11 +77,6 @@ lemma simplex_vertex_image {n : ℕ} {i : Fin n} (f : Fin n → ℝ²) :
 lemma corner_in_closed_hull {n : ℕ} {i : Fin n} {P : Fin n → ℝ²} : P i ∈ closed_hull P := by
   exact ⟨simplex_vertex i, simplex_vertex_in_simplex, by simp⟩
 
-lemma vertex_mem_closed {n : ℕ} {i : Fin n} {f : Fin n → ℝ²} :
-    f i ∈ ((fun α ↦ ∑ i, α i • f i) '' closed_simplex n) :=
-  ⟨simplex_vertex i, ⟨simplex_vertex_in_simplex, by simp⟩⟩
-
-
 lemma closed_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
     closed_hull (fun (_ : Fin n) ↦ P) = {P} := by
   ext v
@@ -91,7 +86,8 @@ lemma closed_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
     exact hαv.symm
   · intro hv
     rw [hv]
-    exact vertex_mem_closed (i := ⟨0,Nat.zero_lt_of_ne_zero hn⟩)
+    exact corner_in_closed_hull (i := ⟨0,Nat.zero_lt_of_ne_zero hn⟩)
+
 
 lemma open_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : ∃ x, x ∈ open_hull P := by
   use ∑ i, (1/(n : ℝ)) • P i, fun _ ↦ (1/(n : ℝ))
@@ -196,7 +192,6 @@ lemma open_segment_sub {L₁ L₂ : Segment} (hsub: ∀ i : Fin 2, L₁ i ∈ cl
   let x₁ : Fin 2 → ℝ := fun i => match i with
     | 0 => (α 0 * α₁ 0 + α 1 * α₂ 0)
     | 1 => (α 0 * α₁ 1 + α 1 * α₂ 1)
-
   have hαx₁ : x₁ ∈ open_simplex 2 := by
     constructor
     have x₁0_pos : x₁ 0 > 0 := by
@@ -280,8 +275,6 @@ lemma open_segment_sub {L₁ L₂ : Segment} (hsub: ∀ i : Fin 2, L₁ i ∈ cl
     exact hx
 
 
-
-
 lemma open_segment_sub' {L₁ L₂ : Segment} (hsub: closed_hull L₁ ⊆ closed_hull L₂)
     (hL₁ : L₁ 0 ≠ L₁ 1) : open_hull L₁ ⊆ open_hull L₂ :=
   open_segment_sub (fun _ ↦ (hsub corner_in_closed_hull)) hL₁
@@ -347,7 +340,6 @@ lemma real_sign_involution {x : ℝ} : x.sign.sign = x.sign := by
 
 lemma real_sign_div_self {x : ℝ} (hx : x ≠ 0) : 0 <  Real.sign x / x :=
   sign_div_pos hx real_sign_involution
-
 
 lemma real_sign_mul_self {x : ℝ} (hx : x ≠ 0) : 0 < (Real.sign x) * x := by
   obtain (hx' | hx') := Real.sign_apply_eq_of_ne_zero x hx <;> rw [hx']
@@ -529,7 +521,6 @@ lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
       by_contra hcontra; push_neg at hcontra
       apply boundary_not_in_open hx
       exact ⟨α,⟨fun i ↦ lt_of_le_of_ne (hα.1 i) (hcontra i).symm,hα.2⟩ ,hαx⟩
-
     sorry
   · sorry
 
@@ -593,7 +584,6 @@ lemma closed_side_sub' {T : Triangle} {i : Fin 3} :
 lemma closed_side_to_co {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} {i : Fin 3} (hx : x ∈ closed_hull (Tside T i)) :
     Tco T x i = 0 := (mem_closed_side hdet (closed_side_sub hx) _).2 hx
 
-
 lemma mem_open_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ closed_hull T) (i : Fin 3) :
     (Tco T x i = 0 ∧ ∀ j, j ≠ i → 0 < Tco T x j) ↔ x ∈ open_hull (Tside T i) := by
   constructor
@@ -620,8 +610,6 @@ lemma mem_open_side {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²} (hx : x ∈ 
     rw [boundary_seg (nondegen_triangle_imp_nondegen_side i hdet), fin2_im, two_co_zero_imp_corner hdet hjneq hTcoj hTcoi]
     simp
     fin_cases i <;> fin_cases j <;> tauto
-
-
 
 lemma mem_open_side_other_co {T : Triangle} (hdet : det T ≠ 0) {x : ℝ²}  {i : Fin 3} (hxOpen : x ∈ open_hull (Tside T i))
   : ∀ j, j ≠ i → 0 < Tco T x j := by
@@ -1297,7 +1285,7 @@ lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit
       have hΔneq : Δ' ≠ Δ := by
         by_contra hΔeq
         rw [hΔeq] at hMemΔ'
-        apply haout ((1/ (l : ℝ) * ε)) (by field_simp; exact Nat.zero_lt_of_ne_zero hlZ)
+        apply haout ((1/ (l : ℝ) * ε)) (by field_simp)
         convert hMemΔ' using 2
         simp [mul_smul]
       -- Then we prove that x ∈ closed_hull Δ'
