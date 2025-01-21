@@ -26,7 +26,7 @@ noncomputable def basic_avoiding_segment_set (X : Finset ℝ²) (A : Set ℝ²) 
 
 inductive Chain : ℝ² → ℝ² → Type
     | basic {u v : ℝ²}  : Chain u v
-    | join {u v w : ℝ²} (hColineair : colin u v w) (C : Chain v w) : Chain u w
+    | join {u v w : ℝ²} (hCollineair : colin u v w) (C : Chain v w) : Chain u w
 
 noncomputable def to_basic_segments {u v : ℝ²} : Chain u v → Finset Segment
     | Chain.basic              => {to_segment u v}
@@ -35,7 +35,6 @@ noncomputable def to_basic_segments {u v : ℝ²} : Chain u v → Finset Segment
 noncomputable def reverse_chain {u v : ℝ²} (C : Chain u v) : Chain v u := sorry
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
-
 
 theorem segment_decomposition (X : Finset ℝ²) (A : Set ℝ²) {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) :
