@@ -711,6 +711,3 @@ lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_h
 lemma sub_collinear_right {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin t v w := by
   sorry
-
-lemma colin_symm {u v w : ℝ²} (h : colin u v w) : colin w v u := by
-  sorry

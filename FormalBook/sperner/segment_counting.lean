@@ -38,7 +38,7 @@ noncomputable def glue_chains {u v w : ℝ²} (hCollinear : colin u v w) : Chain
 
 noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
     | Chain.basic           => Chain.basic
-    | @Chain.join _ x _ h C => glue_chains (colin_symm h) (reverse_chain C) (@Chain.basic x u)
+    | @Chain.join _ x _ h C => glue_chains (colin_reverse h) (reverse_chain C) (@Chain.basic x u)
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
 
