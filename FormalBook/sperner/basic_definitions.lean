@@ -47,7 +47,12 @@ lemma is_cover_open_el_imp_eq {n : ℕ} {S : Set (Fin n → ℝ²)} (hDisj : is_
   have hx := Set.mem_inter hx₁ hx₂
   rwa [Disjoint.inter_eq (hDisj Δ₁ hΔ₁ Δ₂ hΔ₂ hΔ₁₂)] at hx
 
-lemma cover_mem_side {S : Finset Triangle} {X : Set ℝ²} (hCover : is_disjoint_cover X (S : Set Triangle))
+lemma cover_mem_side {S : Set Triangle} {X : Set ℝ²} (hCover : is_disjoint_cover X S)
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) {x : ℝ²} (hx : x ∈ X) (hInt: ∀ Δ ∈ S, x ∉ (open_hull Δ))
     (hv : ∀ i, ∀ Δ ∈ S, x ≠ Δ i) : ∃ Δ ∈ S, ∃ i : Fin 3, x ∈ open_hull (Tside Δ i) := by
-  sorry
+  rw [hCover.1, @Set.mem_iUnion₂] at hx
+  have ⟨Δ, hΔ, hxΔ⟩ := hx
+  have hxBoundary : x ∈ boundary Δ := Set.mem_diff_of_mem hxΔ (hInt Δ hΔ)
+  have ⟨i,hi⟩ := el_in_boundary_imp_side (hArea Δ hΔ) hxBoundary ?_
+  · exact ⟨Δ,hΔ,i,hi⟩
+  · exact fun i ↦ hv i Δ hΔ
