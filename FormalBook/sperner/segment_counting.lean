@@ -19,3 +19,6 @@ noncomputable def segment_set (X : Finset ℝ²) : Finset Segment :=
 
 noncomputable def avoiding_segment_set (X : Finset ℝ²) (A : Set ℝ²) : Finset Segment :=
     (segment_set X).filter (fun L ↦ Disjoint (closed_hull L) (A))
+
+noncomputable def basic_avoiding_segment_set (X : Finset ℝ²) (A : Set ℝ²) : Finset Segment :=
+    (avoiding_segment_set X A).filter (fun L ↦ ∀ x ∈ X, x ∉ open_hull L)
