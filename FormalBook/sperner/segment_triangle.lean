@@ -693,3 +693,25 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
     _ = Tco T x i + (-Tco T x i)/2                            := by congr; exact abs_of_neg hi
     _ < 0                                                     := by linarith
   assumption
+
+
+-- Basic lemmas about collinearity
+
+lemma interior_left_trans {u v w t : ℝ²}
+    (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
+    t ∈ open_hull (to_segment u w) := by
+  sorry
+
+lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w)) : colin u v w := by
+  sorry
+
+lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
+    colin u t v := by
+  sorry
+
+lemma sub_collinear_right {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
+    colin t v w := by
+  sorry
+
+lemma colin_symm {u v w : ℝ²} (h : colin u v w) : colin w v u := by
+  sorry

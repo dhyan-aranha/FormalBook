@@ -32,7 +32,13 @@ noncomputable def to_basic_segments {u v : ℝ²} : Chain u v → Finset Segment
     | Chain.basic              => {to_segment u v}
     | @Chain.join _ w _ _ C    => to_basic_segments C ∪ {to_segment u w}
 
-noncomputable def reverse_chain {u v : ℝ²} (C : Chain u v) : Chain v u := sorry
+noncomputable def glue_chains {u v w : ℝ²} (hCollinear : colin u v w) : Chain u v → Chain v w → Chain u w
+    | Chain.basic, C      => Chain.join hCollinear C
+    | Chain.join h C', C  => Chain.join (interior_collinear (interior_left_trans h.2 hCollinear.2)) (glue_chains (sub_collinear_right hCollinear h.2) C' C)
+
+noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
+    | Chain.basic           => Chain.basic
+    | @Chain.join _ x _ h C => glue_chains (colin_symm h) (reverse_chain C) (@Chain.basic x u)
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
 
@@ -41,4 +47,4 @@ theorem segment_decomposition (X : Finset ℝ²) (A : Set ℝ²) {S : Segment}
     ∃ (C : Chain (S 0) (S 1)), S = chain_to_big_segment C ∧
     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
-    sorry
+  sorry
