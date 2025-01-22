@@ -1285,7 +1285,7 @@ lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_cover unit
       have hΔneq : Δ' ≠ Δ := by
         by_contra hΔeq
         rw [hΔeq] at hMemΔ'
-        apply haout ((1/ (l : ℝ) * ε)) (by field_simp; exact Nat.zero_lt_of_ne_zero hlZ)
+        apply haout ((1/ (l : ℝ) * ε)) (by field_simp; try exact Nat.zero_lt_of_ne_zero hlZ)
         convert hMemΔ' using 2
         simp [mul_smul]
       -- Then we prove that x ∈ closed_hull Δ'
