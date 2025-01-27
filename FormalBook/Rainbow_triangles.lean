@@ -310,6 +310,9 @@ lemma linear_combination_det_middle {n : ℕ} {x z : ℝ²} {P : Fin n → ℝ²
     congr; funext k; fin_cases k <;> rfl
 
 
+
+
+
 lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²} {α : Fin n → ℝ}
     (hα : ∑ i, α i = 1) :
   det (fun | 0 => (∑ i, α i • P i) | 1 => y | 2 => z) =
@@ -324,18 +327,48 @@ lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²}
     congr; funext k; fin_cases k <;> rfl
 
 
-
-
-
 lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
     ∀ x y z, x ∈ closed_hull T → y ∈ closed_hull T → z ∈ closed_hull T →
       det (fun | 0 => x | 1 => y | 2 => z) = 0 := by
   intro x y z ⟨_, ⟨_, hαx⟩ , hx⟩ ⟨_, ⟨_, hαy⟩ , hy⟩ ⟨_, ⟨_, hαz⟩ , hz⟩
-  simp [←hx, ← hy, ←hz, linear_combination_det_first hαx,
-    linear_combination_det_middle hαy, linear_combination_det_last hαz, det_zero_perm hT]
-
-
-
+  rw [←hx, ← hy, ←hz, linear_combination_det_first hαx]
+  simp only [linear_combination_det_middle hαy]
+  refine
+    Eq.mpr
+      (id
+        (congrArg (fun x ↦ x = 0)
+          (Finset.sum_congr (Eq.refl Finset.univ) fun x a ↦
+            congrArg (HMul.hMul (_))
+              (Finset.sum_congr (Eq.refl Finset.univ) fun x_1 a ↦
+                congrArg (HMul.hMul (_))
+                  ((fun x_0 x_1 x_2 ↦
+                      (fun x_0 x_1 x_2 ↦ linear_combination_det_last hαz) x_0 x_1 x_2)
+                    (T x) (T x_1) T)))))
+      ?_ -- this was the breaking simp
+  exact
+    of_eq_true
+      (Eq.trans
+        (congrArg (fun x ↦ x = 0)
+          (Eq.trans
+            (Finset.sum_congr (Eq.refl Finset.univ) fun x a ↦
+              Eq.trans
+                (congrArg (HMul.hMul (_))
+                  (Eq.trans
+                    (Finset.sum_congr (Eq.refl Finset.univ) fun x_1 a ↦
+                      Eq.trans
+                        (congrArg (HMul.hMul (_))
+                          (Eq.trans
+                            (Finset.sum_congr (Eq.refl Finset.univ) fun x_2 a ↦
+                              Eq.trans
+                                (congrArg (HMul.hMul (_))
+                                  ((fun i j k ↦ det_zero_perm hT i j k) x x_1 x_2))
+                                (mul_zero (_)))
+                            Finset.sum_const_zero))
+                        (mul_zero (_)))
+                    Finset.sum_const_zero))
+                (mul_zero (_)))
+            Finset.sum_const_zero))
+        (eq_self 0))
 
 
 
