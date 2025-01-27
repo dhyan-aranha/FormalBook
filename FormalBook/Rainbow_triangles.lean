@@ -485,10 +485,6 @@ rw [h5]
 apply h3
 
 
-
-
-
-
 theorem no_odd_rainbow_triangle (T : Fin 3 → ℝ²)(rt : rainbow_triangle v T) (vhalf: v (1/2) > 1)
 (vodd: ∀ (n : ℕ) (zodd: Odd n), v (1/n) = 1) : ¬ ∃ (n : ℕ) (hodd: Odd n),
 |det T| = 2 / n := by
@@ -510,10 +506,10 @@ have v2: v (2 / n) = v (1/2)⁻¹ * v (1/ n) := by
   rw [v.map_div]
   have v3: v 2 = (v (1/2))⁻¹ := by
     rw [← v.map_inv]
-    have duh: (2:ℝ)⁻¹ = 1/2 := by
+    have obv: (2:ℝ)⁻¹ = 1/2 := by
       rw [div_eq_mul_inv]
       rw [one_mul]
-    rw [← duh]
+    rw [← obv]
     rw [inv_inv]
   rw [v3]
   simp
@@ -534,10 +530,10 @@ have bound2: v (2 / n) < 1 := by
   exact vhalf
   aesop
   rw [← inv_pos, v.map_inv, inv_inv]
-  have doubleduh: (0 : Γ₀) < 1 := by
+  have obv': (0 : Γ₀) < 1 := by
     simp
   rw [gt_iff_lt] at vhalf
-  exact lt_trans doubleduh vhalf
+  exact lt_trans obv' vhalf
 have bound3: v (det T) < 1 := by
   rw [v1]
   apply bound2
