@@ -23,8 +23,8 @@ import Mathlib.Combinatorics.SimpleGraph.Finite
 import Mathlib.Combinatorics.SimpleGraph.Clique
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import FormalBook.Mathlib.EdgeFinset
-import FormalBook.Mathlib.WeightedDoubleCounting
 import Aesop
 
 open Real
@@ -179,7 +179,7 @@ theorem mantel (h: G.CliqueFree 3) : #E ≤ (n^2 / 4) := by
     calc  ∑ e ∈ E, sum_deg e
       _ = ∑ e ∈ E, ∑ v ∈ e, d(v)                  := Finset.sum_congr rfl (λ e he ↦ by induction e with | _ v w => simp at he; simp [sum_deg, he.ne])
       _ = ∑ e ∈ E, ∑ v ∈ {v' ∈ V | v' ∈ e}, d(v)  := Finset.sum_congr rfl (by intro e _; exact congrFun (congrArg Finset.sum (by ext; simp)) _)
-      _ = ∑ v ∈ V, ∑ _ ∈ {e ∈ E | v ∈ e}, d(v)    := Finset.sum_sum_bipartiteAbove_eq_sum_sum_bipartiteBelow _ E V _
+      _ = ∑ v ∈ V, ∑ _ ∈ {e ∈ E | v ∈ e}, d(v)    := Finset.sum_sum_bipartiteAbove_eq_sum_sum_bipartiteBelow _  _
       _ = ∑ v ∈ V, ∑ _ ∈ I(v), d(v)               := Finset.sum_congr rfl (λ v ↦ by simp [G.incidenceFinset_eq_filter v])
       _ = ∑ v ∈ V, d(v)^2                         := by simp [Nat.pow_two]
 

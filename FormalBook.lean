@@ -45,9 +45,7 @@ import FormalBook.Chapter_43
 import FormalBook.Chapter_44
 import FormalBook.Chapter_45
 import FormalBook.Mathlib.EdgeFinset
-import FormalBook.Mathlib.WeightedDoubleCounting
 import FormalBook.Rainbow_triangles
 import FormalBook.Widgets.Windmill
-import FormalBook.bla
-import FormalBook.sperner
 import FormalBook.sperner_pjotr
+import Formalbook.sperner
