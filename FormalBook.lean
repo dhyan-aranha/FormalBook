@@ -48,4 +48,3 @@ import FormalBook.Mathlib.EdgeFinset
 import FormalBook.Rainbow_triangles
 import FormalBook.Widgets.Windmill
 import FormalBook.sperner_pjotr
-import Formalbook.sperner
