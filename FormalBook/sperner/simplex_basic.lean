@@ -66,6 +66,14 @@ lemma open_sub_closed_simplex {n : ℕ} : open_simplex n ⊆ closed_simplex n :=
 lemma open_sub_closed {n : ℕ} (P : Fin n → ℝ²) : open_hull P ⊆ closed_hull P :=
   Set.image_mono open_sub_closed_simplex
 
+lemma open_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
+    open_hull (fun (_ : Fin n) ↦ P) = {P} :=
+  (Set.Nonempty.subset_singleton_iff (open_pol_nonempty (Nat.zero_lt_of_ne_zero hn) _)).mp
+      (subset_of_subset_of_eq (open_sub_closed _) (closed_hull_constant hn))
+
+
+
+
 
 /- Implications of the requirements that (∀ i, 0 ≤ α i),  ∑ i, α i = 1. -/
 
