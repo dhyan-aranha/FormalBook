@@ -699,7 +699,68 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
 lemma interior_left_trans {u v w t : ℝ²}
     (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
     t ∈ open_hull (to_segment u w) := by
-  sorry
+    unfold open_hull at *
+    unfold to_segment at *
+    unfold open_simplex
+    simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image, Set.mem_setOf_eq]
+    simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image] at ht
+    rcases ht with ⟨z, q⟩
+    simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image] at hv
+    rcases hv with ⟨y, p⟩
+    rcases q with ⟨q₁, q₂⟩
+    rcases p with ⟨p₁, p₂⟩
+    unfold open_simplex at *
+    rcases q₁ with ⟨q₁', q₂'⟩
+    rcases p₁ with ⟨p₁', p₂'⟩
+    rw [← p₂] at q₂
+    rw [smul_add] at q₂
+    let x : Fin 2 → ℝ
+    | 0 => z 0 + z 1 • y 0
+    | 1 => z 1 • y 1
+    use x
+    constructor
+    constructor
+    intro i
+    have pos₁: 0 < z 0 + z 1 • y 0 := by
+      simp only [Fin.isValue, smul_eq_mul]
+      calc
+        z 0 + z 1 * y 0 > 0 + z 1 * y 0     := by linarith [q₁' 0, p₁' 0]
+                      _ =  z 1 * y 0        := by rw [zero_add]
+                      _ > 0                 := by apply mul_pos; exact q₁' 1; exact p₁' 0
+    have pos₂: 0 < z 1 • y 1 := by
+      simp only [Fin.isValue, smul_eq_mul]
+      apply mul_pos; exact q₁' 1; exact p₁' 1
+    fin_cases i
+    · exact pos₁
+    · exact pos₂
+    have x0: x 0 = z 0 + z 1 • y 0 := rfl
+    have x1: x 1 = z 1 • y 1 := rfl
+    rw [x0, x1]
+    rw [Fin.sum_univ_two] at p₂'
+    rw [Fin.sum_univ_two] at q₂'
+    calc
+      z 0 + z 1 • y 0 + z 1 • y 1 = z 0 + (z 1 • y 0 + z 1 • y 1) := by rw [←add_assoc]
+                                _ = z 0 + z 1 • (y 0 + y 1) := by rw [smul_add]
+                                _ = z 0 + z 1 • 1 := by rw [p₂']
+                                _ = 1 := by simp only [Fin.isValue, smul_eq_mul, mul_one, q₂']
+    have x0: x 0 = z 0 + z 1 • y 0 := rfl
+    have x1: x 1 = z 1 • y 1 := rfl
+    rw [x0, x1]
+    rw [← add_assoc] at q₂
+    have q2exp1: z 0 • u + z 1 • y 0 • u = (z 0 + z 1 • y 0) • u := by
+      rw [←mul_smul _ _ u]
+      rw [smul_eq_mul]
+      rw [add_smul]
+    rw [q2exp1] at q₂
+    have q2exp2: z 1 • y 1 • w = (z 1 • y 1) • w := by
+      rw [←mul_smul _ _ w]
+      rw [smul_eq_mul]
+    rw [q2exp2] at q₂
+    apply q₂
+
+
+
+
 
 lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w)) : colin u v w := by
   sorry
