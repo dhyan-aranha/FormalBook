@@ -138,6 +138,8 @@ lemma segment_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square)
 /- A version that states that the open_unit_square is open. -/
 lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_hull unit_square) :
     ∃ (ε : ℝ), ε > 0 ∧ ∀ (n : ℕ), x + (1 / (n : ℝ)) • (ε • y) ∈ open_hull unit_square := by
+  simp_rw [open_unit_square_eq]
+
   sorry
 
 
