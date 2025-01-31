@@ -215,6 +215,14 @@ lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
     sorry
   · sorry
 
+lemma boundary_seg'{L : Segment} (hL: L 0 ≠ L 1) : ∀ (i : Fin 2), L i ∈ boundary L := by
+  intro i
+  rw [boundary_seg]
+  simp only [coe_image, coe_univ, Set.image_univ, Set.mem_range, exists_apply_eq_apply]
+  apply hL
+
+
+
 
 lemma sign_seg_line (L : Segment) (x y : ℝ²) (a : ℝ) :
     sign_seg L (x + a • y) = (sign_seg L x) + a * (det₂ (seg_vec L) y) := by
@@ -713,14 +721,74 @@ lemma interior_left_trans {u v w t : ℝ²}
         · exact open_sub_closed _ hv
       · exact huv
 
+lemma middle_not_boundary_colin {u v w : ℝ²}(hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
+  have ⟨p,q⟩ := hcolin
+  constructor
+  · by_contra huv
+    rw [huv] at p
+    have h : u ∉ open_hull (to_segment u w) := by
+      apply boundary_not_in_open
+      apply boundary_seg' (L := to_segment u w) _ 0
+      rw [to_segment, to_segment, huv]
+      apply p
+    apply boundary_not_in_open  at q
+    apply q
+    rw [huv]
+    apply boundary_seg' (L := to_segment v w) _ 0
+    rw [to_segment, to_segment]
+    apply p
+  · by_contra hvw
+    rw [hvw] at q
+    have h : w ∉ open_hull (to_segment u w) := by
+      apply boundary_not_in_open
+      apply boundary_seg' (L := to_segment u w) _ 1
+      rw [to_segment, to_segment]
+      apply p
+    apply boundary_not_in_open  at q
+    apply q
+    rw [← hvw]
+    apply boundary_seg' (L := to_segment u v) _ 1
+    rw [to_segment, to_segment]
+    rw [hvw]
+    apply p
+
 
 lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w)) : colin u v w := by
   sorry
 
 
 lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
-  sorry
+    colin u t v := by
+    constructor
+    · by_contra huv
+      rw [huv] at ht
+      rcases hc with ⟨p,q⟩
+      rw [huv] at q
+      apply boundary_not_in_open at q
+      apply q
+      rw [huv] at p
+      apply boundary_seg' (L := to_segment v w) p 0
+    · apply ht
 
 lemma sub_collinear_right {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin t v w := by
-  sorry
+    have hv: v ≠ u ∧ v ≠ w := let h := middle_not_boundary_colin hc; ⟨h.1.symm, h.2⟩
+    constructor
+    · by_contra huv
+      rcases hc with ⟨p, q⟩
+      have hopen : t ∈ open_hull (to_segment u w) := by
+        apply open_segment_sub' (L₁ := to_segment u v) (L₂ := to_segment u w)
+        · apply closed_hull_convex
+          intro i
+          fin_cases i
+          · exact corner_in_closed_hull (P := to_segment u w) (i := 0)
+          · exact open_sub_closed _ q
+        · rw [to_segment, to_segment]
+          exact Ne.symm hv.1
+        · exact ht
+      apply boundary_not_in_open at hopen
+      apply hopen
+      rw [huv] at *
+      apply boundary_seg' (L := to_segment u w ) p 1
+
+    · sorry
