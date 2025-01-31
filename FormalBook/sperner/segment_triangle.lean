@@ -205,6 +205,8 @@ lemma open_segment_sub' {L₁ L₂ : Segment} (hsub: closed_hull L₁ ⊆ closed
 lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
     : boundary L = image (fun i ↦ L i) (univ : Finset (Fin 2)) := by
   ext x
+  rw [@mem_coe, @mem_image]
+  let f : Fin 2 → Fin 2 := fun | 0 => 1 | 1 => 0
   constructor
   · intro hx
     have ⟨α,hα,hαx⟩ := boundary_in_closed hx
@@ -212,8 +214,33 @@ lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
       by_contra hcontra; push_neg at hcontra
       apply boundary_not_in_open hx
       exact ⟨α,⟨fun i ↦ lt_of_le_of_ne (hα.1 i) (hcontra i).symm,hα.2⟩ ,hαx⟩
-    sorry
-  · sorry
+    have ⟨i,hi⟩ := α_non_zero
+    have hf : α (f i) = 1 := by
+      rw [←hα.2]
+      fin_cases i <;> simp_all [f]
+    use f i, by simp only [mem_univ]
+    simp only [←hαx, Fin.sum_univ_two]
+    fin_cases i <;> simp_all [f]
+  · intro ⟨i, _, hi⟩
+    rw [boundary, @Set.mem_diff]
+    constructor
+    · rw [← hi]
+      exact corner_in_closed_hull
+    · intro ⟨α, hα, hxα⟩
+      have h : (α (f i)) • L i = (α (f i)) • L (f i) := by
+        calc
+          (α (f i)) • L i = (1 - α i) • L i     := by
+            congr;
+            rw [(simplex_open_sub_fin2 hα (f i))];
+            fin_cases i <;> simp [f]
+          (1 - α i) • L i = L i - α i • L i     := by rw [@sub_smul, one_smul]
+          _               =  x  - α i • L i     := by rw [hi]
+          _               =  α (f i) • L (f i)  := by
+            rw [←hxα]
+            fin_cases i <;> simp [f]
+      apply hL
+      have this := smul_cancel (Ne.symm (ne_of_lt (hα.1 (f i)))) h
+      fin_cases i <;> (simp [f] at this; rw [this])
 
 
 lemma sign_seg_line (L : Segment) (x y : ℝ²) (a : ℝ) :
@@ -226,8 +253,21 @@ lemma seg_vec_zero_iff (L : Segment) : seg_vec L = 0 ↔ L 0 = L 1 := by
 
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
     ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
+  by_cases h : seg_vec L = 0
+  · use 1, by norm_num
+    intro _ _
+    simp [h, hxL]
+  ·
+    sorry
 
-  sorry
+lemma seg_dir_sub₂ {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
+    ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
+  by_cases h : seg_vec L = 0
+  · use 1, by norm_num
+    intro _ _
+    simp [h, hxL]
+  ·
+    sorry
 
 lemma seg_vec_co {L : Segment} {x y : ℝ²} (hx : x ∈ closed_hull L) (hy : y ∈ closed_hull L)
   : ∃ a : ℝ, y = x + a • seg_vec L := by

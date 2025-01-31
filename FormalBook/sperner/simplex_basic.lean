@@ -111,6 +111,31 @@ lemma simplex_co_leq_1 {n : ℕ} {α : Fin n → ℝ}
     _   = 1               := h₁.2
 
 
+
+/- Some lemmas specifically about Fin 2 → ℝ. -/
+
+lemma simplex_closed_sub_fin2 {α : Fin 2 → ℝ} (h : α ∈ closed_simplex 2) :
+    ∀ i, α i = 1 - α ((fun | 0 => 1 | 1 => 0) i) := by
+    intro i;
+    rw [←h.2, Fin.sum_univ_two]
+    fin_cases i <;> simp
+
+lemma simplex_open_sub_fin2 {α : Fin 2 → ℝ} (h : α ∈ open_simplex 2) :
+    ∀ i, α i = 1 - α ((fun | 0 => 1 | 1 => 0) i) :=
+  simplex_closed_sub_fin2 (open_sub_closed_simplex h)
+
+def real_to_fin_2 (x : ℝ) : (Fin 2 → ℝ) := fun | 0 => x | 1 => 1 - x
+
+lemma real_to_fin_2_closed {x : ℝ} (h₁ : 0 ≤ x) (h₂ : x ≤ 1)
+    : real_to_fin_2 x ∈ closed_simplex 2 :=
+  ⟨fun i ↦ by fin_cases i <;> (simp [real_to_fin_2]; assumption), by simp [real_to_fin_2]⟩
+
+lemma real_to_fin_2_open {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1)
+    : real_to_fin_2 x ∈ open_simplex 2 :=
+  ⟨fun i ↦ by fin_cases i <;> (simp [real_to_fin_2]; assumption), by simp [real_to_fin_2]⟩
+
+
+
 /- Vertex set of polygon P₁ lies inside the closed hull of polygon P₂ implies
     the closed hull of P₁ lies inside the closed hull of P₂. -/
 lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : Fin n₂ → ℝ²}
