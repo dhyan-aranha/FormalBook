@@ -259,28 +259,61 @@ lemma seg_vec_zero_iff (L : Segment) : seg_vec L = 0 ↔ L 0 = L 1 := by
   rw [seg_vec, sub_eq_zero]
   exact eq_comm
 
+lemma closed_segment_interval_im {L : Segment} :
+    closed_hull L = (fun a ↦ L 0 + a • seg_vec L) '' (Set.Icc 0 1 : Set ℝ)  := by
+  ext x
+  constructor
+  · intro ⟨α, hα, hαx⟩
+    use 1 - α 0
+    constructor
+    · simp [simplex_co_leq_1 hα 0, hα.1 0]
+    · simp [←hαx, simplex_closed_sub_fin2 hα 1, seg_vec]
+      -- Super annoying stuff.
+      sorry
+  · intro ⟨a, ha, hax⟩
+    use (real_to_fin_2 (1 - a)), real_to_fin_2_closed ?_ ?_
+    · simp [←hax, real_to_fin_2, seg_vec]
+      -- Super annoying stuff.
+      sorry
+    · linarith [ha.2]
+    · linarith [ha.1]
+
+
+lemma open_segment_interval_im {L : Segment} :
+    open_hull L = (fun a ↦ L 0 + a • seg_vec L) '' (Set.Ioo 0 1 : Set ℝ)  := by
+  sorry
+
+
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
     ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
-  by_cases h : seg_vec L = 0
-  · use 1, by norm_num
-    intro _ _
-    simp [h, hxL]
-  ·
-    sorry
+  rw [open_segment_interval_im] at *
+  have ⟨a, ha, hax⟩ := hxL
+  use (min ((a)/2) ((1- a)/2))
+  constructor
+  · simp
+    exact ha
+  · intro b hb
+    rw [←hax]
+    use a + b
+    constructor
+    · rw [@Set.add_mem_Ioo_iff_right, zero_sub, Set.mem_Ioo]
+      rw [@le_min_iff, @abs_le, @abs_le] at hb
+      constructor
+      · refine gt_of_ge_of_gt hb.1.1 ?_
+        linarith [ha.1]
+      · refine lt_of_le_of_lt hb.2.2 ?_
+        linarith [ha.2]
+    · simp [add_smul, add_assoc]
 
-lemma seg_dir_sub₂ {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
-    ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
-  by_cases h : seg_vec L = 0
-  · use 1, by norm_num
-    intro _ _
-    simp [h, hxL]
-  ·
-    sorry
 
 lemma seg_vec_co {L : Segment} {x y : ℝ²} (hx : x ∈ closed_hull L) (hy : y ∈ closed_hull L)
   : ∃ a : ℝ, y = x + a • seg_vec L := by
+  rw [closed_segment_interval_im] at hx hy
+  have ⟨a₁, _, hx⟩ := hx
+  have ⟨a₂, _, hy⟩ := hy
+  use a₂ - a₁
+  simp [←hx, ←hy, smul_sub, sub_smul]
 
-  sorry
 
 lemma open_seg_nonempty (L : Segment) : ∃ x, x ∈ open_hull L :=
   open_pol_nonempty (by linarith) L
