@@ -708,18 +708,16 @@ lemma interior_left_trans {u v w t : ℝ²}
     (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
     t ∈ open_hull (to_segment u w) := by
     by_cases huv : u = v
-    · rw [huv] at ht
-      have hopen : open_hull (to_segment v v) = {v} := open_hull_constant (by norm_num : 2 ≠ 0) (P := v)
-      rw [hopen, Set.mem_singleton_iff] at ht
-      rw [← ht] at hv
-      apply hv
-    · refine (open_segment_sub' ?_ ?_) ht
-      · apply closed_hull_convex
-        intro i
-        fin_cases i
-        · exact corner_in_closed_hull (i := 0) (P := to_segment u w)
-        · exact open_sub_closed _ hv
-      · exact huv
+    · have hopen : open_hull (to_segment v v) = {v} := open_hull_constant (by norm_num) (P := v)
+      rw [huv, hopen, Set.mem_singleton_iff] at ht
+      convert hv
+    · refine (open_segment_sub' ?_ huv) ht
+      apply closed_hull_convex
+      intro i
+      fin_cases i
+      · exact corner_in_closed_hull (i := 0) (P := to_segment u w)
+      · exact open_sub_closed _ hv
+
 
 lemma middle_not_boundary_colin {u v w : ℝ²}(hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
   have ⟨p,q⟩ := hcolin
