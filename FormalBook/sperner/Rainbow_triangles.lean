@@ -1,6 +1,7 @@
 import Mathlib.Tactic
 import FormalBook.Appendix
-import FormalBook.sperner_pjotr
+import FormalBook.sperner.simplex_basic
+import FormalBook.sperner.segment_triangle
 
 
 /-!
