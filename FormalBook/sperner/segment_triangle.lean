@@ -828,34 +828,24 @@ lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w))
 lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin u t v := ⟨(middle_not_boundary_colin hc).1,ht⟩
 
-
-
 lemma sub_collinear_right {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin t v w := by
-    have hv: v ≠ u ∧ v ≠ w := let h := middle_not_boundary_colin hc; ⟨h.1.symm, h.2⟩
-    constructor
-    · by_contra huv
-      rcases hc with ⟨p, q⟩
-      have hopen : t ∈ open_hull (to_segment u w) := by
-        apply open_segment_sub' (L₁ := to_segment u v) (L₂ := to_segment u w)
-        · apply closed_hull_convex
-          intro i
-          fin_cases i
-          · exact corner_in_closed_hull (P := to_segment u w) (i := 0)
-          · exact open_sub_closed _ q
-        · rw [to_segment, to_segment]
-          exact Ne.symm hv.1
-        · exact ht
-      apply boundary_not_in_open at hopen
-      apply hopen
-      rw [huv] at *
-      apply boundary_seg' (L := to_segment u w ) p 1
-
-    · sorry
-
-lemma sub_collinear_right₂ {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
-    colin t v w := by
-  refine ⟨?_, ?_⟩
-  ·
-    sorry
-  · sorry
+  refine ⟨(middle_not_boundary_colin ⟨hc.1, (interior_left_trans ht hc.2)⟩).2, ?_⟩
+  have hv := hc.2
+  simp [open_segment_interval_im, to_segment, seg_vec] at *
+  have ⟨a₁, ha₁, ht⟩ := ht
+  have ⟨a₂, ha₂, hv⟩ := hv
+  have hnum : 0 < (1 - a₁ * a₂) := by
+    rw [sub_pos]
+    have htemp : a₂ < 1 + (1 - a₁) * a₂ :=
+      lt_add_of_lt_of_pos ha₂.2 (mul_pos (by linarith) ha₂.1)
+    linarith
+  refine ⟨((1 - a₁) * a₂) / (1 - a₁ * a₂), ⟨?_, ?_⟩ , ?_⟩
+  · field_simp
+    exact mul_pos (by linarith) (by linarith)
+  · rw [div_lt_iff₀ hnum]
+    linarith
+  · rw [←ht, ←hv]
+    ext i
+    field_simp
+    ring
