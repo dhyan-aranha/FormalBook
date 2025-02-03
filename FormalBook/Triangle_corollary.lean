@@ -368,8 +368,10 @@ theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
       . intro i
         fin_cases i <;> simp
         sorry
-        sorry
-        sorry
+        exact ⟨h0 0, h1 1⟩
+        refine ⟨h0 1, ?_⟩
+        rw [add_comm, add_le_add_iff_left]
+        exact h1 0
 
       · rw[Fin.sum_univ_four]
         simp
@@ -385,8 +387,20 @@ theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
     use (fun | 0 => a 1 + a 2 | 1 => a 3 + a 2  )
     constructor
     · simp
-
-      sorry
+      constructor
+      · intro i
+        fin_cases i <;> simp <;> linarith [h11 1, h11 2, h11 3]
+      · intro i
+        rw [Fin.sum_univ_four] at h12
+        fin_cases i <;> simp <;> apply le_trans _ (le_of_eq h12)
+        · calc
+            a 1 + a 2 ≤ a 0 + (a 1 + a 2)       := by exact le_add_of_nonneg_left (h11 0)
+                    _ ≤ a 0 + (a 1 + a 2) + a 3 := by exact le_add_of_nonneg_right (h11 3)
+                    _ = a 0 + a 1 + a 2 + a 3   := by ring
+        · calc
+            a 3 + a 2 ≤ a 0 + (a 3 + a 2)       := by exact le_add_of_nonneg_left (h11 0)
+                    _ ≤ a 0 + (a 3 + a 2) + a 1 := by exact le_add_of_nonneg_right (h11 1)
+                    _ = a 0 + a 1 + a 2 + a 3   := by ring
     · rw[← h2]
       simp[our_basis_ortho, Fin.sum_univ_four , Psquare]
       ext i

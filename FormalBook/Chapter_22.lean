@@ -28,6 +28,8 @@ Lenny Taelman.
 -/
 import Mathlib.Tactic
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.SpecialFunctions.Integrals
+import Mathlib.Order.Interval.Set.Basic
 
 open BigOperators
 
@@ -92,3 +94,39 @@ theorem Monsky (n : ℕ):
     (∃ (S : Finset Triangle), is_equal_area_cover unit_square S ∧ S.card = n)
     ↔ (n ≠ 0 ∧ Even n) := by
   sorry
+
+lemma xyz : ∫ x in (0 : ℝ)..1, 1 - x = 1/2 := by
+  have sub : (fun x ↦ 1 - x : ℝ → ℝ) = fun (x : ℝ) ↦ ((fun _ ↦ 1) x) - (id : ℝ → ℝ) x := rfl
+  rw [sub, intervalIntegral.integral_sub]
+  simp
+  · norm_num
+  · exact intervalIntegrable_const
+  · exact intervalIntegral.intervalIntegrable_id
+
+def standardTriangle : Triangle := Triangle.mk (fun | 0 => 0 | 1 => 0) (fun | 0 => 0 | 1 => 1) (fun | 0 => 1 | 1 => 0)
+
+lemma abc1 : standardTriangle.1 = (fun | 0 => 0 | 1 => 0) := by rfl
+lemma abc2 : standardTriangle.2 = (fun | 0 => 0 | 1 => 1) := by rfl
+lemma abc3 : standardTriangle.3 = (fun | 0 => 1 | 1 => 0) := by rfl
+
+example (α α' : ℝ) : (α • standardTriangle.2 + α' • standardTriangle.3) 1 = α := by
+  simp [abc2, abc3]
+
+def w : Set ℝ² := {p | p 0 ∈ Set.Ioo 0 1 ∧ p 1 ∈ Set.Ioo 0 (1 - p 0) }
+
+lemma openTriangleEq : open_triangle standardTriangle = w := by
+  ext x
+  unfold w
+  constructor <;> intro h
+  · simp
+    rcases h with ⟨α₁, α₂, α₃, hα₁, hα₂, hα₃, hsum, hx⟩
+    rw [hx, abc1, abc2, abc3]
+    simp
+    exact ⟨⟨hα₃, by linarith⟩, ⟨hα₂, by linarith⟩⟩
+  · use (1 - (x 0 + x 1)), x 1, x 0
+    simp at h
+    refine ⟨by linarith, by linarith, by linarith, ?_, ?_⟩
+    · ring
+    · ext i
+      simp [abc1, abc2, abc3]
+      fin_cases i <;> simp
