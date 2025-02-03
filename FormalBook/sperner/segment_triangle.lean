@@ -836,7 +836,7 @@ lemma interior_left_trans {u v w t : ℝ²}
       · exact open_sub_closed _ hv
 
 
-lemma middle_not_boundary_colin {u v w : ℝ²}(hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
+lemma middle_not_boundary_colin {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
   have ⟨p,q⟩ := hcolin
   constructor
   · by_contra huv
@@ -866,6 +866,15 @@ lemma middle_not_boundary_colin {u v w : ℝ²}(hcolin: colin u v w) : (u ≠ v)
     rw [to_segment, to_segment]
     rw [hvw]
     apply p
+
+lemma middle_not_boundary_colin₂ {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
+  have ht : ∀ {u' v' w' : ℝ²}, colin u' v' w' → u' ≠ v' := by
+    intro u _ w ⟨h₁, h₂⟩ huv
+    refine (boundary_not_in_open ?_) h₂
+    convert boundary_seg' (L := to_segment u w) h₁ 0
+    rw [huv, to_segment]
+  exact ⟨ht hcolin, (ht (colin_reverse hcolin)).symm⟩
+
 
 
 lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w)) : colin u v w := by
