@@ -111,6 +111,18 @@ lemma simplex_co_leq_1 {n : ℕ} {α : Fin n → ℝ}
     _   = 1               := h₁.2
 
 
+lemma simplex_co_leq_1_open {n : ℕ} {α : Fin n → ℝ} (hn : 1 < n)
+    (h₁ : α ∈ open_simplex n) : ∀ i, α i < 1 := by
+  intro i
+  apply lt_of_le_of_ne (simplex_co_leq_1 (open_sub_closed_simplex h₁) i)
+  intro hα
+  have hj : ∃ j, i ≠ j := by
+    by_cases hs : i = ⟨0, by linarith⟩
+    · use ⟨1, by linarith⟩
+      simp [hs]
+    · use ⟨0, by linarith⟩
+  have ⟨j, hj⟩ := hj
+  linarith [h₁.1 j, simplex_co_eq_1 (open_sub_closed_simplex h₁) hα j hj.symm]
 
 /- Some lemmas specifically about Fin 2 → ℝ. -/
 
@@ -133,6 +145,7 @@ lemma real_to_fin_2_closed {x : ℝ} (h₁ : 0 ≤ x) (h₂ : x ≤ 1)
 lemma real_to_fin_2_open {x : ℝ} (h₁ : 0 < x) (h₂ : x < 1)
     : real_to_fin_2 x ∈ open_simplex 2 :=
   ⟨fun i ↦ by fin_cases i <;> (simp [real_to_fin_2]; assumption), by simp [real_to_fin_2]⟩
+
 
 
 

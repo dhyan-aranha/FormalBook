@@ -268,20 +268,29 @@ lemma closed_segment_interval_im {L : Segment} :
     constructor
     · simp [simplex_co_leq_1 hα 0, hα.1 0]
     · simp [←hαx, simplex_closed_sub_fin2 hα 1, seg_vec]
-      -- Super annoying stuff.
-      sorry
+      module
   · intro ⟨a, ha, hax⟩
-    use (real_to_fin_2 (1 - a)), real_to_fin_2_closed ?_ ?_
-    · simp [←hax, real_to_fin_2, seg_vec]
-      -- Super annoying stuff.
-      sorry
-    · linarith [ha.2]
-    · linarith [ha.1]
+    use (real_to_fin_2 (1 - a)), real_to_fin_2_closed (by linarith [ha.2]) (by linarith [ha.1])
+    simp [←hax, real_to_fin_2, seg_vec]
+    module
 
-
+-- Same proof essentially.
 lemma open_segment_interval_im {L : Segment} :
     open_hull L = (fun a ↦ L 0 + a • seg_vec L) '' (Set.Ioo 0 1 : Set ℝ)  := by
-  sorry
+  ext x
+  constructor
+  · intro ⟨α, hα, hαx⟩
+    use 1 - α 0
+    constructor
+    · constructor
+      · linarith [simplex_co_leq_1_open (by norm_num) hα 0]
+      · linarith [hα.1 0]
+    · simp [←hαx, simplex_open_sub_fin2 hα 1, seg_vec]
+      module
+  · intro ⟨a, ha, hax⟩
+    use (real_to_fin_2 (1 - a)), real_to_fin_2_open (by linarith [ha.2]) (by linarith [ha.1])
+    simp [←hax, real_to_fin_2, seg_vec]
+    module
 
 
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
@@ -713,23 +722,58 @@ lemma seg_sub_side {T : Triangle} {L : Segment} {x : ℝ²} {i : Fin 3} (hdet : 
   exact (mem_closed_side hdet hy₂ i).1 (hTyi y hy)
 
 
-
 lemma segment_in_boundary_imp_in_side {T : Triangle} {L : Segment} (hdet : det T ≠ 0)
     (hL : closed_hull L ⊆ boundary T) : ∃ i, closed_hull L ⊆ closed_hull (Tside T i) := by
-  have ⟨x,hx⟩ := open_seg_nonempty L
-  have hxBoundary := hL (open_sub_closed _ hx)
-  have hall : ∀ i, T i ∉ open_hull L := by
-
-    sorry
-  have ⟨i, hi⟩ := el_in_boundary_imp_side hdet hxBoundary ?_
-  refine ⟨i,seg_sub_side hdet hx hi ?_ hall⟩
-  · ext y; simp
-    intro hyopen hyclosed
-    refine (boundary_not_in_open (hL hyclosed)) hyopen
-  · intro i hi
-    specialize hall i
-    rw [←hi] at hall
-    exact hall hx
+  by_cases hLTriv : L 0 = L 1
+  · have hconstant : closed_hull L = {L 0} := by
+      convert closed_hull_constant (by norm_num) (n := 2) (P := L 0) using 2
+      ext i; fin_cases i <;> simp [hLTriv]
+    simp_rw [hconstant, Set.singleton_subset_iff] at *
+    exact el_boundary_imp_side hdet hL
+  · have ⟨x,hx⟩ := open_seg_nonempty L
+    have hxBoundary := hL (open_sub_closed _ hx)
+    have hall : ∀ i, T i ∉ open_hull L := by
+      intro i hi
+      have ⟨δ, hδ, hδa⟩ := seg_dir_sub hi
+      have haux : ∀ j, ∀ a, j ≠ i → |a| ≤ δ → a * det₂ (seg_vec (Tside T j)) (seg_vec L) / det T ≥ 0 := by
+        intro j a hji ha'
+        have ht := (closed_triangle_iff hdet).1 (boundary_sub_closed _ (hL (open_sub_closed _ (hδa a ha')))) j
+        rwa [@Tco_line, Tco_basis_off_diag hji.symm, zero_add] at ht
+      have haux2 : ∀ j, j ≠ i → det₂ (seg_vec (Tside T j)) (seg_vec L) = 0 := by
+        intro j hji
+        have h₁ := haux j δ  hji ?_
+        have h₂ := haux j (-δ) hji ?_
+        rw [←(div_left_inj' hdet), zero_div]
+        rw [mul_div_assoc] at h₁ h₂
+        have h₃ := nonneg_of_mul_nonneg_right h₁ hδ
+        have h₄ := nonpos_of_mul_nonneg_right h₂ (by linarith)
+        linarith
+        all_goals simp only [abs_neg, abs_of_pos hδ, le_refl]
+      have hcontra :  T i = T i + δ • seg_vec L := by
+        let j : Fin 3 := ⟨(i + 1)%3, by fin_cases i <;> simp⟩
+        let k : Fin 3 := ⟨(i + 2)%3, by fin_cases i <;> simp⟩
+        have hij : i ≠ j := by fin_cases i <;> simp [j]
+        have hik : i ≠ k := by fin_cases i <;> simp [k]
+        have hjk : j ≠ k := by fin_cases i <;> simp [j, k]
+        convert (two_co_zero_imp_corner hdet hjk ?_ ?_).symm
+        · fin_cases i <;> simp [j,k,last_index]
+        · rw [Tco_line, Tco_basis_off_diag hij, Oside, haux2 j hij.symm, zero_add, mul_zero, zero_div]
+        · rw [Tco_line, Tco_basis_off_diag hik, Oside, haux2 k hik.symm, zero_add, mul_zero, zero_div]
+      apply hLTriv
+      rw [←seg_vec_zero_iff]
+      rw [@self_eq_add_right, smul_eq_zero] at hcontra
+      cases hcontra
+      · linarith
+      · assumption
+    have ⟨i, hi⟩ := el_in_boundary_imp_side hdet hxBoundary ?_
+    refine ⟨i,seg_sub_side hdet hx hi ?_ hall⟩
+    · ext y; simp
+      intro hyopen hyclosed
+      refine (boundary_not_in_open (hL hyclosed)) hyopen
+    · intro i hi
+      specialize hall i
+      rw [←hi] at hall
+      exact hall hx
 
 
 lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : ℝ²}
