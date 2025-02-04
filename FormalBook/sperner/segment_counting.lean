@@ -250,6 +250,33 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
 
 
 
+def two_mod_function (f : Segment → ℕ)
+    := ∀ {u v w}, colin u v w → (f (to_segment u v) + f (to_segment v w)) % 2 = f (to_segment u w) % 2
+
+def symm_fun (f : Segment → ℕ) := ∀ S, f S = f (reverse_segment S)
+
+lemma two_mod_function_chains {f : Segment → ℕ} (hf : two_mod_function f) {u v : ℝ²}
+    (C : Chain u v) : (∑ S ∈ to_basic_segments C, f S) % 2 = f (to_segment u v) % 2 := by
+  induction C with
+  | basic         => simp only [to_basic_segments, sum_singleton]
+  | join h₂ C ih  =>
+      simp [to_basic_segments]
+      rw [Finset.sum_union]
+      · simp only [sum_singleton, Nat.add_mod, ih, dvd_refl, Nat.mod_mod_of_dvd,
+            Nat.add_mod_mod, Nat.mod_add_mod]
+        simp only [dvd_refl, Nat.mod_mod_of_dvd, Nat.add_mod_mod, Nat.mod_add_mod, ←hf h₂]
+        rw [add_comm]
+      · simp only [disjoint_singleton_right]
+        -- Easy but should be seperate lemma.
+        sorry
+
+
+
+
+
+
+
+
 def color : ℝ² → Fin 3 := sorry -- can use the construction using valuations here
 
 def red : Fin 3 := 0
