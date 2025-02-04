@@ -364,14 +364,7 @@ lemma reverse_segment_open_hull {L : Segment}
     · simp_rw [←hαx, Fin.sum_univ_two, reverse_segment, to_segment, add_comm]
   exact Set.Subset.antisymm (haux _) (haux _)
 
-lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
-  have ⟨h₁,h₂⟩ := h
-  exact ⟨h₁.symm, by rwa [←reverse_segment_open_hull, reverse_segment_to_segment]⟩
 
-lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
-    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
-    closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
-  sorry
 
 
 
@@ -803,6 +796,16 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
 
 -- Basic lemmas about collinearity
 
+
+lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
+  have ⟨h₁,h₂⟩ := h
+  exact ⟨h₁.symm, by rwa [←reverse_segment_open_hull, reverse_segment_to_segment]⟩
+
+lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
+    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
+    closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
+  sorry
+
 lemma interior_left_trans {u v w t : ℝ²}
     (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
     t ∈ open_hull (to_segment u w) := by
@@ -816,6 +819,12 @@ lemma interior_left_trans {u v w t : ℝ²}
       fin_cases i
       · exact corner_in_closed_hull (i := 0) (P := to_segment u w)
       · exact open_sub_closed _ hv
+
+lemma colin_trans_right {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u w x := by
+  sorry
+
+lemma colin_trans_left {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u v x := by
+  sorry
 
 lemma middle_not_boundary_colin {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
   have ht : ∀ {u' v' w' : ℝ²}, colin u' v' w' → u' ≠ v' := by

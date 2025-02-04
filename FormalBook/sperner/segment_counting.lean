@@ -44,24 +44,39 @@ noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
 
+lemma chain_to_big_segment_join {u v w} (h : colin u v w) (C : Chain v w) :
+    chain_to_big_segment (Chain.join h C) = to_segment u w := rfl
 
 lemma chain_to_big_segment_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
-    (CR : Chain v w) : chain_to_big_segment (glue_chains h CL CR) = to_segment u w := by
+    (CR : Chain v w) : chain_to_big_segment (glue_chains h CL CR) = to_segment u w := rfl
+
+lemma glue_chains_assoc {u v w x : ℝ²} (C₁ : Chain u v) (C₂ : Chain v w) (C₃ : Chain w x)
+    (h₁ : colin u v w) (h₂ : colin v w x) :
+    glue_chains (colin_trans_right h₁ h₂) (glue_chains h₁ C₁ C₂) C₃ =
+    glue_chains (colin_trans_left h₁ h₂) C₁ (glue_chains h₂ C₂ C₃) := by
 
   sorry
 
-lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
-    (CR : Chain v w)
-    : reverse_chain (glue_chains h CL CR)
-    = glue_chains (colin_reverse h) (reverse_chain CR) (reverse_chain CL) := by
-
-  sorry
 
 lemma reverse_chain_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
     (CR : Chain v w)
-    : to_basic_segments (glue_chains h CL CR) = to_basic_segments CL ∪ to_basic_segments CR := by
+    : reverse_chain (glue_chains h CL CR)
+    = glue_chains (colin_reverse h) (reverse_chain CR) (reverse_chain CL) := by
+  induction CL with
+  | basic         => rfl
+  | join h₂ C ih  =>
+      simp [glue_chains, reverse_chain, ih (sub_collinear_right h h₂.2) CR]
+      rw [←glue_chains_assoc]
 
-  sorry
+lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
+    (CR : Chain v w)
+    : to_basic_segments (glue_chains h CL CR) = to_basic_segments CL ∪ to_basic_segments CR := by
+  induction CL with
+  | basic       => rw [union_comm]; rfl
+  | join h₂ C ih  =>
+      simp [to_basic_segments, glue_chains, ih (sub_collinear_right h h₂.2) CR]
+      congr 1
+      exact union_comm _ _
 
 
 
@@ -165,24 +180,46 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
       have ⟨x, hx⟩ := hEl
       let Sleft := to_segment (S 0) x
       let Sright := to_segment x (S 1)
+      have hSlefti : ∀ i, Sleft i ∈ closed_hull S := by
+        rw [mem_filter] at hx
+        intro i; fin_cases i
+        · convert (corner_in_closed_hull (i := 0) (P := S)) using 1
+        · convert open_sub_closed _ hx.2
+      have hSrighti : ∀ i, Sright i ∈ closed_hull S := by
+        rw [mem_filter] at hx
+        intro i; fin_cases i
+        · convert open_sub_closed _ hx.2
+        · convert (corner_in_closed_hull (i := 1) (P := S)) using 1
+      have hcolin : colin (S 0) x (S 1) := by
+        rw [mem_filter] at hx
+        exact ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hx.2⟩
       have Sleftcard : (filter (fun p ↦ p ∈ open_hull Sleft) X).card < N := by
         rw [←Scard]
         refine card_lt_card ⟨?_,?_⟩
         · intro t ht
           simp only [mem_filter] at *
-          refine ⟨ht.1, (open_segment_sub ?_ ?_) ht.2⟩
-          · sorry
-          · sorry
+          refine ⟨ht.1, (open_segment_sub hSlefti ?_) ht.2⟩
+          convert (middle_not_boundary_colin hcolin).1 using 1
         · rw [@not_subset]
           use x, hx
           intro hcontra
           rw [mem_filter] at hcontra
-          refine (boundary_not_in_open ?_) hcontra.2
-          sorry
-      have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N :=
-        sorry
+          refine (boundary_not_in_open (boundary_seg' ?_ 1)) hcontra.2
+          convert (middle_not_boundary_colin hcolin).1 using 1
+      have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N := by
+        rw [←Scard]
+        refine card_lt_card ⟨?_,?_⟩
+        · intro t ht
+          simp only [mem_filter] at *
+          refine ⟨ht.1, (open_segment_sub hSrighti ?_) ht.2⟩
+          convert (middle_not_boundary_colin hcolin).2 using 1
+        · rw [@not_subset]
+          use x, hx
+          intro hcontra
+          rw [mem_filter] at hcontra
+          refine (boundary_not_in_open (boundary_seg' ?_ 0)) hcontra.2
+          convert (middle_not_boundary_colin hcolin).2 using 1
       rw [mem_filter] at hx
-      have hcolin : colin (S 0) x (S 1) := ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hx.2⟩
       have ⟨CL,hSCL,hLSegUnion⟩ :=
         hm (filter (fun p ↦ p ∈ open_hull Sleft) X).card Sleftcard Sleft rfl
         (avoiding_segment_set_sub_left hS hx.1 hx.2)
@@ -192,6 +229,7 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
       use glue_chains hcolin CL CR
       have haux_set {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
         : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
+        -- Lenny Tactic
         sorry
       simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
           basic_segments_glue, true_and, haux_set,
@@ -200,19 +238,42 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
       simp [basic_avoiding_segment_set]
       constructor
       · intro ⟨h , hLS⟩
-        -- Split wether L ⊆ Sleft or L ⊆ Sright
         cases' colin_sub hcolin (by convert hLS; exact segment_rfl) (h.2 x hx.1) with hLleft hLright
         · left
           exact ⟨h,hLleft⟩
         · right
           exact ⟨h,hLright⟩
       · rintro (hL | hR)
-        · refine ⟨hL.1, subset_trans hL.2 (closed_hull_convex ?_)⟩
-
-          sorry
-        · refine ⟨hR.1, subset_trans hR.2 (closed_hull_convex ?_)⟩
-          sorry
+        · exact ⟨hL.1, subset_trans hL.2 (closed_hull_convex hSlefti)⟩
+        · exact ⟨hR.1, subset_trans hR.2 (closed_hull_convex hSrighti)⟩
   exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
+
+
+
+def two_mod_function (f : Segment → ℕ)
+    := ∀ {u v w}, colin u v w → (f (to_segment u v) + f (to_segment v w)) % 2 = f (to_segment u w) % 2
+
+def symm_fun (f : Segment → ℕ) := ∀ S, f S = f (reverse_segment S)
+
+lemma two_mod_function_chains {f : Segment → ℕ} (hf : two_mod_function f) {u v : ℝ²}
+    (C : Chain u v) : (∑ S ∈ to_basic_segments C, f S) % 2 = f (to_segment u v) % 2 := by
+  induction C with
+  | basic         => simp only [to_basic_segments, sum_singleton]
+  | join h₂ C ih  =>
+      simp [to_basic_segments]
+      rw [Finset.sum_union]
+      · simp only [sum_singleton, Nat.add_mod, ih, dvd_refl, Nat.mod_mod_of_dvd,
+            Nat.add_mod_mod, Nat.mod_add_mod]
+        simp only [dvd_refl, Nat.mod_mod_of_dvd, Nat.add_mod_mod, Nat.mod_add_mod, ←hf h₂]
+        rw [add_comm]
+      · simp only [disjoint_singleton_right]
+        -- Easy but should be seperate lemma.
+        sorry
+
+
+
+
+
 
 
 
