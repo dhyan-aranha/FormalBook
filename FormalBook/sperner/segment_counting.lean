@@ -165,24 +165,36 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
       have ⟨x, hx⟩ := hEl
       let Sleft := to_segment (S 0) x
       let Sright := to_segment x (S 1)
+      have hSlefti : ∀ i, Sleft i ∈ closed_hull S := by
+        rw [mem_filter] at hx
+        intro i; fin_cases i
+        · convert (corner_in_closed_hull (i := 0) (P := S)) using 1
+        · convert open_sub_closed _ hx.2
+      have hSrighti : ∀ i, Sright i ∈ closed_hull S := by
+        rw [mem_filter] at hx
+        intro i; fin_cases i
+        · convert open_sub_closed _ hx.2
+        · convert (corner_in_closed_hull (i := 1) (P := S)) using 1
+      have hcolin : colin (S 0) x (S 1) := by
+        rw [mem_filter] at hx
+        exact ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hx.2⟩
       have Sleftcard : (filter (fun p ↦ p ∈ open_hull Sleft) X).card < N := by
         rw [←Scard]
         refine card_lt_card ⟨?_,?_⟩
         · intro t ht
           simp only [mem_filter] at *
-          refine ⟨ht.1, (open_segment_sub ?_ ?_) ht.2⟩
-          · sorry
-          · sorry
+          refine ⟨ht.1, (open_segment_sub hSlefti ?_) ht.2⟩
+          convert (middle_not_boundary_colin hcolin).1 using 1
         · rw [@not_subset]
           use x, hx
           intro hcontra
           rw [mem_filter] at hcontra
           refine (boundary_not_in_open ?_) hcontra.2
+
           sorry
       have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N :=
         sorry
       rw [mem_filter] at hx
-      have hcolin : colin (S 0) x (S 1) := ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hx.2⟩
       have ⟨CL,hSCL,hLSegUnion⟩ :=
         hm (filter (fun p ↦ p ∈ open_hull Sleft) X).card Sleftcard Sleft rfl
         (avoiding_segment_set_sub_left hS hx.1 hx.2)
@@ -207,11 +219,8 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
         · right
           exact ⟨h,hLright⟩
       · rintro (hL | hR)
-        · refine ⟨hL.1, subset_trans hL.2 (closed_hull_convex ?_)⟩
-
-          sorry
-        · refine ⟨hR.1, subset_trans hR.2 (closed_hull_convex ?_)⟩
-          sorry
+        · refine ⟨hL.1, subset_trans hL.2 (closed_hull_convex hSlefti)⟩
+        · refine ⟨hR.1, subset_trans hR.2 (closed_hull_convex hSrighti)⟩
   exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
 
 
