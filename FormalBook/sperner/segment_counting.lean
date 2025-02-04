@@ -42,13 +42,33 @@ noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
 
-theorem segment_decomposition (A : Set ℝ²):
-    ∀ (X : Finset ℝ²) {S : Segment}, (S ∈ avoiding_segment_set X A) →
-    ∃ (C : Chain (S 0) (S 1)), S = chain_to_big_segment C ∧
+theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) :
+    ∃ (C : Chain (S 0) (S 1)),
+    S = chain_to_big_segment C ∧
     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
+  --let PX : Finset ℝ² := Finset.filter (fun p ↦ p ∈ open_hull S) X
+  have hn : ∀ n, ∀ S, (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card = n →
+    S ∈ avoiding_segment_set X A → ∃ (C : Chain (S 0) (S 1)),
+    S = chain_to_big_segment C ∧
+    (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
+    = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
+    intro n
+    refine Nat.strong_induction_on n ?_
+    intro N hm S Scard hS
+    by_cases hN : N = 0
+    · use @Chain.basic (S 0) (S 1)
+      simp [chain_to_big_segment, to_basic_segments, reverse_chain]
+      constructor
+      · rfl
+        sorry
+      · sorry
+    · sorry
+  exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
 
-    sorry
+
+
 
 
 
