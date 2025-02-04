@@ -189,11 +189,21 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
           use x, hx
           intro hcontra
           rw [mem_filter] at hcontra
-          refine (boundary_not_in_open ?_) hcontra.2
-
-          sorry
-      have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N :=
-        sorry
+          refine (boundary_not_in_open (boundary_seg' ?_ 1)) hcontra.2
+          convert (middle_not_boundary_colin hcolin).1 using 1
+      have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N := by
+        rw [←Scard]
+        refine card_lt_card ⟨?_,?_⟩
+        · intro t ht
+          simp only [mem_filter] at *
+          refine ⟨ht.1, (open_segment_sub hSrighti ?_) ht.2⟩
+          convert (middle_not_boundary_colin hcolin).2 using 1
+        · rw [@not_subset]
+          use x, hx
+          intro hcontra
+          rw [mem_filter] at hcontra
+          refine (boundary_not_in_open (boundary_seg' ?_ 0)) hcontra.2
+          convert (middle_not_boundary_colin hcolin).2 using 1
       rw [mem_filter] at hx
       have ⟨CL,hSCL,hLSegUnion⟩ :=
         hm (filter (fun p ↦ p ∈ open_hull Sleft) X).card Sleftcard Sleft rfl
@@ -204,6 +214,7 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
       use glue_chains hcolin CL CR
       have haux_set {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
         : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
+
         sorry
       simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
           basic_segments_glue, true_and, haux_set,
