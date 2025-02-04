@@ -141,7 +141,6 @@ theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     S = chain_to_big_segment C ∧
     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
-  --let PX : Finset ℝ² := Finset.filter (fun p ↦ p ∈ open_hull S) X
   have hn : ∀ n, ∀ S, (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card = n →
     S ∈ avoiding_segment_set X A → ∃ (C : Chain (S 0) (S 1)),
     S = chain_to_big_segment C ∧
@@ -261,11 +260,6 @@ theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
         · exact ⟨hL.1, subset_trans hL.2 (closed_hull_convex hSlefti)⟩
         · exact ⟨hR.1, subset_trans hR.2 (closed_hull_convex hSrighti)⟩
   exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
-
-
-example {α : Type} {A B : Finset α} (h : (A : Set α) = (B : Set α)) : A = B := by
-  exact coe_inj.mp h
-  sorry
 
 
 def two_mod_function (f : Segment → ℕ)
