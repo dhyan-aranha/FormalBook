@@ -272,11 +272,11 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle) (hCovering : is_tria
   sorry
 
 
-noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) (h : T ∈ Δ) :=
+noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
 
-lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
-    ∑ (S ∈ triangle_basic_boundary Δ T h), isPurple S % 4 = 2 * isRainbow T % 4 := by
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ):
+    (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 = 2 * isRainbow T % 4 := by
   sorry
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
@@ -286,12 +286,12 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  -- rw [congrArg Δ.sum (rainbow_triangle_purple_sum ).symm]
+  have h : (∑ T ∈ Δ, 2 * isRainbow T % 4) % 4 = (∑ T ∈ Δ, (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4) % 4 := by
+
+    sorry
+  rw [h]
+
   sorry
-
-example (α : Type) (ι : Finset α) (f : α → ℕ) (g : α → ℕ) (h : g = f) : ∑ (s ∈ ι), f s = ∑ (s ∈ ι), g s :=
-  by exact congrArg ι.sum h.symm
-
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
