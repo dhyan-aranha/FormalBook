@@ -102,7 +102,7 @@ noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
   {T ∈ Δ | isRainbow T = 1}
 
 noncomputable def is_triangulation (Δ : Finset Triangle) : Prop :=
-  is_cover {x | ∀ i, 0 ≤ x i ∧ x i ≤ 1} Δ.toSet
+  is_cover (closed_hull unit_square) Δ.toSet
 
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
@@ -111,101 +111,32 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
 
 
 theorem segment_sum_rainbow_triangle (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    rainbow_sum Δ = 2 * (rainbow_triangles Δ).card := by
+    rainbow_sum Δ = (rainbow_triangles Δ).card := by
   sorry
 
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : rainbow_sum Δ = purple_sum Δ := by
-  sorry --
+noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) (h : T ∈ Δ) :=
+    {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
+
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
+    ∑ (S ∈ triangle_basic_boundary Δ T h), isPurple S % 4 = 2 * isRainbow T % 4 := by
+  sorry
+
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
+  /-
+    Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
+    or over all triangles first.
+  -/
+  unfold rainbow_sum purple_sum
+  rw [mul_sum, sum_nat_mod]
+  -- rw [congrArg Δ.sum (rainbow_triangle_purple_sum ).symm]
+  sorry
+
+example (α : Type) (ι : Finset α) (f : α → ℕ) (g : α → ℕ) (h : g = f) : ∑ (s ∈ ι), f s = ∑ (s ∈ ι), g s :=
+  by exact congrArg ι.sum h.symm
+
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     ∃ T ∈ Δ, isRainbow T = 1 := by
   sorry -- easy, follows from above
-
-
--- Old stuff from Lenny
-/- section noncomputable
-
-def color : ℝ² → Fin 3 := sorry
-
-def red : Fin 3 := 0
-def blue : Fin 3 := 1
-def green : Fin 3 := 2
-
-lemma no_three_colors_on_a_line (L : Segment) :
-    ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
-
-lemma color00 : color (v 0 0) = red := sorry
-lemma color01 : color (v 0 1) = blue := sorry
-lemma color10 : color (v 1 0) = green := sorry
-lemma color11 : color (v 1 1) = blue := sorry
-
-
-/-
-  Define incidence relation between segments and triangles
--/
-
-def side (T : Triangle) (i : Fin 3) : Segment :=
-  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
-
-def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
-  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
-
-
-/-
-  A segment is purple if it runs from 0 to 1 or 1 to 0
--/
-
-def IsPurple (L : Segment) : Prop :=
-  (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
-
-
-/-
-  Parity of number of purple basic segments on a segment
--/
-
-noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
-  {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
-
-lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : IsPurple L) :
-  (purple_segments X L.val).card % 2 = 1 := sorry
-
-lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : ¬ IsPurple L) :
-  (purple_segments X L.val).card % 2 = 0 := sorry
-
-
-
-/-
-  Now we assume given a dissection S. Write X for the set of all segments in the dissection
--/
-
-variable (S : Finset Triangle) (hS : is_cover unit_square S)
-
-def X : SegmentSet := sorry
-lemma hX : complete_segment_set X := sorry
-def B := {  L : X | basis_segment X L }
-
-/-
-  For any triangle in the dissection, the number of purple segments on its boundary
-  is odd iff the triangle is rainbow
-  TODO: probably should be 2 mod 4, given that segments are counted with
-  both orientations
--/
-
-def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
-
-lemma purple_odd_iff_rainbow (T : S) :
-  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
-  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
-
-
-/-
-  Main goal for our group:
--/
-
-theorem monsky_rainbow  :
-    ∃ T ∈ S, IsRainbow T := sorry
--/
