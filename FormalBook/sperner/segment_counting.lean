@@ -243,8 +243,8 @@ theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
       use glue_chains hcolin CL CR
       have haux_set {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
         : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
-        -- Lenny Tactic
-        sorry
+        simp only [←coe_inj, union_assoc, coe_union]
+        tauto_set
       simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
           basic_segments_glue, true_and, haux_set,
           ←hLSegUnion, ←hRSegUnion]
@@ -262,6 +262,10 @@ theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
         · exact ⟨hR.1, subset_trans hR.2 (closed_hull_convex hSrighti)⟩
   exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
 
+
+example {α : Type} {A B : Finset α} (h : (A : Set α) = (B : Set α)) : A = B := by
+  exact coe_inj.mp h
+  sorry
 
 
 def two_mod_function (f : Segment → ℕ)
