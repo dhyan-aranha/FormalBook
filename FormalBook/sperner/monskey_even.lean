@@ -73,21 +73,29 @@ def scale_vector (a : ℝ) (y : ℝ²) : ℝ² := fun | 0 => y 0 | 1 => a * y 1
 
 def scale_triangle (a : ℝ) (T : Triangle) : Triangle := fun i ↦ scale_vector a (T i)
 
+lemma scale_triangle_det (a : ℝ) (T : Triangle) :
+    det (scale_triangle a T) = a * det T := by
+  simp only [det, scale_triangle, scale_vector]
+  ring
+
 lemma scale_triangle_area (a : ℝ) (T : Triangle)
     : triangle_area (scale_triangle a T) = |a| * (triangle_area T) := by
-  simp [triangle_area, scale_triangle, scale_vector, ←abs_mul, ←mul_div_assoc, det]
-  congr; ring
+  simp only [triangle_area, scale_triangle_det a T, abs_mul, mul_div_assoc]
+
 
 /- Elementary stuff about translating (only in the y direction).-/
 
 def translate_vector (a : ℝ) (x : ℝ²) : ℝ² := fun | 0 => x 0 | 1 => a + x 1
 def translate_triangle (a : ℝ) (T : Triangle) : Triangle := fun i ↦ translate_vector a (T i)
 
+lemma translate_triangle_det (a : ℝ) (T : Triangle) :
+    det (translate_triangle a T) = det T := by
+  simp only [det, translate_triangle, translate_vector]
+  ring
+
 lemma translate_triangle_area (a : ℝ) (T : Triangle)
     : triangle_area (translate_triangle a T) = (triangle_area T) := by
-  simp [triangle_area, translate_triangle, translate_vector, det]
-  congr 2; ring
-
+  simp only [triangle_area, translate_triangle_det]
 
 -- Here a different try. Just give a very explicit cover.
 noncomputable def zig_part_cover (n : ℕ)
@@ -259,12 +267,41 @@ lemma zig_zag_covers_square {n : ℕ} (hn : n ≠ 0)
         simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀'] at hs₀ hs₁ hs₂
         field_simp [hn] at hs₀ hs₁ hs₂
         intro i; constructor <;> (fin_cases i <;> simp; linarith)
-        · sorry
-        · sorry
-      ·
-        sorry
-    ·
-      sorry
+        · convert div_le_div_of_nonneg_right (le_trans (Nat.cast_nonneg' _) hs₂) (Nat.cast_nonneg' n)
+          · simp only [zero_div]
+          · refine Eq.symm (mul_div_cancel_right₀ (x 1) (Nat.cast_ne_zero.mpr hn))
+        · rw [add_assoc, le_neg_add_iff_le] at hs₀
+          have this := le_trans hs₁ hs₀
+          rw [le_neg_add_iff_le] at this
+          have this2 := div_le_div_of_nonneg_right this (Nat.cast_nonneg' n)
+          rw [(mul_div_cancel_right₀ (x 1) (Nat.cast_ne_zero.mpr hn))] at this2
+          apply le_trans this2
+          apply (div_le_one₀ (Nat.cast_pos'.mpr (Nat.zero_lt_of_ne_zero hn))).mpr
+          convert (Nat.cast_le (α := ℝ)).2 (@Nat.lt_iff_add_one_le.1 s.prop)
+          simp only [Nat.cast_add, Nat.cast_one]
+      · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
+        · exact inv_ne_zero (Nat.cast_ne_zero.mpr hn)
+        · simp [det, Δ₀]
+    · simp [zag_part_cover] at hzag
+      have ⟨s, hs⟩ := hzag
+      rw [←hs, closed_triangle_iff] at hS
+      · have hs₀ := hS 0
+        have hs₁ := hS 1
+        have hs₂ := hS 2
+        simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀'] at hs₀ hs₁ hs₂
+        field_simp [hn] at hs₀ hs₁ hs₂
+        conv at hs₀ => ring
+        conv at hs₁ => ring
+        conv at hs₂ => ring
+        intro i; constructor <;> (fin_cases i <;> simp; linarith)
+        ·
+          sorry
+        ·
+          sorry
+      · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
+        · exact inv_ne_zero (Nat.cast_ne_zero.mpr hn)
+        · simp [det, Δ₀']
+
 
 theorem monsky_easy_direction' {n : ℕ} (hn : Even n) (hnneq : n ≠ 0)
     : (∃ (S : Finset Triangle), is_equal_area_cover (closed_hull unit_square) S ∧ S.card = n) := by
