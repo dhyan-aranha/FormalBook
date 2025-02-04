@@ -286,8 +286,28 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle) (hCovering : is_tria
   sorry
 
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : rainbow_sum Δ = purple_sum Δ := by
-  sorry --
+noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
+    {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
+
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
+    2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by
+  intro T hT
+
+  sorry
+
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
+  /-
+    Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
+    or over all triangles first.
+  -/
+  unfold rainbow_sum purple_sum
+  rw [mul_sum, sum_nat_mod]
+  rw [sum_congr rfl rainbow_triangle_purple_sum]
+
+
+  sorry
+
+
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
