@@ -79,9 +79,18 @@ lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
       exact union_comm _ _
 
 
+lemma basic_segments_colin_disjoint {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
+    to_segment u v ∉ to_basic_segments C := by
+
+  sorry
+
 lemma reverse_chain_basic_segments {u v : ℝ²} (C : Chain u v) :
     to_basic_segments (reverse_chain C) =
     Finset.image (fun S ↦ reverse_segment S) (to_basic_segments C) := by
+  sorry
+
+lemma reverse_chain_basic_segments_disjoint {u v : ℝ²} (C : Chain u v) (huv : u ≠ v) :
+    Disjoint (to_basic_segments C) (to_basic_segments (reverse_chain C)) := by
 
   sorry
 
@@ -272,8 +281,7 @@ lemma two_mod_function_chains {f : Segment → ℕ} (hf : two_mod_function f) {u
         simp only [dvd_refl, Nat.mod_mod_of_dvd, Nat.add_mod_mod, Nat.mod_add_mod, ←hf h₂]
         rw [add_comm]
       · simp only [disjoint_singleton_right]
-        -- Easy but should be seperate lemma.
-        sorry
+        exact basic_segments_colin_disjoint h₂
 
 
 lemma symm_function_reverse_sum {f : Segment → ℕ} (hf : symm_fun f) {u v : ℝ²}
@@ -296,13 +304,12 @@ lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hf₂ : symm_fun f):
     (∑ T ∈ (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S), f T) % 4 =
     (2 * f S) % 4 := by
-  have ⟨C, hS, hSdecomp⟩ := segment_decomposition hS
+  have ⟨C, _, hSdecomp⟩ := segment_decomposition hS
   rw [hSdecomp, Finset.sum_union]
   · rw [symm_function_reverse_sum hf₂, ←Nat.two_mul]
     apply mod_two_mul
     convert two_mod_function_chains hf₁ C
-  · -- Should be seperate lemma.
-    sorry
+  · exact reverse_chain_basic_segments_disjoint _ (segment_set_vertex_distinct (avoiding_segment_set_sub hS))
 
 
 
