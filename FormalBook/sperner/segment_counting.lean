@@ -79,6 +79,11 @@ lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
       exact union_comm _ _
 
 
+lemma reverse_chain_basic_segments {u v : ℝ²} (C : Chain u v) :
+    to_basic_segments (reverse_chain C) =
+    Finset.image (fun S ↦ reverse_segment S) (to_basic_segments C) := by
+
+  sorry
 
 lemma segment_set_vertex {X : Finset ℝ²} {S : Segment}
   (hS : S ∈ segment_set X) : ∀ i, S i ∈ X := by
@@ -121,7 +126,7 @@ lemma avoiding_segment_set_sub_right {X : Finset ℝ²} {A : Set ℝ²} {S : Seg
 
 
 
-theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
+theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) :
     ∃ (C : Chain (S 0) (S 1)),
     S = chain_to_big_segment C ∧
@@ -253,7 +258,7 @@ theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
 def two_mod_function (f : Segment → ℕ)
     := ∀ {u v w}, colin u v w → (f (to_segment u v) + f (to_segment v w)) % 2 = f (to_segment u w) % 2
 
-def symm_fun (f : Segment → ℕ) := ∀ S, f S = f (reverse_segment S)
+def symm_fun (f : Segment → ℕ) := ∀ S, f (reverse_segment S) = f S
 
 lemma two_mod_function_chains {f : Segment → ℕ} (hf : two_mod_function f) {u v : ℝ²}
     (C : Chain u v) : (∑ S ∈ to_basic_segments C, f S) % 2 = f (to_segment u v) % 2 := by
@@ -269,6 +274,35 @@ lemma two_mod_function_chains {f : Segment → ℕ} (hf : two_mod_function f) {u
       · simp only [disjoint_singleton_right]
         -- Easy but should be seperate lemma.
         sorry
+
+
+lemma symm_function_reverse_sum {f : Segment → ℕ} (hf : symm_fun f) {u v : ℝ²}
+    (C : Chain u v) :
+    (∑ S ∈ to_basic_segments (reverse_chain C), f S) =
+    (∑ S ∈ to_basic_segments C, f S) := by
+  rw [reverse_chain_basic_segments, Finset.sum_image]
+  · congr
+    ext L
+    exact hf L
+  · intro _ _ _ _
+    have ⟨hi,_⟩ := reverse_segment_bijective
+    exact fun a ↦ hi (hi (hi a))
+
+lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2): (2 * a) % 4 = (2 * b) % 4 := by
+  sorry
+
+lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) {f : Segment → ℕ} (hf₁ : two_mod_function f)
+    (hf₂ : symm_fun f):
+    (∑ T ∈ (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S), f T) % 4 =
+    (2 * f S) % 4 := by
+  have ⟨C, hS, hSdecomp⟩ := segment_decomposition hS
+  rw [hSdecomp, Finset.sum_union]
+  · rw [symm_function_reverse_sum hf₂, ←Nat.two_mul]
+    apply mod_two_mul
+    convert two_mod_function_chains hf₁ C
+  · -- Should be seperate lemma.
+    sorry
 
 
 
@@ -355,8 +389,6 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl rainbow_triangle_purple_sum]
-  rw [← sum_nat_mod]
-
 
 
   sorry

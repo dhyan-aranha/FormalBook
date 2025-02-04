@@ -343,6 +343,9 @@ lemma reverse_segment_involution {L : Segment}
     : reverse_segment (reverse_segment L) = L :=
   List.ofFn_inj.mp rfl
 
+lemma reverse_segment_bijective : Function.Bijective reverse_segment :=
+  Function.Involutive.bijective (Function.involutive_iff_iter_2_eq_id.mpr (by ext _; simp))
+
 
 lemma reverse_segment_closed_hull {L : Segment}
     : closed_hull (reverse_segment L) = closed_hull L := by
