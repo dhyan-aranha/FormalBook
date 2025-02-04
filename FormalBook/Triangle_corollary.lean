@@ -362,18 +362,19 @@ theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
   constructor
   · rw[mem_parallelepiped_iff , unit_square, closed_hull]
     rintro ⟨ t, ⟨ ⟨ h0,h1⟩ , h2⟩⟩
-    use (fun | 0 => 1 + max 0 (t 0 + t 1 -1) - t 0 - t 1 | 1  => t 0 - ( max 0 (t 0 + t 1 -1)) | 2 =>  max 0 (t 0 + t 1 -1) | 3 => t 1 - ( max 0 (t 0 + t 1 -1)))
+    use (fun | 0 => 1 + 0 ⊔ (t 0 + t 1 -1) - t 0 - t 1 | 1  => t 0 - (0 ⊔ (t 0 + t 1 -1)) | 2 =>  0 ⊔ (t 0 + t 1 -1) | 3 => t 1 - ( 0 ⊔ (t 0 + t 1 -1)))
     constructor
     · constructor
       . intro i
         fin_cases i <;> simp
-        sorry
+        · rw [le_sub_iff_add_le, add_sup 0]
+          ring_nf
+          exact le_sup_right
         exact ⟨h0 0, h1 1⟩
         refine ⟨h0 1, ?_⟩
         rw [add_comm, add_le_add_iff_left]
         exact h1 0
-
-      · rw[Fin.sum_univ_four]
+      · rw [Fin.sum_univ_four]
         simp
         ring
     · simp
