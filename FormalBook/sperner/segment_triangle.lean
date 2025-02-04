@@ -330,6 +330,11 @@ lemma perp_vec_exists (Lset : Finset Segment) (hLset : ∀ L ∈ Lset, L 0 ≠ L
 
 
 @[simp]
+lemma segment_rfl {L : Segment}
+    : to_segment (L 0) (L 1) = L :=
+  List.ofFn_inj.mp rfl
+
+@[simp]
 lemma reverse_segment_to_segment {u v : ℝ²}
   : reverse_segment (to_segment u v) = to_segment v u := rfl
 
