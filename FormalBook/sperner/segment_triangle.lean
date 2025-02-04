@@ -364,13 +364,14 @@ lemma reverse_segment_open_hull {L : Segment}
     · simp_rw [←hαx, Fin.sum_univ_two, reverse_segment, to_segment, add_comm]
   exact Set.Subset.antisymm (haux _) (haux _)
 
-
-
-
 lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
   have ⟨h₁,h₂⟩ := h
   exact ⟨h₁.symm, by rwa [←reverse_segment_open_hull, reverse_segment_to_segment]⟩
 
+lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
+    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
+    closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
+  sorry
 
 
 
