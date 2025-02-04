@@ -78,65 +78,6 @@ lemma scale_triangle_area (a : ℝ) (T : Triangle)
   simp [triangle_area, scale_triangle, scale_vector, ←abs_mul, ←mul_div_assoc, det]
   congr; ring
 
-lemma open_hull_scale {a : ℝ} (T : Triangle)
-    : open_hull (scale_triangle a T) = (scale_vector a) '' (open_hull T) := by
-  ext x
-  constructor
-  · intro ⟨α,hα,hαx⟩
-    use (∑ i, α i • T i)
-    refine ⟨by use α;,?_⟩
-    rw [←hαx]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
-  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
-    use α, hα
-    rw [←hyx, ←hαy]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
-
-lemma closed_hull_scale {a : ℝ} (T : Triangle)
-    : closed_hull (scale_triangle a T) = (scale_vector a) '' (closed_hull T) := by
-  ext x
-  constructor
-  · intro ⟨α,hα,hαx⟩
-    use (∑ i, α i • T i)
-    refine ⟨by use α;,?_⟩
-    rw [←hαx]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
-  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
-    use α, hα
-    rw [←hyx, ←hαy]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, scale_triangle, scale_vector]; ring
-
-lemma scale_inverse {a : ℝ} {x : ℝ²} (ha : a ≠ 0) : scale_vector a⁻¹ (scale_vector a x) = x := by
-  ext i; fin_cases i <;> simp [scale_vector]
-  rw [←mul_assoc, inv_mul_cancel₀ ha, one_mul]
-
-lemma scale_inverse' {a : ℝ} {x : ℝ²} (ha : a ≠ 0) : scale_vector a (scale_vector a⁻¹ x) = x := by
-  convert scale_inverse (a := a⁻¹) (inv_ne_zero ha)
-  exact Eq.symm (DivisionMonoid.inv_inv a)
-
-lemma scale_injective {a : ℝ} (ha : a ≠ 0) : (fun x ↦ scale_vector a x).Injective :=
-  Function.RightInverse.injective (g := (fun x ↦ scale_vector a⁻¹ x)) (fun _ ↦ scale_inverse ha)
-
-lemma scale_disjoint {X₁ X₂ : Set ℝ²} {a : ℝ} (ha : a ≠ 0) (h₁₂ : Disjoint X₁ X₂)
-    : Disjoint ((scale_vector a) '' X₁) ((scale_vector a) '' X₂) :=
-  (Set.disjoint_image_iff (scale_injective ha)).mpr h₁₂
-
-lemma scale_union {α : Type} {f : α → Set ℝ²} {S : Set α} {a : ℝ}
-    : ⋃ X ∈ S, (scale_vector a) '' (f X) = (scale_vector a) '' (⋃ X ∈ S, (f X)) :=
-  Eq.symm (Set.image_iUnion₂ _ fun i _ => f i)
-
-lemma scale_disjoint' {X₁ X₂ : Set ℝ²} {a : ℝ} (ha : a ≠ 0)
-    (h₁₂ : Disjoint ((scale_vector a) '' X₁) ((scale_vector a) '' X₂)) : Disjoint X₁ X₂ := by
-  convert scale_disjoint (X₁ := ((scale_vector a) '' X₁)) (X₂ := ((scale_vector a) '' X₂)) (a := a⁻¹) (inv_ne_zero ha) h₁₂ <;> (
-    rw [Set.image_image]
-    conv => rhs; lhs; intro x; rw [scale_inverse ha]
-    simp only [Set.image_id']
-  )
-
 /- Elementary stuff about translating (only in the y direction).-/
 
 def translate_vector (a : ℝ) (x : ℝ²) : ℝ² := fun | 0 => x 0 | 1 => a + x 1
@@ -146,73 +87,6 @@ lemma translate_triangle_area (a : ℝ) (T : Triangle)
     : triangle_area (translate_triangle a T) = (triangle_area T) := by
   simp [triangle_area, translate_triangle, translate_vector, det]
   congr 2; ring
-
-lemma open_hull_translate {a : ℝ} (T : Triangle)
-    : open_hull (translate_triangle a T) = (translate_vector a) '' (open_hull T) := by
-  ext x
-  constructor
-  · intro ⟨α,hα,hαx⟩
-    use (∑ i, α i • T i)
-    refine ⟨by use α;,?_⟩
-    rw [←hαx]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
-    nth_rw 1 [←mul_one a, ←hα.2, Fin.sum_univ_three]
-    ring
-  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
-    use α, hα
-    rw [←hyx, ←hαy]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
-    nth_rw 4 [←mul_one a]
-    simp [←hα.2, Fin.sum_univ_three]
-    ring
-
-lemma closed_hull_translate {a : ℝ} (T : Triangle)
-    : closed_hull (translate_triangle a T) = (translate_vector a) '' (closed_hull T) := by
-  ext x
-  constructor
-  · intro ⟨α,hα,hαx⟩
-    use (∑ i, α i • T i)
-    refine ⟨by use α;,?_⟩
-    rw [←hαx]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
-    nth_rw 1 [←mul_one a, ←hα.2, Fin.sum_univ_three]
-    ring
-  · intro ⟨y, ⟨α,hα,hαy⟩, hyx⟩
-    use α, hα
-    rw [←hyx, ←hαy]
-    ext i
-    fin_cases i <;> simp [Fin.sum_univ_three, translate_triangle, translate_vector]; ring_nf
-    nth_rw 4 [←mul_one a]
-    simp [←hα.2, Fin.sum_univ_three]
-    ring
-
-lemma translate_inverse {a : ℝ} {x : ℝ²} : translate_vector (-a) (translate_vector a x) = x := by
-  ext i; fin_cases i <;> simp [translate_vector]
-
-example (f₁ f₂ : ℝ² → ℝ²) (X : Set ℝ²) : f₁ '' (f₂ '' X) = (fun x ↦ f₁ (f₂ x)) '' X := by
-  exact Set.image_image f₁ f₂ X
-
-lemma translate_inverse' {a : ℝ} {x : ℝ²} : translate_vector a (translate_vector (-a) x) = x := by
-  convert translate_inverse (a := -a); exact (neg_neg a).symm
-
-lemma translate_injective {a : ℝ} : (fun x ↦ translate_vector a x).Injective :=
-  Function.RightInverse.injective (g := (fun x ↦ translate_vector (-a) x)) (fun _ ↦ translate_inverse)
-
-lemma translate_disjoint {X₁ X₂ : Set ℝ²} {a : ℝ} (h₁₂ : Disjoint X₁ X₂)
-    : Disjoint ((translate_vector a) '' X₁) ((translate_vector a) '' X₂) :=
-  (Set.disjoint_image_iff translate_injective).mpr h₁₂
-
-lemma translate_disjoint' {X₁ X₂ : Set ℝ²} {a : ℝ}
-    (h₁₂ : Disjoint ((translate_vector a) '' X₁) ((translate_vector a) '' X₂)) : Disjoint X₁ X₂ := by
-  convert translate_disjoint (X₁ := ((translate_vector a) '' X₁)) (X₂ := ((translate_vector a) '' X₂)) (a := -a) h₁₂ <;> (
-    rw [Set.image_image]
-    conv => rhs; lhs; intro x; rw [translate_inverse]
-    simp only [Set.image_id']
-  )
-
 
 
 -- Here a different try. Just give a very explicit cover.
@@ -387,7 +261,8 @@ lemma zig_zag_covers_square {n : ℕ} (hn : n ≠ 0)
         intro i; constructor <;> (fin_cases i <;> simp; linarith)
         · sorry
         · sorry
-      · sorry
+      ·
+        sorry
     ·
       sorry
 
