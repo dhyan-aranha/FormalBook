@@ -242,7 +242,7 @@ theorem segment_decomposition {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
       use glue_chains hcolin CL CR
       have haux_set {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
         : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
-        simp only [←coe_inj, union_assoc, coe_union]
+        simp only [←coe_inj, coe_union]
         tauto_set
       simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
           basic_segments_glue, true_and, haux_set,
