@@ -294,6 +294,8 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl rainbow_triangle_purple_sum]
+  rw [← sum_nat_mod]
+
 
 
   sorry
