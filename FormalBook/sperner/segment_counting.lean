@@ -44,13 +44,170 @@ noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
 
 noncomputable def chain_to_big_segment {u v : ℝ²} (_ : Chain u v) : Segment := to_segment u v
 
-theorem segment_decomposition (A : Set ℝ²):
-    ∀ (X : Finset ℝ²) {S : Segment}, (S ∈ avoiding_segment_set X A) →
-    ∃ (C : Chain (S 0) (S 1)), S = chain_to_big_segment C ∧
+
+lemma chain_to_big_segment_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
+    (CR : Chain v w) : chain_to_big_segment (glue_chains h CL CR) = to_segment u w := by
+
+  sorry
+
+lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
+    (CR : Chain v w)
+    : reverse_chain (glue_chains h CL CR)
+    = glue_chains (colin_reverse h) (reverse_chain CR) (reverse_chain CL) := by
+
+  sorry
+
+lemma reverse_chain_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
+    (CR : Chain v w)
+    : to_basic_segments (glue_chains h CL CR) = to_basic_segments CL ∪ to_basic_segments CR := by
+
+  sorry
+
+
+
+lemma segment_set_vertex {X : Finset ℝ²} {S : Segment}
+  (hS : S ∈ segment_set X) : ∀ i, S i ∈ X := by
+  simp only [segment_set, ne_eq, product_eq_sprod, mem_image,
+              mem_filter, mem_product, Prod.exists] at hS
+  have ⟨a, b, ⟨⟨⟨ha,hb⟩ ,h₁⟩,h₂⟩⟩ := hS
+  rw [←h₂]
+  intro i; fin_cases i <;> (simp [to_segment]; assumption)
+
+lemma avoiding_segment_set_sub {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) : S ∈ segment_set X :=
+  mem_of_mem_filter S hS
+
+lemma basic_avoiding_segment_set_sub {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ basic_avoiding_segment_set X A) : S ∈ segment_set X :=
+  avoiding_segment_set_sub (A := A) (mem_of_mem_filter S hS)
+
+lemma segment_set_vertex_distinct {X : Finset ℝ²} {S : Segment}
+    (hS : S ∈ segment_set X) : S 0 ≠ S 1 := by
+  simp only [segment_set, ne_eq, product_eq_sprod, mem_image,
+              mem_filter, mem_product, Prod.exists] at hS
+  have ⟨_, _, ⟨⟨_,_⟩ ,h₂⟩⟩ := hS
+  rw [←h₂]
+  simpa [to_segment]
+
+lemma basic_avoiding_segment_set_reverse {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ basic_avoiding_segment_set X A)
+    : reverse_segment S ∈ basic_avoiding_segment_set X A := by
+  sorry
+
+lemma avoiding_segment_set_sub_left {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
+    : to_segment (S 0) x ∈ avoiding_segment_set X A := by
+  sorry
+
+lemma avoiding_segment_set_sub_right {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
+    : to_segment x (S 1) ∈ avoiding_segment_set X A := by
+  sorry
+
+
+
+theorem segment_decomposition (A : Set ℝ²) (X : Finset ℝ²) {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) :
+    ∃ (C : Chain (S 0) (S 1)),
+    S = chain_to_big_segment C ∧
     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
+  --let PX : Finset ℝ² := Finset.filter (fun p ↦ p ∈ open_hull S) X
+  have hn : ∀ n, ∀ S, (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card = n →
+    S ∈ avoiding_segment_set X A → ∃ (C : Chain (S 0) (S 1)),
+    S = chain_to_big_segment C ∧
+    (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
+    = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
+    intro n
+    refine Nat.strong_induction_on n ?_
+    intro N hm S Scard hS
+    have hSboundary := boundary_seg (segment_set_vertex_distinct (avoiding_segment_set_sub hS))
+    by_cases hN : N = 0
+    · use @Chain.basic (S 0) (S 1)
+      simp only [chain_to_big_segment, Fin.isValue, segment_rfl,
+        to_basic_segments, reverse_chain, true_and]
+      simp [hN, filter_eq_empty_iff] at Scard
+      ext L
+      simp only [mem_filter, Fin.isValue, mem_union, mem_singleton]
+      constructor
+      · intro ⟨hL, hLS⟩
+        have hLi : ∀ i, L i ∈ boundary S := by
+          intro i
+          simp only [boundary, Set.mem_diff]
+          refine ⟨hLS (corner_in_closed_hull),?_⟩
+          apply Scard
+          exact segment_set_vertex (basic_avoiding_segment_set_sub hL) i
+        have hLdif := segment_set_vertex_distinct (basic_avoiding_segment_set_sub hL)
+        simp [hSboundary] at hLi
+        have ⟨i₀, hL₀⟩ := hLi 0
+        have ⟨i₁, hL₁⟩ := hLi 1
+        rw [←hL₀, ←hL₁] at hLdif
+        have hi₀₁ : i₁ = (fun | 0 => 1 | 1 => 0) i₀  := by
+          fin_cases i₀ <;> fin_cases i₁ <;> simp_all
+        rw [hi₀₁] at hL₁
+        fin_cases i₀
+        · left
+          exact List.ofFn_inj.mp (by simp [←hL₁, ←hL₀])
+        · right
+          exact List.ofFn_inj.mp (by simp [to_segment, ←hL₁, ←hL₀])
+      · rintro (hL | hL) <;> rw [hL]
+        · refine ⟨?_, fun _ a ↦ a⟩
+          simp only [basic_avoiding_segment_set, mem_filter]
+          exact ⟨hS,Scard⟩
+        · rw [←reverse_segment]
+          refine ⟨?_, by rw [reverse_segment_closed_hull]⟩
+          apply basic_avoiding_segment_set_reverse
+          simp only [basic_avoiding_segment_set, mem_filter]
+          exact ⟨hS,Scard⟩
+    · have hEl : Finset.Nonempty (filter (fun p ↦ p ∈ open_hull S) X) := by
+        rw [← Finset.card_pos, Scard]
+        exact Nat.zero_lt_of_ne_zero hN
+      have ⟨x, hx⟩ := hEl
+      let Sleft := to_segment (S 0) x
+      let Sright := to_segment x (S 1)
+      have Sleftcard : (filter (fun p ↦ p ∈ open_hull Sleft) X).card < N := by
+        rw [←Scard]
+        refine card_lt_card ⟨?_,?_⟩
+        · intro t ht
+          simp only [mem_filter] at *
+          refine ⟨ht.1, (open_segment_sub ?_ ?_) ht.2⟩
+          · sorry
+          · sorry
+        · rw [@not_subset]
+          use x, hx
+          intro hcontra
+          rw [mem_filter] at hcontra
+          refine (boundary_not_in_open ?_) hcontra.2
+          sorry
+      have Srightcard : (filter (fun p ↦ p ∈ open_hull Sright) X).card < N :=
+        sorry
+      rw [mem_filter] at hx
+      have hcolin : colin (S 0) x (S 1) := ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hx.2⟩
+      have ⟨CL,hSCL,hLSegUnion⟩ :=
+        hm (filter (fun p ↦ p ∈ open_hull Sleft) X).card Sleftcard Sleft rfl
+        (avoiding_segment_set_sub_left hS hx.1 hx.2)
+      have ⟨CR,hSCR,hRSegUnion⟩ :=
+        hm (filter (fun p ↦ p ∈ open_hull Sright) X).card Srightcard Sright rfl
+        (avoiding_segment_set_sub_right hS hx.1 hx.2)
+      use glue_chains hcolin CL CR
+      have haux_set {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
+        : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
+        sorry
+      simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
+          basic_segments_glue, true_and, haux_set,
+          ←hLSegUnion, ←hRSegUnion]
+      ext L
+      simp [basic_avoiding_segment_set]
+      constructor
+      · intro ⟨h , hLS⟩
+        -- Split wether L ⊆ Sleft or L ⊆ Sright
+        sorry
+      ·
+        sorry
+  exact hn (Finset.filter (fun p ↦ p ∈ open_hull S) X ).card _ (rfl) hS
 
-    sorry
+
+
 
 
 
