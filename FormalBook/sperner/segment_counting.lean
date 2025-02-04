@@ -295,7 +295,17 @@ lemma symm_function_reverse_sum {f : Segment → ℕ} (hf : symm_fun f) {u v : �
     exact fun a ↦ hi (hi (hi a))
 
 lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2): (2 * a) % 4 = (2 * b) % 4 := by
-  sorry
+  rcases Nat.mod_two_eq_zero_or_one a with h' | h' <;> rw [h'] at h <;> have h := Eq.symm h
+  · rw [←Nat.even_iff] at h h'
+    rcases h with ⟨k, hk⟩
+    rcases h' with ⟨k', hk'⟩
+    rw [hk, hk', ←Nat.two_mul, ←Nat.two_mul, ←mul_assoc, ←mul_assoc]
+    simp
+  · rw [←Nat.odd_iff] at h h'
+    rcases h with ⟨k, hk⟩
+    rcases h' with ⟨k', hk'⟩
+    rw [hk, hk', mul_add, mul_add, ←Nat.mod_add_mod, ←Nat.mod_add_mod, ←mul_assoc, ←mul_assoc]
+    simp
 
 lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {f : Segment → ℕ} (hf₁ : two_mod_function f)
