@@ -2,6 +2,8 @@ import Mathlib
 import FormalBook.sperner.simplex_basic
 import FormalBook.sperner.segment_triangle
 import FormalBook.sperner.basic_definitions
+import FormalBook.sperner.Rainbow_triangles
+import FormalBook.sperner.square
 
 
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
@@ -34,7 +36,7 @@ noncomputable def to_basic_segments {u v : ℝ²} : Chain u v → Finset Segment
 
 noncomputable def glue_chains {u v w : ℝ²} (hCollinear : colin u v w) : Chain u v → Chain v w → Chain u w
     | Chain.basic, C      => Chain.join hCollinear C
-    | Chain.join h C', C  => Chain.join (interior_collinear (interior_left_trans h.2 hCollinear.2)) (glue_chains (sub_collinear_right hCollinear h.2) C' C)
+    | Chain.join h C', C  => Chain.join ⟨hCollinear.1, interior_left_trans h.2 hCollinear.2⟩ (glue_chains (sub_collinear_right hCollinear h.2) C' C)
 
 noncomputable def reverse_chain {u v : ℝ²} : Chain u v → Chain v u
     | Chain.basic           => Chain.basic
@@ -97,9 +99,12 @@ lemma purple_parity {u v : ℝ²} (C : Chain u v) : ∑ T ∈ to_basic_segments 
 noncomputable def triangulation_points (Δ : Finset Triangle) : Finset ℝ² :=
   Finset.biUnion Δ (fun T ↦ {T 0, T 1, T 2})
 
+noncomputable def triangulation_points₂ (Δ : Finset Triangle) : Finset ℝ² :=
+  Finset.biUnion Δ (fun T ↦ (Finset.image (fun i ↦ T i) Finset.univ))
+
 -- The union of the interiors of the triangles of a triangulation
 noncomputable def triangulation_avoiding_set (Δ : Finset Triangle) : Set ℝ² :=
-  {x ∈ {x | ∀ i, 0 < x i ∧ x i < 1} | x ∉ ⋃ (T ∈ Δ), open_hull T}
+    ⋃ (T ∈ Δ), open_hull T
 
 noncomputable def triangulation_basic_segments (Δ : Finset Triangle) : Finset Segment :=
   basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)
@@ -114,7 +119,7 @@ noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
   ∑ (T ∈ Δ), isRainbow T
 
 noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
-  sorry
+  {T ∈ Δ | isRainbow T = 1}
 
 noncomputable def is_triangulation (Δ : Finset Triangle) : Prop :=
   is_cover {x | ∀ i, 0 ≤ x i ∧ x i ≤ 1} Δ.toSet
@@ -131,9 +136,96 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle) (hCovering : is_tria
 
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : rainbow_sum Δ = purple_sum Δ := by
-  sorry
+  sorry --
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     ∃ T ∈ Δ, isRainbow T = 1 := by
-  sorry
+  sorry -- easy, follows from above
+
+
+-- Old stuff from Lenny
+/- section noncomputable
+
+def color : ℝ² → Fin 3 := sorry
+
+def red : Fin 3 := 0
+def blue : Fin 3 := 1
+def green : Fin 3 := 2
+
+lemma no_three_colors_on_a_line (L : Segment) :
+    ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
+
+lemma color00 : color (v 0 0) = red := sorry
+lemma color01 : color (v 0 1) = blue := sorry
+lemma color10 : color (v 1 0) = green := sorry
+lemma color11 : color (v 1 1) = blue := sorry
+
+
+/-
+  Define incidence relation between segments and triangles
+-/
+
+def side (T : Triangle) (i : Fin 3) : Segment :=
+  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
+
+def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
+  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
+
+
+/-
+  A segment is purple if it runs from 0 to 1 or 1 to 0
+-/
+
+def IsPurple (L : Segment) : Prop :=
+  (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
+
+
+/-
+  Parity of number of purple basic segments on a segment
+-/
+
+noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
+  {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
+
+lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+  (L : X) (hL : IsPurple L) :
+  (purple_segments X L.val).card % 2 = 1 := sorry
+
+lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+  (L : X) (hL : ¬ IsPurple L) :
+  (purple_segments X L.val).card % 2 = 0 := sorry
+
+
+
+/-
+  Now we assume given a dissection S. Write X for the set of all segments in the dissection
+-/
+
+variable (S : Finset Triangle) (hS : is_cover unit_square S)
+
+def X : SegmentSet := sorry
+lemma hX : complete_segment_set X := sorry
+def B := {  L : X | basis_segment X L }
+
+/-
+  For any triangle in the dissection, the number of purple segments on its boundary
+  is odd iff the triangle is rainbow
+  TODO: probably should be 2 mod 4, given that segments are counted with
+  both orientations
+-/
+
+def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
+
+lemma purple_odd_iff_rainbow (T : S) :
+  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
+  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
+
+
+/-
+  Main goal for our group:
+-/
+
+theorem monsky_rainbow  :
+    ∃ T ∈ S, IsRainbow T := sorry
+-/
