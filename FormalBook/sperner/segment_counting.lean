@@ -294,6 +294,7 @@ lemma symm_function_reverse_sum {f : Segment → ℕ} (hf : symm_fun f) {u v : �
     have ⟨hi,_⟩ := reverse_segment_bijective
     exact fun a ↦ hi (hi (hi a))
 
+
 lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2): (2 * a) % 4 = (2 * b) % 4 := by
   rcases Nat.mod_two_eq_zero_or_one a with h' | h' <;> rw [h'] at h <;> have h := Eq.symm h
   · rw [←Nat.even_iff] at h h'
@@ -306,6 +307,16 @@ lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2): (2 * a) % 4 = (2 * b) % 4 := 
     rcases h' with ⟨k', hk'⟩
     rw [hk, hk', mul_add, mul_add, ←Nat.mod_add_mod, ←Nat.mod_add_mod, ←mul_assoc, ←mul_assoc]
     simp
+
+/- Following is a different proof:
+
+lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2) : (2 * a) % 4 = (2 * b) % 4 := by
+  rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff',
+      ←sub_eq_zero, ←Int.cast_sub, ZMod.intCast_zmod_eq_zero_iff_dvd] at *
+  have ⟨c, hc⟩ := h
+  exact ⟨c, by simp only [Nat.cast_mul, ←mul_sub, hc]; ring⟩
+-/
+
 
 lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {f : Segment → ℕ} (hf₁ : two_mod_function f)

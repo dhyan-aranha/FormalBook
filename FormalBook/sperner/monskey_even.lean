@@ -249,14 +249,86 @@ lemma zig_zag_open_disjoint {n : ℕ}
     · simp [det, translate_triangle, scale_triangle, Δ₀, translate_vector, scale_vector, Nat.not_eq_zero_of_lt nsign]
   · simp [Nat.eq_zero_of_not_pos nsign, zag_part_cover, disjoint_set]
 
+
 lemma zig_zag_covers_square {n : ℕ} (hn : n ≠ 0)
     : covers ((zig_part_cover n ∪ zag_part_cover n) : Set Triangle) (closed_hull unit_square) closed_hull := by
   ext x
   simp [closed_unit_square_eq]
   constructor
   · intro hx
-
-    sorry
+    -- Determine in which part of the cover x falls.
+    -- Nat.floor (n * x 1) is not right unfortunately when x 1 = 1
+    by_cases hx₁ : x 1 < 1
+    · let j := Nat.floor (n * x 1)
+      by_cases hj : (n * x 1 - j) + x 0 ≤ 1
+      · use translate_triangle ((j : ℝ) / (n : ℝ)) (scale_triangle (1 / (n : ℝ)) Δ₀)
+        constructor
+        · left
+          rw [zig_part_cover,mem_image]
+          refine ⟨⟨j,?_⟩ ,by simp⟩
+          rw [propext (Nat.floor_lt' hn)]
+          convert (mul_lt_mul_left ?_).mpr hx₁
+          · ring
+          · rw [Nat.cast_pos]
+            exact Nat.zero_lt_of_ne_zero hn
+        · rw [closed_triangle_iff]
+          · intro i
+            fin_cases i <;> (
+              simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀'];
+              field_simp [hn]
+              ring_nf
+              try linarith [hx 0 ]
+            )
+            convert Nat.floor_le (a := ↑n * x 1) ?_ using 1
+            · exact mul_comm _ _
+            · exact Left.mul_nonneg (Nat.cast_nonneg' _) (hx 1).1
+          · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
+            · simp only [one_div, ne_eq, inv_eq_zero, Nat.cast_eq_zero, hn, not_false_eq_true]
+            · simp [det, Δ₀]
+      · use translate_triangle ((j : ℝ) / (n : ℝ)) (scale_triangle (1 / (n : ℝ)) Δ₀')
+        constructor
+        · right
+          rw [zag_part_cover,mem_image]
+          refine ⟨⟨j,?_⟩ ,by simp⟩
+          rw [propext (Nat.floor_lt' hn)]
+          convert (mul_lt_mul_left ?_).mpr hx₁
+          · ring
+          · rw [Nat.cast_pos]
+            exact Nat.zero_lt_of_ne_zero hn
+        · rw [closed_triangle_iff]
+          · intro i
+            fin_cases i <;> (
+              simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀'];
+              field_simp [hn]
+              ring_nf
+              try linarith [hx 0 ]
+            )
+            convert sub_nonneg.2 (le_of_lt (Nat.lt_floor_add_one (↑n * x 1))) using 1
+            ring
+          · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
+            · simp only [one_div, ne_eq, inv_eq_zero, Nat.cast_eq_zero, hn, not_false_eq_true]
+            · simp [det, Δ₀']
+    · have hx₁ : x 1 = 1 := by linarith [hx 1]
+      · use translate_triangle (( n  - 1 ) / (n : ℝ)) (scale_triangle (1 / (n : ℝ)) Δ₀')
+        constructor
+        · right
+          rw [zag_part_cover,mem_image]
+          refine ⟨⟨n - 1, Nat.sub_one_lt hn⟩,?_⟩
+          simp only [mem_univ, one_div, true_and]
+          conv => arg 1; arg 1; arg 1; rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hn), Nat.cast_one]
+        · rw [closed_triangle_iff]
+          · intro i
+            fin_cases i <;> (
+              simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀', hx₁];
+              field_simp [hn]
+              ring_nf
+              try linarith [hx 0]
+            )
+            rw [mul_assoc, mul_inv_cancel₀ ( Nat.cast_ne_zero.mpr hn)]
+            linarith [hx 0]
+          · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
+            · simp only [one_div, ne_eq, inv_eq_zero, Nat.cast_eq_zero, hn, not_false_eq_true]
+            · simp [det, Δ₀']
   · rintro ⟨S,(hzig | hzag),hS⟩
     · simp [zig_part_cover] at hzig
       have ⟨s, hs⟩ := hzig
@@ -273,6 +345,7 @@ lemma zig_zag_covers_square {n : ℕ} (hn : n ≠ 0)
         · rw [add_assoc, le_neg_add_iff_le] at hs₀
           have this := le_trans hs₁ hs₀
           rw [le_neg_add_iff_le] at this
+          -- Following part is repeated below
           have this2 := div_le_div_of_nonneg_right this (Nat.cast_nonneg' n)
           rw [(mul_div_cancel_right₀ (x 1) (Nat.cast_ne_zero.mpr hn))] at this2
           apply le_trans this2
@@ -290,14 +363,24 @@ lemma zig_zag_covers_square {n : ℕ} (hn : n ≠ 0)
         have hs₂ := hS 2
         simp [Tco, sign_seg, set, det, scale_triangle, translate_triangle, scale_triangle, translate_vector, Tside, scale_vector, Δ₀, Δ₀'] at hs₀ hs₁ hs₂
         field_simp [hn] at hs₀ hs₁ hs₂
-        conv at hs₀ => ring
-        conv at hs₁ => ring
-        conv at hs₂ => ring
+        conv at hs₀ => ring_nf
+        conv at hs₁ => ring_nf
+        conv at hs₂ => ring_nf
         intro i; constructor <;> (fin_cases i <;> simp; linarith)
-        ·
-          sorry
-        ·
-          sorry
+        · have step₁ : 0 ≤ (x 1 * ↑n - ↑↑s) := le_trans hs₁ (by linarith)
+          have step₂ : 0 ≤ x 1 * ↑n := le_trans (b := (s : ℝ)) (Nat.cast_nonneg' _) (by linarith)
+          convert div_le_div_of_nonneg_right (c := (n : ℝ)) step₂ ?_
+          · simp only [zero_div]
+          · refine Eq.symm (mul_div_cancel_right₀ (x 1) (Nat.cast_ne_zero.mpr hn))
+          · exact Nat.cast_nonneg' n
+        · have step₁ : x 1 * ↑n ≤ ↑↑s + 1 := by linarith
+          have step₂ := div_le_div_of_nonneg_right step₁ (Nat.cast_nonneg' n)
+          -- This part is the same as above and probably not efficient
+          rw [(mul_div_cancel_right₀ (x 1) (Nat.cast_ne_zero.mpr hn))] at step₂
+          apply le_trans step₂
+          apply (div_le_one₀ (Nat.cast_pos'.mpr (Nat.zero_lt_of_ne_zero hn))).mpr
+          convert (Nat.cast_le (α := ℝ)).2 (@Nat.lt_iff_add_one_le.1 s.prop)
+          simp only [Nat.cast_add, Nat.cast_one]
       · rw [translate_triangle_det, scale_triangle_det, mul_ne_zero_iff_right]
         · exact inv_ne_zero (Nat.cast_ne_zero.mpr hn)
         · simp [det, Δ₀']
