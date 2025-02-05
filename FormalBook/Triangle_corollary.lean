@@ -106,28 +106,53 @@ theorem map_pres (X : Set ℝ²) : volume X = volume (id_map '' X) :=
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
 lemma unit_triangle_def : unit_triangle = fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1) := by rfl
 
-theorem unit_is_unit_in_prod : id_map '' (open_hull unit_triangle) = regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1) := by
-  sorry
+def lower : ℝ → ℝ := fun x ↦ 0
+def upper : ℝ → ℝ := fun x ↦ 1 - x
+
+theorem unit_is_unit_in_prod : id_map '' (open_hull unit_triangle) = regionBetween lower upper (Set.Ioc 0 1) := by
+  ext x; constructor <;> unfold regionBetween open_hull open_simplex lower upper _root_.id_map unit_triangle <;> intro hx <;> simp at *
+  · rcases hx with ⟨a, ⟨ha, ha''⟩, ha'⟩
+    rw [Fin.sum_univ_three] at ha'' ha'
+    rw [←ha']
+    simp at *
+    constructor <;> constructor <;> linarith [ha 0, ha 1, ha 2]
+  · use ![1 - x.1 - x.2, x.1, x.2]
+    rcases hx with ⟨⟨⟩, ⟨⟩⟩
+    constructor
+    · constructor
+      · intro i
+        fin_cases i <;> simp <;> linarith
+      · rw [Fin.sum_univ_three]
+        simp
+        ring
+    · rw [Fin.sum_univ_three]
+      simp
 
 --Then we have the statement that the open hull of the unit triangle has the right area, plus we add the statement that it is measurable
 theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triangle)) = 1/2 := by
-  have xyz : ∀ x ∈ Set.Ioc 0 1, (fun x ↦ 0) x ≤ (fun x ↦ 1 - x) x := by
+  have xyz : ∀ x ∈ Set.Ioc 0 1, lower x ≤ upper x := by
     intro x
-    simp
-  have abc : MeasureTheory.volume (regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1 : Set ℝ)) = ENNReal.ofReal (∫ (x : ℝ) in (0 : ℝ)..1, 1 - x) := by
-    exact volume_regionBetween_eq_integral (by simp) (by simp) sorry xyz
-  suffices  ∫ (x : ℝ) in (0 : ℝ)..1, 1 - x = 1/2 by
+    simp [upper, lower]
+  have integ : IntegrableOn lower (Set.Ioc 0 1) := by unfold lower; simp
+  have integ' : IntegrableOn upper (Set.Ioc 0 1) :=
+    MeasureTheory.Integrable.sub (integrable_const 1) (intervalIntegral.intervalIntegrable_id).1
+
+
+  suffices  ∫ (x : ℝ) in (0 : ℝ)..1, upper x = 1/2 by
     calc
       MeasureTheory.volume (open_hull unit_triangle)
-          = MeasureTheory.volume (regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1 : Set ℝ))  := by rw [map_pres (open_hull unit_triangle), unit_is_unit_in_prod]
-        _ = ENNReal.ofReal (∫ (x : ℝ) in (0 : ℝ)..1, 1 - x)                                            := abc
+          = MeasureTheory.volume (regionBetween lower upper (Set.Ioc 0 1 : Set ℝ))  := by rw [map_pres (open_hull unit_triangle), unit_is_unit_in_prod]
+        _ = ENNReal.ofReal (∫ (x : ℝ) in (Set.Ioc 0 1), upper x - lower x)                             := volume_regionBetween_eq_integral integ integ' measurableSet_Ioc xyz
+        _ = ENNReal.ofReal (∫ (x : ℝ) in (0 : ℝ)..1, upper x)                                          := by simp [lower, sub_zero, intervalIntegral.integral_of_le]
         _ = 1/2                                                                                       := by rw [this, ENNReal.ofReal_div_of_pos] <;> norm_num
+  unfold upper
   rw [intervalIntegral.integral_sub] <;> simp
   norm_num
 
 theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_triangle)).toReal = 1/2 := by sorry
 
-theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by sorry
+theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by
+  sorry
 
 -- Now that we have this, we want to show that the areas can be nicely transformed, for which we use tthis theorem
 theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
