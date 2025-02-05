@@ -92,7 +92,7 @@ open MeasureTheory
 
 --We start with the definition of the unit triangle
 
-def id_map : ℝ² → ℝ × ℝ := fun x ↦ ⟨x 0, x 1⟩
+def id_map : ℝ² → ℝ × ℝ := MeasurableEquiv.finTwoArrow
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μa : Measure α} {μb : Measure β} in
 theorem measure_image_equiv {f : α ≃ᵐ β} (hf : MeasurePreserving f μa μb) (s : Set α) :
@@ -128,6 +128,12 @@ theorem unit_is_unit_in_prod : id_map '' (open_hull unit_triangle) = regionBetwe
     · rw [Fin.sum_univ_three]
       simp
 
+theorem unit_in_prod_is_unit : id_map⁻¹' (regionBetween lower upper (Set.Ioc 0 1)) = open_hull unit_triangle
+  := by
+    apply (Set.preimage_eq_iff_eq_image ?hf).mpr ?_
+    exact MeasurableEquiv.bijective (MeasurableEquiv.finTwoArrow)
+    rw [unit_is_unit_in_prod]
+
 --Then we have the statement that the open hull of the unit triangle has the right area, plus we add the statement that it is measurable
 theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triangle)) = 1/2 := by
   have xyz : ∀ x ∈ Set.Ioc 0 1, lower x ≤ upper x := by
@@ -149,10 +155,16 @@ theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triang
   rw [intervalIntegral.integral_sub] <;> simp
   norm_num
 
-theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_triangle)).toReal = 1/2 := by sorry
+theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_triangle)).toReal = 1/2
+    := by
+  rw [volume_open_unit_triangle]
+  norm_num
 
 theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by
-  sorry
+  rw [←unit_in_prod_is_unit]
+  apply MeasurableEquiv.measurable_toFun
+  refine measurableSet_regionBetween (by unfold lower; simp) ?_ measurableSet_Ioc
+  exact Measurable.sub measurable_const (fun ⦃t⦄ a ↦ a)
 
 -- Now that we have this, we want to show that the areas can be nicely transformed, for which we use tthis theorem
 theorem area_lin_map ( L : ℝ² →ₗ[ℝ ]  ℝ²) (A : Set ℝ²) : MeasureTheory.volume (Set.image L A) = (ENNReal.ofReal (abs ( LinearMap.det L ))) * (MeasureTheory.volume (A)) := by
