@@ -1,6 +1,9 @@
 
 --This stuff is copy pasted from another file so I don't have rewrite definitions
 import Mathlib
+import Mathlib.Order.Basic
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Dynamics.Ergodic.MeasurePreserving
 -- import Mathlib.Tactic
 -- import Mathlib.Analysis.InnerProductSpace.PiL2
 -- import Mathlib.Data.Finset.Basic
@@ -85,14 +88,43 @@ the unit triangle. For degenerate triangles, we use that they have measure zero,
 null-measurable, which is a weaker statement but sufficient for our result (They are actually measurable
 but this is probably quite annoying to show)-/
 
+open MeasureTheory
 
 --We start with the definition of the unit triangle
+
+def id_map : ℝ² → ℝ × ℝ := fun x ↦ ⟨x 0, x 1⟩
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μa : Measure α} {μb : Measure β} in
+theorem measure_image_equiv {f : α ≃ᵐ β} (hf : MeasurePreserving f μa μb) (s : Set α) :
+    μa s = μb (f '' s) := by
+  simpa using hf.measure_preimage_equiv (f '' s)
+
+theorem map_pres (X : Set ℝ²) : volume X = volume (id_map '' X) :=
+  measure_image_equiv (EuclideanSpace.volume_preserving_measurableEquiv (Fin 2)
+    |>.trans (volume_preserving_finTwoArrow ℝ)) X
 
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
 lemma unit_triangle_def : unit_triangle = fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1) := by rfl
 
+theorem unit_is_unit_in_prod : id_map '' (open_hull unit_triangle) = regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1) := by
+  sorry
+
 --Then we have the statement that the open hull of the unit triangle has the right area, plus we add the statement that it is measurable
-theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triangle)) = 1/2 := by sorry
+theorem volume_open_unit_triangle : (MeasureTheory.volume (open_hull unit_triangle)) = 1/2 := by
+  have xyz : ∀ x ∈ Set.Ioc 0 1, (fun x ↦ 0) x ≤ (fun x ↦ 1 - x) x := by
+    intro x
+    simp
+  have abc : MeasureTheory.volume (regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1 : Set ℝ)) = ENNReal.ofReal (∫ (x : ℝ) in (0 : ℝ)..1, 1 - x) := by
+    exact volume_regionBetween_eq_integral (by simp) (by simp) sorry xyz
+  suffices  ∫ (x : ℝ) in (0 : ℝ)..1, 1 - x = 1/2 by
+    calc
+      MeasureTheory.volume (open_hull unit_triangle)
+          = MeasureTheory.volume (regionBetween (fun x ↦ 0) (fun x ↦ 1 - x) (Set.Ioc 0 1 : Set ℝ))  := by rw [map_pres (open_hull unit_triangle), unit_is_unit_in_prod]
+        _ = ENNReal.ofReal (∫ (x : ℝ) in (0 : ℝ)..1, 1 - x)                                            := abc
+        _ = 1/2                                                                                       := by rw [this, ENNReal.ofReal_div_of_pos] <;> norm_num
+  rw [intervalIntegral.integral_sub] <;> simp
+  norm_num
+
 theorem volume_open_unit_triangle1 : (MeasureTheory.volume (open_hull unit_triangle)).toReal = 1/2 := by sorry
 
 theorem measurable_unit_triangle : MeasurableSet (open_hull unit_triangle) := by sorry
@@ -238,8 +270,7 @@ theorem unit_triangle_to_triangle (T : Triangle): Set.image (triangle_translatio
 
 --We are allmost ready to show that the volume of triangles scale the way we want them to, but we just need a silly lemma first
 lemma half_is_half : (2⁻¹ : ENNReal) = ENNReal.ofReal (2⁻¹ : ℝ ) := by
-  have h1: (2:ℝ)  > 0
-  norm_num
+  have h1: (2:ℝ)  > 0 := by norm_num
   rw[ENNReal.ofReal_inv_of_pos h1]
   norm_num
 
