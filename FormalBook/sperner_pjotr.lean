@@ -1,4 +1,4 @@
-import Mathlib
+/-import Mathlib
 import Mathlib.Tactic
 
 
@@ -2319,3 +2319,4 @@ lemma purple_odd_iff_rainbow (T : S) :
 
 theorem monsky_rainbow  :
     ∃ T ∈ S, IsRainbow T := sorry
+-/
