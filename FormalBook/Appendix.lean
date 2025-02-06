@@ -7,6 +7,7 @@ open Algebra
 open Polynomial
 
 -- multiplying a polynomial by 2 commutes with deleting a power
+-- Could generalize outside of 2
 lemma mul_del_commute {R : Type} [CommRing R] (p : Polynomial R) (n : ℕ) :
  C 2 * erase n p = erase n (C 2 * p) := by
   -- Now we use that a polynomial deleting the n-th term aand adding it back in is the same as doing nothing
@@ -144,7 +145,7 @@ lemma lower_degree (B : Subring ℝ) (α : ℝ) (m n : ℕ) (H : α ∉ B ∧ α
     ring
   have this4 : (aeval α) q1 - v₀*α^n  = (aeval α) (q1.erase n) := by
     rw[this3, aeval_add α]
-    simp
+    simp only [map_neg, aeval_monomial]
     rw[algebramap v₀]
     ring
   have this5 : (1 - 2 * v₀) * α^n = 2 * (aeval α) (q1.erase n) := by

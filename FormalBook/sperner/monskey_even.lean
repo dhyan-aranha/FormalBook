@@ -97,6 +97,13 @@ lemma translate_triangle_area (a : ℝ) (T : Triangle)
     : triangle_area (translate_triangle a T) = (triangle_area T) := by
   simp only [triangle_area, translate_triangle_det]
 
+lemma translate_injective {T : Triangle} :
+    Function.Injective (fun (a : ℝ) ↦ translate_triangle a T) := by
+  intro _ _ hsame
+  have hsame := congrArg (fun Δ ↦ Δ 0 1) hsame
+  simp only [Fin.isValue, translate_triangle, translate_vector, add_left_inj] at hsame
+  assumption
+
 -- Here a different try. Just give a very explicit cover.
 noncomputable def zig_part_cover (n : ℕ)
   := Finset.image (fun (s : Fin n) ↦ translate_triangle ((s : ℝ) / (n : ℝ)) (scale_triangle (1 / (n : ℝ)) Δ₀)) univ
@@ -104,33 +111,18 @@ noncomputable def zig_part_cover (n : ℕ)
 noncomputable def zag_part_cover (n : ℕ)
   := Finset.image (fun (s : Fin n) ↦ translate_triangle ((s : ℝ) / (n : ℝ)) (scale_triangle (1 / (n : ℝ)) Δ₀')) univ
 
-lemma zig_cover_size (n : ℕ) : (zig_part_cover n).card = n := by
-  unfold zig_part_cover
-  by_cases hn : n = 0
-  rw [hn]; simp
-  rw [Finset.card_image_of_injective]
-  · simp only [card_univ, Fintype.card_fin]
-  · intro s₁ s₂ hsame
-    have hsame := congrArg (fun Δ ↦ Δ 0 1) hsame
-    have hn' := (Nat.cast_ne_zero (R := ℝ)).mpr hn
-    simp [translate_triangle, translate_vector, div_eq_div_iff hn' hn'] at hsame
-    cases' hsame with h h
-    · exact Fin.eq_of_val_eq h
-    · rw [h] at hn'; simp at hn'
-
-lemma zag_cover_size (n : ℕ) : (zag_part_cover n).card = n := by
-  unfold zag_part_cover
-  by_cases hn : n = 0
-  rw [hn]; simp
-  rw [Finset.card_image_of_injective]
-  · simp only [card_univ, Fintype.card_fin]
-  · intro s₁ s₂ hsame
-    have hsame := congrArg (fun Δ ↦ Δ 0 1) hsame
-    have hn' := (Nat.cast_ne_zero (R := ℝ)).mpr hn
-    simp [translate_triangle, translate_vector, div_eq_div_iff hn' hn'] at hsame
-    cases' hsame with h h
-    · exact Fin.eq_of_val_eq h
-    · rw [h] at hn'; simp at hn'
+lemma zig_zag_cover_size_aux (n : ℕ) :
+    (zig_part_cover n).card = n ∧ (zag_part_cover n).card = n := by
+  rw [zig_part_cover, zag_part_cover]
+  constructor <;> (
+    rw [Finset.card_image_of_injective]
+    · exact card_fin n
+    · convert Function.Injective.comp translate_injective ?_
+      intro s _ hsame
+      have hn : (n : ℝ) ≠ 0 := fun h ↦ Fin.elim0 (Fin.cast ((Nat.cast_eq_zero).1 h) s)
+      simp_all only [div_eq_div_iff hn hn, mul_eq_mul_right_iff, or_false, Nat.cast_inj]
+      exact Fin.eq_of_val_eq hsame
+    )
 
 lemma zig_zag_cover_size (n : ℕ) : (zig_part_cover n ∪ zag_part_cover n).card = 2 * n := by
   have h : (zig_part_cover n ∩ zag_part_cover n).card = 0 := by
@@ -142,7 +134,7 @@ lemma zig_zag_cover_size (n : ℕ) : (zig_part_cover n ∪ zag_part_cover n).car
     rw [←hs₂] at hs₁
     have hsame := congrArg (fun Δ ↦ Δ 0 0) hs₁
     simp [translate_triangle, translate_vector, scale_triangle, scale_vector, Δ₀, Δ₀'] at hsame
-  simp_rw [card_union, zig_cover_size, zag_cover_size, h, tsub_zero, two_mul]
+  simp_rw [card_union, zig_zag_cover_size_aux, h, tsub_zero, two_mul]
 
 
 lemma zig_cover_area {n : ℕ} : ∀ {Δ : Triangle}, Δ ∈ zig_part_cover n → triangle_area Δ = 1 / (2 * n) := by
