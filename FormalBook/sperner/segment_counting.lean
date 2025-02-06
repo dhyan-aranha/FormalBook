@@ -373,11 +373,53 @@ noncomputable def triangulation_avoiding_set (Δ : Finset Triangle) : Set ℝ² 
 noncomputable def triangulation_basic_segments (Δ : Finset Triangle) : Finset Segment :=
   basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)
 
+noncomputable def triangulation_boundary_basic_segments (Δ : Finset Triangle) : Finset Segment :=
+  {S ∈ triangulation_basic_segments Δ | open_hull S ⊆ boundary unit_square}
+
+noncomputable def triangulation_interior_basic_segments (Δ : Finset Triangle) : Finset Segment :=
+  {S ∈ triangulation_basic_segments Δ | open_hull S ⊆ open_hull unit_square}
+
+noncomputable def is_triangulation (Δ : Finset Triangle) : Prop :=
+  is_cover (closed_hull unit_square) Δ.toSet
+
+
+lemma triangulation_boundary_union (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
+    triangulation_basic_segments Δ =
+    triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ := by
+  unfold triangulation_boundary_basic_segments triangulation_interior_basic_segments
+  have hfilter : triangulation_basic_segments Δ =
+      filter (fun S ↦ open_hull S ⊆ closed_hull unit_square) (triangulation_basic_segments Δ) := by
+    ext L
+    rw [mem_filter, iff_self_and]
+    intro hL
+    unfold is_triangulation at hCover
+    apply is_cover_sub at hCover
+    have hT : ∃ T ∈ Δ, closed_hull L ⊆ closed_hull T := by
+      -- I think we can use segment_triangle_pairing_boundary from square.lean
+      sorry
+    cases' hT with T hT
+    calc open_hull L ⊆ closed_hull L := open_sub_closed L
+        _ ⊆ closed_hull T := hT.right
+        _ ⊆ closed_hull unit_square := hCover T hT.left
+  rw [hfilter, ← boundary_union_open_closed, ← filter_or]
+  ext L
+  repeat rw [mem_filter]
+  simp only [iff_self_and, and_imp]
+  intro hL hinc
+  -- I hope we have already proved what we need now
+  sorry
+
+lemma triangulation_boundary_intersection (Δ : Finset Triangle) :
+    triangulation_boundary_basic_segments Δ ∩ triangulation_interior_basic_segments Δ = ∅ := by
+  unfold triangulation_boundary_basic_segments triangulation_interior_basic_segments
+  sorry
+
+
 noncomputable def triangulation_all_segments (Δ : Finset Triangle) : Finset Segment :=
   avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)
 
 noncomputable def purple_sum (Δ : Finset Triangle) : ℕ :=
-  ∑ (S ∈ triangulation_basic_segments Δ), isPurple S
+  ∑ (S ∈ triangulation_boundary_basic_segments Δ), isPurple S
 
 noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
   ∑ (T ∈ Δ), isRainbow T
@@ -385,22 +427,24 @@ noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
 noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
   {T ∈ Δ | isRainbow T = 1}
 
-noncomputable def is_triangulation (Δ : Finset Triangle) : Prop :=
-  is_cover {x | ∀ i, 0 ≤ x i ∧ x i ≤ 1} Δ.toSet
-
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum Δ % 4 = 2 := by
+  -- Strategy: show that triangulation_boundary_basic_segments Δ is the disjoint union over the
+  -- segments contained in the four sides of the squares. Then for each side, use that the purple
+  -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
   sorry
 
 
-theorem segment_sum_rainbow_triangle (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    rainbow_sum Δ = 2 * (rainbow_triangles Δ).card := by
-  sorry
+theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
+    rainbow_sum Δ = (rainbow_triangles Δ).card := by
+  unfold rainbow_sum rainbow_triangles isRainbow
+  simp only [sum_boole, Nat.cast_id, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
 
 
 noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
+
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by

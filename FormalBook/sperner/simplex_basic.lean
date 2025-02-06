@@ -179,3 +179,9 @@ lemma boundary_not_in_open {n : ℕ} {P : Fin n → ℝ²} {x : ℝ²} (hx : x �
 
 lemma boundary_in_closed {n : ℕ} {P : Fin n → ℝ²} {x : ℝ²} (hx : x ∈ boundary P) :
     x ∈ closed_hull P := Set.mem_of_mem_diff hx
+
+lemma boundary_int_open_empty {n : ℕ} {P : Fin n → ℝ²} : boundary P ∩ open_hull P = ∅ :=
+  Set.diff_inter_self
+
+lemma boundary_union_open_closed {n : ℕ} {P : Fin n → ℝ²} :
+    boundary P ∪ open_hull P = closed_hull P := Set.diff_union_of_subset (open_sub_closed P)
