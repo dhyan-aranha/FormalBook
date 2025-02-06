@@ -45,7 +45,7 @@ import FormalBook.Chapter_43
 import FormalBook.Chapter_44
 import FormalBook.Chapter_45
 import FormalBook.Mathlib.EdgeFinset
-import FormalBook.Rainbow_triangles
+import FormalBook.sperner.Rainbow_triangles
 import FormalBook.Widgets.Windmill
 import FormalBook.sperner.Monsky_even
 import FormalBook.sperner_pjotr
