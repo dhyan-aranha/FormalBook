@@ -174,12 +174,8 @@ def Color_matrix (X Y Z : ℝ²): Matrix (Fin 3) (Fin 3) ℝ :=
 lemma det_of_Color_matrix (X Y Z : ℝ²) :
   Matrix.det (Color_matrix X Y Z) =
    (X 0 * Y 1 + X 1 * Z 0 + Y 0 * Z 1 - Y 1 * Z 0 - X 1 * Y 0 - X 0 * Z 1) := by
-rw [Matrix.det_fin_three, Color_matrix]
-simp only [Fin.isValue, Matrix.cons_val', Matrix.cons_val_zero, Matrix.empty_val',
-     Matrix.cons_val_fin_one, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-     Nat.succ_eq_add_one, Nat.reduceAdd, Matrix.tail_cons, Matrix.tail_val',
-     Matrix.head_val', Matrix.head_fin_const, mul_one, one_mul]
-ring_nf
+  simp [Matrix.det_fin_three, Color_matrix]
+  ring
 
 -- Valuation of a sum of six variables is equal to the valuation of the largest of them
 lemma valuation_max
@@ -258,16 +254,10 @@ def σ : Fin 6 → (Fin 3 → Fin 3) := fun
 lemma sign_non_zero : ∀ b, b_sign b ≠ 0 := by
   intro b; fin_cases b <;> simp [b_sign]
 
-lemma fun_in_bijections {i j k : Fin 3} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
-    ∃ b, σ b = (fun | 0 => i | 1 => j | 2 => k)  := by
-  fin_cases i <;> fin_cases j <;> fin_cases k
-  all_goals (try tauto)
-  · exact ⟨0, rfl⟩
-  · exact ⟨1, rfl⟩
-  · exact ⟨2, rfl⟩
-  · exact ⟨3, rfl⟩
-  · exact ⟨4, rfl⟩
-  · exact ⟨5, rfl⟩
+lemma fun_in_bijections :
+    ∀ {i j k : Fin 3}, i ≠ j → i ≠ k → j ≠ k →
+      ∃ b, σ b = (fun | 0 => i | 1 => j | 2 => k) := by
+  decide
 
 
 lemma det_perm {T : Triangle} (b : Fin 6) :
@@ -327,6 +317,13 @@ lemma linear_combination_det_first {n : ℕ} {y z : ℝ²} {P : Fin n → ℝ²}
     simp [b_sign, σ];
     congr; funext k; fin_cases k <;> rfl
 
+lemma linear_combination_det_last' {n : ℕ} {x y : ℝ²} {P : Fin n → ℝ²} {α : Fin n → ℝ}
+    (hα : ∑ i, α i = 1) :
+  det (fun | 0 => x | 1 => y | 2 => (∑ i, α i • P i)) =
+  ∑ i, (α i * det (fun | 0 => x | 1 => y | 2 => (P i))) := by
+  simp [det, left_distrib, sum_add_distrib, sum_apply _, mul_sum, ←sum_mul, hα]
+  congr <;> (ext; ring)
+
 
 lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
     ∀ x y z, x ∈ closed_hull T → y ∈ closed_hull T → z ∈ closed_hull T →
@@ -334,47 +331,20 @@ lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
   intro x y z ⟨_, ⟨_, hαx⟩ , hx⟩ ⟨_, ⟨_, hαy⟩ , hy⟩ ⟨_, ⟨_, hαz⟩ , hz⟩
   rw [←hx, ← hy, ←hz, linear_combination_det_first hαx]
   simp only [linear_combination_det_middle hαy]
-  refine
-    Eq.mpr
-      (id
-        (congrArg (fun x ↦ x = 0)
-          (Finset.sum_congr (Eq.refl Finset.univ) fun x a ↦
-            congrArg (HMul.hMul (_))
-              (Finset.sum_congr (Eq.refl Finset.univ) fun x_1 a ↦
-                congrArg (HMul.hMul (_))
-                  ((fun x_0 x_1 x_2 ↦
-                      (fun x_0 x_1 x_2 ↦ linear_combination_det_last hαz) x_0 x_1 x_2)
-                    (T x) (T x_1) T)))))
-      ?_ -- this was the breaking simp
-  exact
-    of_eq_true
-      (Eq.trans
-        (congrArg (fun x ↦ x = 0)
-          (Eq.trans
-            (Finset.sum_congr (Eq.refl Finset.univ) fun x a ↦
-              Eq.trans
-                (congrArg (HMul.hMul (_))
-                  (Eq.trans
-                    (Finset.sum_congr (Eq.refl Finset.univ) fun x_1 a ↦
-                      Eq.trans
-                        (congrArg (HMul.hMul (_))
-                          (Eq.trans
-                            (Finset.sum_congr (Eq.refl Finset.univ) fun x_2 a ↦
-                              Eq.trans
-                                (congrArg (HMul.hMul (_))
-                                  ((fun i j k ↦ det_zero_perm hT i j k) x x_1 x_2))
-                                (mul_zero (_)))
-                            Finset.sum_const_zero))
-                        (mul_zero (_)))
-                    Finset.sum_const_zero))
-                (mul_zero (_)))
-            Finset.sum_const_zero))
-        (eq_self 0))
-
-
-
-
-
+  apply Finset.sum_eq_zero
+  intro a ha
+  rw [mul_eq_zero]
+  right
+  apply Finset.sum_eq_zero
+  intro b hb
+  rw [mul_eq_zero]
+  right
+  rw [linear_combination_det_last' (P := T) hαz]
+  apply Finset.sum_eq_zero
+  intro c hc
+  rw [mul_eq_zero]
+  right
+  exact det_zero_perm hT _ _ _
 
 
 
@@ -487,7 +457,7 @@ apply h3
 
 
 theorem no_odd_rainbow_triangle (T : Fin 3 → ℝ²)(rt : rainbow_triangle v T) (vhalf: v (1/2) > 1)
-(vodd: ∀ (n : ℕ) (zodd: Odd n), v (1/n) = 1) : ¬ ∃ (n : ℕ) (hodd: Odd n),
+(vodd: ∀ (n : ℕ) (_: Odd n), v (1/n) = 1) : ¬ ∃ (n : ℕ) (_: Odd n),
 |det T| = 2 / n := by
 
 push_neg
