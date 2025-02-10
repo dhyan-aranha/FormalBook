@@ -910,8 +910,7 @@ lemma colin_sub_aux {u v w x : ℝ²} {L : Segment} (hc : colin u v w)
       intro h;
       rw [h] at hxL
       exact hv hxL
-    apply hv
-    refine open_segment_sub ?_ ?_ hc₂.2
+    refine hv (open_segment_sub ?_ ?_ hc₂.2)
     · sorry
     · -- This case is why the cases on L being trivial is necessary
       -- Now it should follow that x is not L i because x is in the open_hull
