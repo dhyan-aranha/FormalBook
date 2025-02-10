@@ -345,11 +345,23 @@ noncomputable def isPurple : Segment → ℕ :=
 noncomputable def isRainbow : Triangle → ℕ :=
     fun T ↦ if (Function.Surjective (color ∘ T)) then 1 else 0
 
+
+lemma isPurple_two_mod_function : two_mod_function isPurple := by
+  unfold two_mod_function
+  intro u v w hColin
+  sorry
+
+lemma isPurple_symm_function : symm_fun isPurple := by
+  unfold symm_fun
+  intro S
+  unfold isPurple reverse_segment
+  aesop
+
 -- The segment covered by a chain is purple if and only if an odd number of its basic
 -- segments are purple.
 lemma purple_parity {u v : ℝ²} (C : Chain u v) : ∑ T ∈ to_basic_segments C, isPurple T % 2
     = isPurple (chain_to_big_segment C) := by
-  sorry -- can probably be proven by induction
+  sorry -- can apply two_mod_function_chains
 
 
 noncomputable def triangulation_points (Δ : Finset Triangle) : Finset ℝ² :=
@@ -404,7 +416,21 @@ lemma triangulation_boundary_union (Δ : Finset Triangle) (hCover: is_triangulat
 lemma triangulation_boundary_intersection (Δ : Finset Triangle) :
     triangulation_boundary_basic_segments Δ ∩ triangulation_interior_basic_segments Δ = ∅ := by
   unfold triangulation_boundary_basic_segments triangulation_interior_basic_segments
-  sorry
+  ext S
+  simp only [mem_inter, mem_filter, not_mem_empty, iff_false, not_and, and_imp]
+  intro hS hOpen hS2
+  by_contra h
+  have h_elt : ∃ x, x ∈ open_hull S := by
+    apply open_pol_nonempty
+    linarith
+  have h_open_nonempty : open_hull S ≠ ∅ := by
+    obtain ⟨x, h_1⟩ := h_elt
+    intro h
+    simp_all only [Set.empty_subset, Set.mem_empty_iff_false]
+  have h_open_empty : open_hull S ⊆ ∅ := by
+    rw [← boundary_int_open_empty]
+    tauto_set
+  simp_all only [ne_eq, Set.subset_empty_iff]
 
 
 noncomputable def triangulation_all_segments (Δ : Finset Triangle) : Finset Segment :=
@@ -441,10 +467,28 @@ noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by
   intro T hT
+  -- Reduce the sum over the boundary to just the sum over the 3 boundary segments of T
+  -- I think we have to use segment_decomposition in this proof.
+
+  -- Then the result follows by an explicit computation
+  sorry
+
+lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
+    filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ ∪
+        triangulation_interior_basic_segments Δ) =
+    filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ) ∪
+        filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_interior_basic_segments Δ) := by
+  aesop
+
+lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
+    filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
+        filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
 
   sorry
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
+
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
+    2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
   /-
     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
     or over all triangles first.
@@ -452,7 +496,11 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) : 2 * rainbow_sum Δ % 
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl rainbow_triangle_purple_sum]
-
+  unfold triangle_basic_boundary
+  rw [triangulation_boundary_union Δ hCover]
+  conv => left; arg 1; arg 2; ext T; arg 1; arg 1;
+  --rw [sum_congr rfl (boundary_filter_union Δ T)]
+  -- arg 1; rw [boundary_filter_union Δ T (by sorry)]
 
   sorry
 
