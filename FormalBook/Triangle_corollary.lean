@@ -311,20 +311,7 @@ lemma half_is_half : (2⁻¹ : ENNReal) = ENNReal.ofReal (2⁻¹ : ℝ ) := by
   rw[ENNReal.ofReal_inv_of_pos h1]
   norm_num
 
---One version of this statement in Real numbers, the other in ENNReal, in terms of proof efficiency these probably should not be completely seperate proofs
-theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal =  (triangle_area (T : Triangle)) := by
-  rw[← unit_triangle_to_triangle T ,triangle_translation_def]
-  rw[ area_translation, area_lin_map, volume_open_unit_triangle]
-  rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform T ) ]
-  rw[LinearMap.det_toLin our_basis ((LinearMap.toMatrix our_basis our_basis) (linear_transform T))]
-  rw[Matrix.det_fin_two]
-  rw[linear_transform_def, basis_transform_def, our_basis_def, triangle_area ]
-  repeat rw[LinearMap.toMatrix_apply]
-  simp
-
-  ring_nf
-
-theorem volume_open_triangle1 ( T : Triangle ) : (MeasureTheory.volume (open_hull T)) =  ENNReal.ofReal (triangle_area (T : Triangle)) := by
+theorem volume_open_triangle' ( T : Triangle ) : (MeasureTheory.volume (open_hull T)) =  ENNReal.ofReal (triangle_area (T : Triangle)) := by
   rw[← unit_triangle_to_triangle T ,triangle_translation_def]
   rw[ area_translation, area_lin_map, volume_open_unit_triangle]
   rw[← Matrix.toLin_toMatrix our_basis our_basis  ( linear_transform T ) ]
@@ -339,6 +326,11 @@ theorem volume_open_triangle1 ( T : Triangle ) : (MeasureTheory.volume (open_hul
   norm_num
   rw[← ENNReal.ofReal_mul' h2]
   ring_nf
+
+--One version of this statement in Real numbers, the other in ENNReal, in terms of proof efficiency these probably should not be completely seperate proofs
+theorem volume_open_triangle ( T : Triangle ) : (MeasureTheory.volume (open_hull T)).toReal =  (triangle_area (T : Triangle)) := by
+  rw [volume_open_triangle', ENNReal.toReal_ofReal_eq_iff]
+  exact div_nonneg (abs_nonneg _) (by norm_num)
 
 --Now that we know the volume of open triangles, we also want to know the area of segments. For this we have a similar strategy. We first take a unit segment, and show it is a subset of the y axis which as hhas measure zero
 def unit_segment : Segment := fun | 0 => (v 0 0) | 1 => (v 1 0)
@@ -627,7 +619,85 @@ theorem union_of_edges_zero_vol (S : Finset Triangle) : MeasureTheory.volume ( �
   rw[h5]
   exact ENNReal.tsum_eq_zero.mpr (congrFun rfl)
 
+--example (X A: Set ℝ²)(S : Finset Triangle)(h: A = ∅) : MeasureTheory.volume A = 0 := by exact?
+
 --
+theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_cover X S) : MeasureTheory.volume X = ∑  (T ∈  S), MeasureTheory.volume (open_hull T) := by
+  unfold is_cover at hcover
+  rw[hcover.1]
+  have h1:  closed_hull  = (fun T ↦  open_hull T ∪ all_edges_triangle_hull T)
+  ext T X
+  rw[closed_triangle_is_union T]
+  have h2 :  ⋃ T ∈ Finset.toSet S, closed_hull T= (⋃ i, (Finset.toSet S).restrict closed_hull i)
+  exact Eq.symm (Set.iUnion_subtype (Membership.mem S) (S.restrict closed_hull))
+  rw[h2,  h1]
+  dsimp
+  rw[Set.iUnion_union_distrib ]
+  rw[volume_zero]
+  · let open_hullT : (Triangle → Set ℝ²) := open_hull
+    let f := Set.restrict S open_hullT
+    have h : ∀ (i : S), MeasureTheory.NullMeasurableSet (f i)
+    · intro T
+      exact null_meas_triangle T
+    have hd : Pairwise (Function.onFun (MeasureTheory.AEDisjoint MeasureTheory.volume) f)
+    · have h6 := hcover.2
+      unfold f open_hullT
+      unfold Set.PairwiseDisjoint Set.Pairwise at h6
+      unfold Pairwise
+
+      intro i j hij
+      apply Disjoint.aedisjoint
+      specialize h6 i.2 j.2 (Subtype.coe_ne_coe.mpr hij)
+      rw[Function.onFun_apply] at h6
+      exact h6
+    erw[MeasureTheory.measure_iUnion₀ hd h, tsum_fintype,]
+    simp [f]
+    rw [Finset.sum_attach S (fun x ↦ volume (open_hullT x))]
+
+  · have h4 :  ⋃ T ∈ S, all_edges_triangle_hull T= (⋃ i, (Finset.toSet S).restrict all_edges_triangle_hull i)
+    exact Eq.symm (Set.iUnion_subtype (Membership.mem S) (S.restrict all_edges_triangle_hull))
+    have h5 := union_of_edges_zero_vol S
+    rw[ h4] at h5
+    exact h5
+
+--theorem triangle_det_sum_one (S : Finset Triangle)(g : Triangle → ℝ ) (h1: ∀ T : Triangle, g T = triangle_area T ) : ∑  (T ∈  S), triangle_area T = ∑  (T ∈  S), g T := by exact
+  --Eq.symm ( rfl fun x a ↦ h1 x)
+
+theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover unit_square S) :  ∑  (T ∈  S), triangle_area T = 1 := by
+  rw[← volume_box]
+  rw[area_equal_sum_cover unit_square S hcover]
+  have h: ∀ T ∈  S, triangle_area T = (MeasureTheory.volume (open_hull T)).toReal
+  intro T hT
+  rw[volume_open_triangle]
+  rw[sum_congr (by rfl) h]
+  simp
+  rw[ENNReal.toReal_sum]
+  intro a ha; rw [volume_open_triangle']; simp
+
+theorem equal_area_cover_implies_triangle_area_n (S : Finset Triangle)(hcover : is_equal_area_cover unit_square S) : ∀ T ∈ S, triangle_area T = 1/ S.card := by
+  rcases hcover with ⟨ h1, ⟨ area,h2 ⟩ ⟩
+  intro T hT
+  have h3 := triangle_det_sum_one S h1
+  let f : S → ℝ := (fun x ↦ area)
+  have h4 : ∑ T ∈ S, triangle_area T = ∑ T ∈ S, area := sum_congr rfl h2
+
+  rw [h4, sum_const] at h3
+
+  rw[h2 T hT, ← h3, nsmul_eq_mul]
+  ring_nf
+  rw [mul_assoc,mul_comm,mul_assoc, IsUnit.inv_mul_cancel _, mul_one]
+  simp at h3
+  apply isUnit_iff_exists.mpr
+  use area; constructor; exact h3; rw [mul_comm]; exact h3
+
+
+
+-- def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
+--   is_cover X S ∧
+--   (∃ (area : ℝ), ∀ T, (T ∈ S) → triangle_area T = area)
+--def is_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
+--(X = ⋃ (T ∈ S), closed_hull T) ∧
+-- (Set.PairwiseDisjoint S open_hull)
 
 -- theorem null_measurable_segment (L : Segment): MeasureTheory.NullMeasurableSet (closed_hull L) := by
 --   exact MeasureTheory.NullMeasurableSet.of_null (volume_closed_segment L)
