@@ -431,8 +431,7 @@ theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hul
   simp
 
 
---We also in the end need that the unit square has volume 1. The unit square is equal to the square spanned by the basis vectors, which Lean knows has volume 1. This is proved here, although the prove is not finished
-theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
+--We also in the end need that the unit square has volume 1. The unit square is equal to the square spanned by the basis vectors, which Lean knows has volume 1.
   ext x
   constructor
   · rw[mem_parallelepiped_iff , unit_square, closed_hull]
