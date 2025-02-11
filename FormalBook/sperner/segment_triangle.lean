@@ -225,7 +225,7 @@ lemma boundary_seg {L : Segment} (hL : L 0 ≠ L 1)
       have this := smul_cancel (Ne.symm (ne_of_lt (hα.1 (f i)))) h
       fin_cases i <;> (simp [f] at this; rw [this])
 
-lemma boundary_seg'{L : Segment} (hL: L 0 ≠ L 1) : ∀ (i : Fin 2), L i ∈ boundary L := by
+lemma boundary_seg' {L : Segment} (hL: L 0 ≠ L 1) : ∀ (i : Fin 2), L i ∈ boundary L := by
   intro i
   rw [boundary_seg]
   simp only [coe_image, coe_univ, Set.image_univ, Set.mem_range, exists_apply_eq_apply]
@@ -807,6 +807,7 @@ lemma colin_reverse {u v w : ℝ²} (h : colin u v w) : colin w v u := by
 lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
     (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
     closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
+
   sorry
 
 lemma interior_left_trans {u v w t : ℝ²}
@@ -839,10 +840,6 @@ lemma middle_not_boundary_colin {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v
 
 
 
-lemma interior_collinear {u v w : ℝ²} (hv : v ∈ open_hull (to_segment u w)) : colin u v w := by
-  sorry
-
-
 lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin u t v := ⟨(middle_not_boundary_colin hc).1,ht⟩
 
@@ -867,3 +864,64 @@ lemma sub_collinear_right {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_
     ext i
     field_simp
     ring
+
+-- A slightly stronger version.
+lemma sub_collinear_right' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ closed_hull (to_segment u v))
+    (htv : t ≠ v) : colin t v w := by
+  by_cases ht_open : t ∈ open_hull (to_segment u v)
+  · exact sub_collinear_right hc ht_open
+  · have ht_boundary : t ∈ boundary (to_segment u v) := Set.mem_diff_of_mem ht ht_open
+    rw [boundary_seg (by convert (middle_not_boundary_colin hc).1)] at ht_boundary
+    simp only [coe_image, coe_univ, Set.image_univ, Set.mem_range] at ht_boundary
+    have ⟨i, hi⟩ := ht_boundary
+    fin_cases i
+    · rw [←hi]
+      exact hc
+    · rw [←hi] at htv
+      tauto
+
+
+lemma sub_collinear_right_symm' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ closed_hull (to_segment v w))
+    (htv : t ≠ v) : colin u v t := by
+  apply colin_reverse
+  refine sub_collinear_right' (hc := colin_reverse hc) ?_ htv
+  convert ht using 1;
+  convert reverse_segment_closed_hull
+  simp only [reverse_segment_to_segment]
+
+
+lemma colin_sub_aux {u v w x : ℝ²} {L : Segment} (hc : colin u v w)
+    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hv : v ∉ open_hull L) (hxL : x ∈ open_hull L)
+    (hx : x ∈ closed_hull (to_segment u v)) : closed_hull L ⊆ closed_hull (to_segment u v) := by
+  by_cases hL01 : L 0 = L 1
+  · rw [←Set.singleton_subset_iff] at hx
+    convert hx
+    sorry
+  · apply closed_hull_convex
+    by_contra hLi
+    push_neg at hLi
+    have ⟨i, hLi⟩ := hLi
+    have hc₁ : colin u v (L i) := by
+      apply sub_collinear_right_symm' hc
+      · sorry
+      · sorry
+    have hc₂ : colin x v (L i) := by
+      apply sub_collinear_right' hc₁ hx
+      intro h;
+      rw [h] at hxL
+      exact hv hxL
+    refine hv (open_segment_sub ?_ ?_ hc₂.2)
+    · sorry
+    · -- This case is why the cases on L being trivial is necessary
+      -- Now it should follow that x is not L i because x is in the open_hull
+      sorry
+
+
+
+-- Test
+
+def ClosedSymSeg : Sym2 ℝ² → Set ℝ² :=
+  Sym2.lift ⟨fun a b ↦ closed_hull (to_segment a b), by
+  intro _ _
+  convert reverse_segment_closed_hull
+  simp only [reverse_segment_to_segment]⟩
