@@ -65,6 +65,21 @@ def open_unit_square : Set ℝ²
 lemma v₀_val {x y : ℝ} : (v x y) 0 = x := rfl
 @[simp]
 lemma v₁_val {x y : ℝ} : (v x y) 1 = y := rfl
+
+lemma open_sub_closed {n : ℕ} (P : Fin n → ℝ²) : open_hull P ⊆ closed_hull P :=
+  fun _ ⟨α,hαx,hx⟩ ↦ ⟨α,⟨⟨fun i ↦ by linarith [hαx.1 i],hαx.2⟩,hx⟩⟩
+
+def Tside (T : Triangle) : Fin 3 → Segment := fun
+  | 0 => (fun | 0 => T 1 | 1 => T 2)
+  | 1 => (fun | 0 => T 2 | 1 => T 0)
+  | 2 => (fun | 0 => T 0 | 1 => T 1)
+
+
+
+lemma closed_side_sub {T : Triangle} {x : ℝ²} {i : Fin 3} (hx : x ∈ closed_hull (Tside T i)) :
+    x ∈ closed_hull T := by sorry
+
+
 -- Copy pasted stuff ends here
 
 
@@ -570,15 +585,94 @@ theorem null_meas_triangle (T : Triangle) : MeasureTheory.NullMeasurableSet (ope
     exact h
 
 --Now that we have also have measurability we can start the real work
---We define the edge points of the triangle
-def edges_triangle (T : Triangle) : (Fin 3 → Segment ) := fun | 0 => (fun | 0 => T 0 | 1 => T 1) | 1 => (fun | 0 => T 1 | 1 => T 2) | 2 => (fun | 0 => T 2 | 1 => T 0)
+--The edge points of the triangle have already been defined with Tside
 
---And show that the closed hull of these edges together with an open triangle makes a closed triangle
-def all_edges_triangle_hull (T : Triangle) := closed_hull (edges_triangle T 0) ∪ closed_hull (edges_triangle T 1) ∪ closed_hull (edges_triangle T 2)
+--We show that the closed hull of these edges together with an open triangle makes a closed triangle, first the definition
+def all_edges_triangle_hull (T : Triangle) := closed_hull (Tside T 0) ∪ closed_hull (Tside T 1) ∪ closed_hull (Tside T 2)
 
---This stuff has already be done by Pjotr, but only for nondegenerate triangles ( I think), so maybe this means it has to be shown again anyhow? I am not sure
+--then the proof (this proof is probably the ugliest I have written, with lots of ctr copy ctr paste, but it is also the last sorry I had to fill in so I don't care :))
 theorem closed_triangle_is_union (T : Triangle) : closed_hull T = open_hull T ∪ all_edges_triangle_hull T := by
-  sorry
+  ext x
+  constructor
+  · rintro ⟨ a ,⟨ h1, h2⟩  , h3⟩
+    by_cases ha0 : a 0 = 0
+    · right
+      left
+      left
+      use (fun | 0 => a 1 | 1 => a 2)
+      unfold Tside
+      dsimp
+      constructor
+      · constructor
+        · intro i
+          fin_cases i
+          dsimp ; exact h1 1 ; exact h1 2 --would have like if this could have been done without fin_cases but it did not seem to work
+        · rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+          linarith
+      · dsimp at h3
+        rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+        rw[ha0] at h3 h2
+        simp at *
+        exact h3
+    · by_cases ha1 : a 1 = 0
+      · right
+        left
+        right
+        use (fun | 0 => a 2 | 1 => a 0)
+        unfold Tside
+        dsimp
+        constructor
+        · constructor
+          · intro i
+            fin_cases i
+            dsimp ; exact h1 2 ; exact h1 0 --would have like if this could have been done without fin_cases but it did not seem to work
+          · rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+            linarith
+        · dsimp at h3
+          rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+          rw[ha1] at h3 h2
+          simp at *
+          rw[add_comm]
+          exact h3
+      · by_cases ha2 : a 2 = 0
+        · right
+          right
+          use (fun | 0 => a 0 | 1 => a 1)
+          unfold Tside
+          dsimp
+          constructor
+          · constructor
+            · intro i
+              fin_cases i
+              dsimp ; exact h1 0 ; exact h1 1 --would have like if this could have been done without fin_cases but it did not seem to work
+            · rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+              linarith
+          · dsimp at h3
+            rw[Fin.sum_univ_two,Fin.sum_univ_three] at *
+            rw[ha2] at h3 h2
+            simp at *
+            exact h3
+        · left
+          use a
+          constructor
+          · constructor
+            · intro i
+              fin_cases i
+              · specialize h1 0
+                exact lt_of_le_of_ne h1 fun a_1 ↦ ha0 (id (Eq.symm a_1))
+              · specialize h1 1
+                exact lt_of_le_of_ne h1 fun a_1 ↦ ha1 (id (Eq.symm a_1))
+              · specialize h1 2
+                exact lt_of_le_of_ne h1 fun a_1 ↦ ha2 (id (Eq.symm a_1))
+            · exact h2
+          · exact h3
+  · rintro ( hx1| hx2)
+    · exact open_sub_closed T hx1
+    · unfold all_edges_triangle_hull at hx2
+      rcases hx2 with ((hx3|hx4 )| hx5)
+      · exact closed_side_sub hx3
+      · exact closed_side_sub hx4
+      · exact closed_side_sub hx5
 
 --This is useful lemma
 lemma volume_zero ( A B: Set ℝ² ) (h : MeasureTheory.volume B = 0) : MeasureTheory.volume (A ∪ B) = MeasureTheory.volume A := by
@@ -619,9 +713,8 @@ theorem union_of_edges_zero_vol (S : Finset Triangle) : MeasureTheory.volume ( �
   rw[h5]
   exact ENNReal.tsum_eq_zero.mpr (congrFun rfl)
 
---example (X A: Set ℝ²)(S : Finset Triangle)(h: A = ∅) : MeasureTheory.volume A = 0 := by exact?
-
---
+--This theorem shows that whenever you have a cover by triangles, the measure theoretic area of the triangles add up to the measure theoretic area of what they cover
+--This proof is a bit ugly, but these sums and unions are very annoying to work with in my opinion
 theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_cover X S) : MeasureTheory.volume X = ∑  (T ∈  S), MeasureTheory.volume (open_hull T) := by
   unfold is_cover at hcover
   rw[hcover.1]
@@ -660,9 +753,8 @@ theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_co
     rw[ h4] at h5
     exact h5
 
---theorem triangle_det_sum_one (S : Finset Triangle)(g : Triangle → ℝ ) (h1: ∀ T : Triangle, g T = triangle_area T ) : ∑  (T ∈  S), triangle_area T = ∑  (T ∈  S), g T := by exact
-  --Eq.symm ( rfl fun x a ↦ h1 x)
-
+--This theorem is similar to the above but specifically to the unit square (which has an area of 1) and where the measure theoretic area of the triangles replaced by their area in determinant form
+--This proof is even uglier then the previous
 theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover unit_square S) :  ∑  (T ∈  S), triangle_area T = 1 := by
   rw[← volume_box]
   rw[area_equal_sum_cover unit_square S hcover]
@@ -674,6 +766,7 @@ theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover unit_square
   rw[ENNReal.toReal_sum]
   intro a ha; rw [volume_open_triangle']; simp
 
+--This is the statemet we have been working so hard for: whenever we have a cover of triangles of equal area, this area must be 1/|amount of triangles|
 theorem equal_area_cover_implies_triangle_area_n (S : Finset Triangle)(hcover : is_equal_area_cover unit_square S) : ∀ T ∈ S, triangle_area T = 1/ S.card := by
   rcases hcover with ⟨ h1, ⟨ area,h2 ⟩ ⟩
   intro T hT
