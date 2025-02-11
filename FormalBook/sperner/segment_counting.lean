@@ -54,8 +54,11 @@ lemma glue_chains_assoc {u v w x : ℝ²} (C₁ : Chain u v) (C₂ : Chain v w) 
     (h₁ : colin u v w) (h₂ : colin v w x) :
     glue_chains (colin_trans_right h₁ h₂) (glue_chains h₁ C₁ C₂) C₃ =
     glue_chains (colin_trans_left h₁ h₂) C₁ (glue_chains h₂ C₂ C₃) := by
-
-  sorry
+  induction C₁ with
+  | basic         => rfl
+  | join h₃ C ih  =>
+    simp only [glue_chains, Chain.join.injEq, heq_eq_eq, true_and]
+    exact ih C₂ _ _
 
 
 lemma reverse_chain_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
