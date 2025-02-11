@@ -470,10 +470,10 @@ lemma isPurple_symm_function : symm_fun isPurple := by
 
 -- The segment covered by a chain is purple if and only if an odd number of its basic
 -- segments are purple.
-lemma purple_parity {u v : ℝ²} (C : Chain u v) : ∑ T ∈ to_basic_segments C, isPurple T % 2
+/-lemma purple_parity {u v : ℝ²} (C : Chain u v) : ∑ T ∈ to_basic_segments C, isPurple T % 2
     = isPurple (chain_to_big_segment C) := by
   sorry -- can apply two_mod_function_chains
-
+-/
 
 noncomputable def triangulation_points (Δ : Finset Triangle) : Finset ℝ² :=
   Finset.biUnion Δ (fun T ↦ {T 0, T 1, T 2})
@@ -589,11 +589,60 @@ lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
         triangulation_interior_basic_segments Δ) =
     filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ) ∪
         filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_interior_basic_segments Δ) := by
-  aesop
+  intro a
+  ext a_1 : 1
+  simp_all only [mem_filter, mem_union]
+  apply Iff.intro
+  · intro a_2
+    simp_all only [and_true]
+  · intro a_2
+    cases a_2 with
+    | inl h => simp_all only [true_or, and_self]
+    | inr h_1 => simp_all only [or_true, and_self]
+
 
 lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
     filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
         filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
+
+  sorry
+
+
+lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
+    S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
+  sorry
+
+lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
+    S ∈ triangulation_interior_basic_segments Δ ↔ reverse_segment S ∈ triangulation_interior_basic_segments Δ := by
+  unfold triangulation_interior_basic_segments
+  repeat rw [mem_filter]
+  constructor <;> intro a <;> obtain ⟨left, right⟩ := a
+  · rw [← reverse_open_hull_basic, reverse_segment_open_hull]
+    exact ⟨left, right⟩
+  · rw [reverse_open_hull_basic, ← reverse_segment_open_hull]
+    exact ⟨left, right⟩
+
+def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
+  {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
+
+lemma exists_segment_orientation_choice (Δ : Finset Triangle) : ∃ A : Finset Segment,
+    triangulation_interior_basic_segments Δ = A ∪ Finset.image reverse_segment A ∧
+    Disjoint A (Finset.image reverse_segment A) := by
+  sorry
+
+theorem interior_purple_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) :
+    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
+  cases' (exists_segment_orientation_choice Δ) with A h
+  obtain ⟨hU, hdisj⟩ := h
+  rw [hU]
+  -- rw [Finset.sum_disjUnion hdisj]
+
+  sorry
+
+lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
+    (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
+    ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
+    2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
 
   sorry
 
@@ -606,15 +655,25 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl rainbow_triangle_purple_sum]
+  rw [sum_congr rfl rainbow_triangle_purple_sum, ←sum_nat_mod]
+  rw [split_segment_sum Δ hCover isPurple isPurple_symm_function]
+  have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 4 = 0 := by
+    exact mod_two_mul (interior_purple_sum Δ hCover)
+  rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
+  /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
   unfold triangle_basic_boundary
   rw [triangulation_boundary_union Δ hCover]
-  conv => left; arg 1; arg 2; ext T; arg 1; arg 1;
-  --rw [sum_congr rfl (boundary_filter_union Δ T)]
-  -- arg 1; rw [boundary_filter_union Δ T (by sorry)]
+  have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+        (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
+          isPurple x.snd) % 4
+        = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+          (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
+          (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+          (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
+    := by
 
-  sorry
-
+    sorry
+  rw [h]-/
 
 
 
