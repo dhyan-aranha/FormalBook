@@ -121,7 +121,7 @@ theorem map_pres (X : Set ℝ²) : volume X = volume (id_map '' X) :=
 def unit_triangle : Triangle := fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1)
 lemma unit_triangle_def : unit_triangle = fun | 0 => (v 0 0) | 1 => (v 1 0) | 2 => (v 0 1) := by rfl
 
-def lower : ℝ → ℝ := fun x ↦ 0
+def lower : ℝ → ℝ := fun _ ↦ 0
 def upper : ℝ → ℝ := fun x ↦ 1 - x
 
 theorem unit_is_unit_in_prod : id_map '' (open_hull unit_triangle) = regionBetween lower upper (Set.Ioc 0 1) := by
@@ -431,7 +431,8 @@ theorem volume_closed_segment( L : Segment ) : (MeasureTheory.volume (closed_hul
   simp
 
 
---We also in the end need that the unit square has volume 1. The unit square is equal to the square spanned by the basis vectors, which Lean knows has volume 1.
+--We also in the end need that the unit square has volume 1. The unit square is equal to the square spanned by the basis vectors, which Lean knows has volume 1. This is proved here, although the prove is not finished
+theorem box_equal_to_pare : parallelepiped our_basis_ortho = unit_square := by
   ext x
   constructor
   · rw[mem_parallelepiped_iff , unit_square, closed_hull]
@@ -578,7 +579,7 @@ theorem null_meas_triangle (T : Triangle) : MeasureTheory.NullMeasurableSet (ope
     exact MeasurableSet.nullMeasurableSet (nondegen_triangle_meas T h1)
   · simp at h
     apply ENNReal.zero_eq_ofReal.mpr at h
-    rw[← volume_open_triangle1 T] at h
+    rw[← volume_open_triangle' T] at h
     apply MeasureTheory.NullMeasurableSet.of_null
     symm
     exact h
@@ -686,9 +687,9 @@ lemma volume_zero ( A B: Set ℝ² ) (h : MeasureTheory.volume B = 0) : MeasureT
 theorem all_edges_triangle_hull_area (T: Triangle) : MeasureTheory.volume (all_edges_triangle_hull T) = 0:= by
   unfold all_edges_triangle_hull
   repeat rw[volume_zero]
-  exact volume_closed_segment (edges_triangle T 0)
-  exact volume_closed_segment (edges_triangle T 1)
-  exact volume_closed_segment (edges_triangle T 2)
+  exact volume_closed_segment (Tside T 0)
+  exact volume_closed_segment (Tside T 1)
+  exact volume_closed_segment (Tside T 2)
 
 --This shows that all boundaries combined also have measure zero. This proof is a lot uglier then I would like it to be, it might be due to a lack of understanding of sums and unions....
 theorem union_of_edges_zero_vol (S : Finset Triangle) : MeasureTheory.volume ( ⋃ (T ∈ S) , all_edges_triangle_hull T ) = 0 := by
@@ -758,20 +759,19 @@ theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover unit_square
   rw[← volume_box]
   rw[area_equal_sum_cover unit_square S hcover]
   have h: ∀ T ∈  S, triangle_area T = (MeasureTheory.volume (open_hull T)).toReal
-  intro T hT
+  intro T _
   rw[volume_open_triangle]
   rw[sum_congr (by rfl) h]
   simp
   rw[ENNReal.toReal_sum]
-  intro a ha; rw [volume_open_triangle']; simp
+  intro a _; rw [volume_open_triangle']; simp
 
 --This is the statemet we have been working so hard for: whenever we have a cover of triangles of equal area, this area must be 1/|amount of triangles|
 theorem equal_area_cover_implies_triangle_area_n (S : Finset Triangle)(hcover : is_equal_area_cover unit_square S) : ∀ T ∈ S, triangle_area T = 1/ S.card := by
   rcases hcover with ⟨ h1, ⟨ area,h2 ⟩ ⟩
   intro T hT
   have h3 := triangle_det_sum_one S h1
-  let f : S → ℝ := (fun x ↦ area)
-  have h4 : ∑ T ∈ S, triangle_area T = ∑ T ∈ S, area := sum_congr rfl h2
+  have h4 : ∑ T ∈ S, triangle_area T = ∑ _ ∈ S, area := sum_congr rfl h2
 
   rw [h4, sum_const] at h3
 
