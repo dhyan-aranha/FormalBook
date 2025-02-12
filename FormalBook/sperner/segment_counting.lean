@@ -611,7 +611,7 @@ lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
   sorry
 
 
-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
+/-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
     S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
   sorry
 
@@ -623,30 +623,78 @@ lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
   · rw [← reverse_open_hull_basic, reverse_segment_open_hull]
     exact ⟨left, right⟩
   · rw [reverse_open_hull_basic, ← reverse_segment_open_hull]
-    exact ⟨left, right⟩
+    exact ⟨left, right⟩-/
 
 def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
   {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
 
+lemma open_eq_implies_closed_eq (S T : Segment) :
+    open_hull S = open_hull T → closed_hull S = closed_hull T := by
+  sorry
+
+lemma open_hull_almost_unique (S T : Segment) :
+    open_hull S = open_hull T → S = T ∨ S = reverse_segment T := by
+  intro h
+  have h_clos := open_eq_implies_closed_eq S T h
+  have h_boundary : boundary S = boundary T := by
+    unfold boundary
+    rw [h, h_clos]
+  -- Now make a case distinction. If the open_hull consists of one point, both segments are degenerate
+  -- Otherwise, the endpoints of the segments are exactly the boundary
+  sorry
+
 lemma exists_segment_orientation_choice (Δ : Finset Triangle) : ∃ A : Finset Segment,
     triangulation_interior_basic_segments Δ = A ∪ Finset.image reverse_segment A ∧
     Disjoint A (Finset.image reverse_segment A) := by
+  -- Idea: show that the natural map from triangulation_interior_basic_segments Δ to
+  -- triangulation_interior_basic_segments_hulls Δ is surjective, and every fiber has exactly
+  -- two elements.
   sorry
 
-theorem interior_purple_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) :
+theorem interior_purple_sum (Δ : Finset Triangle):
     (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
   cases' (exists_segment_orientation_choice Δ) with A h
   obtain ⟨hU, hdisj⟩ := h
-  rw [hU]
-  -- rw [Finset.sum_disjUnion hdisj]
+  have h_U_disj : triangulation_interior_basic_segments Δ = A.disjUnion (image reverse_segment A) hdisj := by
+    rw [hU]
+    exact Eq.symm (disjUnion_eq_union _ _ _)
+  rw [h_U_disj]
+  rw [Finset.sum_disjUnion]
+  have inv' : ∀ S ∈ A, reverse_segment (reverse_segment S) = S := by
+    intro S hS
+    exact reverse_segment_involution
+  have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
+    intro S hS
+    exact reverse_segment_involution
+  have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
+    fun S a ↦ mem_image_of_mem reverse_segment a
+  have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
+    simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+      reverse_segment_involution, imp_self, implies_true]
+  have htriv : ∀ S ∈ image reverse_segment A, isPurple S = isPurple (reverse_segment S) := by
+    intro S hS
+    exact Eq.symm (isPurple_symm_function S)
+  rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
+    h_mem₂ h_mem₁ inv₂' inv' htriv]
+  rw [← two_mul]
+  simp only [Nat.mul_mod_right, Nat.zero_mod]
 
-  sorry
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
     (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
     ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
     2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
-
+  /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
+  unfold triangle_basic_boundary
+  rw [triangulation_boundary_union Δ hCover]
+  have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+        (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
+          isPurple x.snd) % 4
+        = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+          (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
+          (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+          (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
+    := by -/
   sorry
 
 
@@ -661,23 +709,8 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   rw [sum_congr rfl rainbow_triangle_purple_sum, ←sum_nat_mod]
   rw [split_segment_sum Δ hCover isPurple isPurple_symm_function]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 4 = 0 := by
-    exact mod_two_mul (interior_purple_sum Δ hCover)
+    exact mod_two_mul (interior_purple_sum Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
-  /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
-  unfold triangle_basic_boundary
-  rw [triangulation_boundary_union Δ hCover]
-  have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-        (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
-          isPurple x.snd) % 4
-        = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
-          (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
-    := by
-
-    sorry
-  rw [h]-/
-
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
