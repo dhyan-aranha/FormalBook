@@ -905,6 +905,10 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
         have hra : α + (β - α) / (1 - α) - (β - α) / (1 - α) * α = (1-α)/(1-α) * α + (β - α) / (1 - α) - (β - α) / (1 - α) * α := by
           rw [div_self]
           linarith
+          by_contra hcontra
+          have  hcontra' : α = 1 := by
+              linarith
+          linarith
         rw [hra]
         ring_nf
         have hra' : -(α * (1 - α)⁻¹ * β) + (1 - α)⁻¹ * β = (β - β • α) / (1 - α) := by
@@ -913,8 +917,6 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
         rw [hra']
         apply hβ'.symm
       simp [smul_sub, ← hr''']
-      rw [sub_smul, sub_smul, add_smul, add_smul]
-      field_simp
       module
   intro hz
   by_cases t: z ∈ closed_hull (to_segment u v)
@@ -942,11 +944,6 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
     · exact hv''
     · exact hw
   tauto_set
-
-
-
-
-
 
 
 
