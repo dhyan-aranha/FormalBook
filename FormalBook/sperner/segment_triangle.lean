@@ -962,6 +962,14 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
     · exact hw
   tauto_set
 
+  lemma middle_not_boundary_colin {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
+  have ht : ∀ {u' v' w' : ℝ²}, colin u' v' w' → u' ≠ v' := by
+    intro u _ w ⟨h₁, h₂⟩ huv
+    refine boundary_not_in_open ?_ h₂
+    convert boundary_seg' (L := to_segment u w) h₁ 0
+    rw [huv, to_segment]
+  exact ⟨ht hcolin, (ht (colin_reverse hcolin)).symm⟩
+
 
 lemma interior_left_trans {u v w t : ℝ²}
     (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
@@ -977,19 +985,49 @@ lemma interior_left_trans {u v w t : ℝ²}
       · exact corner_in_closed_hull (i := 0) (P := to_segment u w)
       · exact open_sub_closed _ hv
 
+lemma union_of_open_hulls {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) :
+ open_hull (to_segment u x) = open_hull (to_segment u w) ∪ open_hull (to_segment v x) := by sorry
+
 lemma colin_trans_right {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u w x := by
-  sorry
+  have hw : w ∈ open_hull (to_segment u x) := by
+    rw [union_of_open_hulls h₁ h₂]
+    right
+    apply h₂.2
+  have hunx: u ≠ x := by
+    by_contra hcontra
+    rw [hcontra] at hw
+    have hux' : open_hull (to_segment x x) = {x} := by
+       apply open_hull_constant
+       linarith
+    rw [hux', Set.mem_singleton_iff] at hw
+    have hwnx : w ≠ x := by
+      apply (middle_not_boundary_colin h₂).2
+    contradiction
+  constructor
+  apply hunx
+  apply hw
 
 lemma colin_trans_left {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u v x := by
-  sorry
+  have hv : v ∈ open_hull (to_segment u x) := by
+    rw [union_of_open_hulls h₁ h₂]
+    left
+    apply h₁.2
+  have hunx: u ≠ x := by
+    by_contra hcontra
+    rw [hcontra] at hv
+    have hvx' : open_hull (to_segment x x) = {x} := by
+       apply open_hull_constant
+       linarith
+    rw [hvx', Set.mem_singleton_iff] at hv
+    have hvnx : v ≠ x := by
+        apply h₂.1
+    contradiction
+  constructor
+  apply hunx
+  apply hv
 
-lemma middle_not_boundary_colin {u v w : ℝ²} (hcolin: colin u v w) : (u ≠ v) ∧ (v ≠ w) := by
-  have ht : ∀ {u' v' w' : ℝ²}, colin u' v' w' → u' ≠ v' := by
-    intro u _ w ⟨h₁, h₂⟩ huv
-    refine boundary_not_in_open ?_ h₂
-    convert boundary_seg' (L := to_segment u w) h₁ 0
-    rw [huv, to_segment]
-  exact ⟨ht hcolin, (ht (colin_reverse hcolin)).symm⟩
+
+
 
 
 
@@ -1129,7 +1167,7 @@ by_contra hcontra
 have hv : v ∈ closed_hull (to_segment v w) \ {v} := by
   tauto_set
 have hv' :  v ∉ closed_hull (to_segment v w) \ {v} := by
-  aesop
+  simp_all only [ne_eq, Set.mem_diff, Set.mem_singleton_iff, not_true_eq_false, and_false]
 contradiction
 
 
