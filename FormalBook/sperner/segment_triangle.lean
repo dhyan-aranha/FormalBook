@@ -231,6 +231,23 @@ lemma boundary_seg' {L : Segment} (hL: L 0 ≠ L 1) : ∀ (i : Fin 2), L i ∈ b
   simp only [coe_image, coe_univ, Set.image_univ, Set.mem_range, exists_apply_eq_apply]
   apply hL
 
+lemma boundary_seg_set {L :Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1} := by
+  rw [boundary_seg hL]
+  ext x
+  constructor
+  · intro hx
+    simp at hx
+    rcases hx with ⟨i, _, hi⟩
+    fin_cases i
+    simp only [Fin.isValue, Fin.zero_eta, Set.mem_insert_iff, Set.mem_singleton_iff, true_or]
+    simp only [Fin.isValue, Fin.mk_one, Set.mem_insert_iff, Set.mem_singleton_iff, or_true]
+  · simp only [Fin.isValue, Set.mem_insert_iff, Set.mem_singleton_iff, coe_image, coe_univ,
+    Set.image_univ, Set.mem_range]
+    intro hx
+    rcases hx with ⟨i, hi⟩
+    use (0 : Fin 2)
+    use (1 : Fin 2)
+    tauto
 
 
 
@@ -946,15 +963,6 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
   tauto_set
 
 
-
-
-
-lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
-    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
-    closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
-
-  sorry
-
 lemma interior_left_trans {u v w t : ℝ²}
     (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
     t ∈ open_hull (to_segment u w) := by
@@ -1026,6 +1034,187 @@ lemma sub_collinear_right' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ clos
       tauto
 
 
+
+lemma open_intersect_closed {n : ℕ} {P : Fin n → ℝ²} :
+    open_hull P = open_hull P ∩ closed_hull P := by
+    rw [←boundary_union_open_closed]
+    tauto_set
+
+
+lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
+    closed_hull P \ boundary P = open_hull P := by
+    rw [boundary]
+    rw [Set.diff_diff_right]
+    ext z
+    constructor
+    · tauto_set
+    · intro hz
+      rw [open_intersect_closed]
+      simp only [sdiff_self, Set.bot_eq_empty, Set.empty_union, Set.mem_inter_iff]
+      constructor
+      apply open_sub_closed
+      apply hz
+      constructor
+      apply hz
+      apply open_sub_closed
+      apply hz
+
+lemma closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v}) :
+closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} := by
+by_cases hzw : z = w
+· rw [hzw]
+  have hzwconst : closed_hull (to_segment w w) = {w} := by
+    apply closed_hull_constant
+    linarith
+  rw [hzwconst]
+  simp only [Set.singleton_subset_iff, Set.mem_diff, Set.mem_singleton_iff]
+  constructor
+  · tauto_set
+  · apply hvw.symm
+· have hzcl : z ∈ closed_hull (to_segment v w) := by
+   tauto_set
+  have hzwcl : closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) := by
+   apply closed_hull_convex
+   intro i
+   fin_cases i
+   · simp
+     exact hzcl
+   · apply corner_in_closed_hull (i := 1) (P := to_segment v w)
+  have hopen : open_hull (to_segment z w) ⊆ open_hull (to_segment v w) := by
+   apply open_segment_sub' hzwcl
+   rw[to_segment, to_segment]
+   apply hzw
+  have hvwboundary : boundary (to_segment v w) = {v, w} := by
+    apply boundary_seg_set
+    rw [to_segment, to_segment]
+    apply hvw
+  have hw : w ∈ closed_hull (to_segment v w) \ {v} := by
+   rw [← boundary_union_open_closed]
+   rw [hvwboundary]
+   simp only [Set.mem_diff, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff, or_true,
+     true_or, true_and]
+   apply hvw.symm
+  have hzwboundary : boundary (to_segment z w) = {z, w} := by
+   apply boundary_seg_set
+   rw [to_segment, to_segment]
+   apply hzw
+  rw [← boundary_union_open_closed]
+  rw [hzwboundary]
+  simp
+  constructor
+  have hzhw : {z,w} ⊆ closed_hull (to_segment v w) \ {v} := by
+   intro x hx
+   by_cases hxz : x = z
+   rw [hxz]
+   exact hz
+   have hxw : x = w := by
+    simp_all only [ne_eq, Set.mem_diff, Set.mem_singleton_iff, true_and, Set.mem_insert_iff,
+      false_or]
+   rw [hxw]
+   rw [← boundary_union_open_closed]
+   rw [hvwboundary]
+   simp only [Set.mem_diff, Set.mem_union, Set.mem_insert_iff, Set.mem_singleton_iff, or_true,
+     true_or, true_and, ne_eq]
+   apply hvw.symm
+  apply hzhw
+  have hzopen : open_hull (to_segment  v w) ⊆ closed_hull (to_segment v w) \ {v} := by
+    rw [← open_closed_hull_minus_boundary]
+    tauto_set
+  tauto_set
+
+lemma corrollary_closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
+(hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
+
+by_contra hcontra
+have hv : v ∈ closed_hull (to_segment v w) \ {v} := by
+  tauto_set
+have hv' :  v ∉ closed_hull (to_segment v w) \ {v} := by
+  aesop
+contradiction
+
+
+lemma middle_intersection_empty {u v w : ℝ²} {h : colin u v w} :
+ closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) = ∅ := by
+
+by_contra hcontra
+have hmid : Set.Nonempty (closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v})) := by
+  exact Set.nonempty_iff_ne_empty.mpr hcontra
+have hmid' : ∃ z, z ∈ closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) := by
+  exact Set.nonempty_def.mp hmid
+rcases hmid' with ⟨z, hz⟩
+have hzv : z ≠ v := by
+  intro hzv
+  rw [hzv] at hz
+  have hv : v ∉ closed_hull (to_segment u v) := by
+    rw [closed_segment_interval_im, to_segment, seg_vec] at hz
+    tauto_set
+  have hv' : v ∈ closed_hull (to_segment u v) := by
+    apply corner_in_closed_hull (i := 1) (P := to_segment u v)
+  contradiction
+have hzuv : z ∈ closed_hull (to_segment u v) := by
+ tauto_set
+have hzvwv : z ∈ closed_hull (to_segment v w) \ {v} := by
+  tauto_set
+have hv1 : v ∈ closed_hull (to_segment z w) := by
+  have hv1' : colin z v w := by
+    exact sub_collinear_right' h hzuv hzv
+  apply open_sub_closed _
+  apply hv1'.2
+have hg : closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} := by
+  apply closed_in_clopen_right
+  exact (middle_not_boundary_colin h).2
+  apply hzvwv
+have hg' : v ∉ closed_hull (to_segment z w) := by
+  exact corrollary_closed_in_clopen_right (middle_not_boundary_colin h).2 hzvwv hg
+contradiction
+
+
+
+
+
+
+lemma clopen_left {u v w : ℝ²}{h: colin u v w} : closed_hull (to_segment u w) \ closed_hull (to_segment u v)
+= closed_hull (to_segment v w) \ {v} := by
+  ext z
+  constructor
+  intro hz
+  have clovw : z ∈ closed_hull (to_segment v w) := by
+    rw [colin_decomp_closed h] at hz
+    tauto_set
+  have hzv : z ≠ v := by
+    intro hzv
+    rw [hzv] at hz
+    have hv : v ∉ closed_hull (to_segment u v) := by
+      rw [closed_segment_interval_im, to_segment, seg_vec] at hz
+      tauto_set
+    have hv' : v ∈ closed_hull (to_segment u v) := by
+      apply corner_in_closed_hull (i := 1) (P := to_segment u v)
+    tauto_set
+  tauto_set
+  intro hz
+  have hzuw : z ∈ closed_hull (to_segment u w) := by
+    rw [colin_decomp_closed h]
+    tauto_set
+  have hzuv :  z ∉ closed_hull (to_segment u v) := by
+    by_contra hcontra
+    have hmid : closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) = ∅ := by
+      apply middle_intersection_empty
+      apply h
+    have hzmid: z ∈ closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) := by
+      tauto_set
+    have hempty : Set.singleton z = ∅ := by
+      rw [← hmid]
+      rw [← Set.singleton_subset_iff] at hzmid
+      tauto_set
+    have hnempty : Set.singleton z ≠ ∅ := by
+      intro hcontra
+      exact Set.not_mem_empty z (Set.mem_singleton_iff.mp hcontra ▸ Set.mem_singleton z)
+    contradiction
+  tauto_set
+
+
+
+
 lemma sub_collinear_right_symm' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ closed_hull (to_segment v w))
     (htv : t ≠ v) : colin u v t := by
   apply colin_reverse
@@ -1035,38 +1224,86 @@ lemma sub_collinear_right_symm' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈
   simp only [reverse_segment_to_segment]
 
 
+
 lemma colin_sub_aux {u v w x : ℝ²} {L : Segment} (hc : colin u v w)
     (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hv : v ∉ open_hull L) (hxL : x ∈ open_hull L)
     (hx : x ∈ closed_hull (to_segment u v)) : closed_hull L ⊆ closed_hull (to_segment u v) := by
   by_cases hL01 : L 0 = L 1
   · rw [←Set.singleton_subset_iff] at hx
     convert hx
-    sorry
+    have hxcL : x ∈ closed_hull L := by
+      apply open_sub_closed _ hxL
+    have hconstant : closed_hull L = {L 0} := by
+      convert closed_hull_constant (Nat.zero_ne_add_one 1).symm using 2
+      ext i; fin_cases i <;> simp [hL01]
+    rw [hconstant] at hxcL
+    rw [hconstant]
+    rw [← Set.singleton_subset_iff, Set.singleton_subset_singleton] at hxcL
+    rw [hxcL]
   · apply closed_hull_convex
     by_contra hLi
     push_neg at hLi
     have ⟨i, hLi⟩ := hLi
     have hc₁ : colin u v (L i) := by
       apply sub_collinear_right_symm' hc
-      · sorry
-      · sorry
+      · have hLivw : (L i) ∈ closed_hull (to_segment u w) \ closed_hull (to_segment u v) := by
+          by_contra honctra
+          have hLiuw : (L i) ∈ closed_hull (to_segment u w) := by
+            apply hLsub
+            apply boundary_in_closed
+            apply boundary_seg' hL01
+          have hLiuv : (L i) ∈ closed_hull (to_segment u v) := by
+            tauto_set
+          tauto_set
+        rw [clopen_left] at hLivw
+        exact hLivw.1
+        apply hc
+      · by_contra hcontra
+        rw [hcontra] at hLi
+        have hvcl : v ∈ closed_hull (to_segment u v) := by
+          apply boundary_in_closed
+          have huv : u ≠ v := by
+            exact (middle_not_boundary_colin hc).1
+          have hvinboundary : v ∈ boundary (to_segment u v) := by
+            apply boundary_seg' huv 1
+          exact hvinboundary
+        tauto_set
     have hc₂ : colin x v (L i) := by
       apply sub_collinear_right' hc₁ hx
       intro h;
       rw [h] at hxL
       exact hv hxL
     refine hv (open_segment_sub ?_ ?_ hc₂.2)
-    · sorry
-    · -- This case is why the cases on L being trivial is necessary
-      -- Now it should follow that x is not L i because x is in the open_hull
-      sorry
+    · intro j
+      by_cases hj0 : j = 0
+      rw [hj0]
+      rw[to_segment]
+      apply open_sub_closed _ hxL
+      have hj1 : j = 1 := by
+        fin_cases j
+        simp only [Fin.zero_eta, Fin.isValue, not_true_eq_false] at hj0
+        simp only [Fin.mk_one, Fin.isValue]
+      rw [hj1]
+      rw [to_segment]
+      apply boundary_in_closed
+      apply boundary_seg' hL01
+    · rw [to_segment, to_segment]
+      by_contra hcontra
+      rw [hcontra] at hxL
+      apply boundary_not_in_open
+      apply boundary_seg' hL01
+      apply i
+      apply hxL
 
-
-
--- Test
+--test
 
 def ClosedSymSeg : Sym2 ℝ² → Set ℝ² :=
   Sym2.lift ⟨fun a b ↦ closed_hull (to_segment a b), by
   intro _ _
   convert reverse_segment_closed_hull
   simp only [reverse_segment_to_segment]⟩
+
+lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
+    (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
+    closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
+    sorry
