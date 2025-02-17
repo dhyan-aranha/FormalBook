@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Authors: Moritz Firsching,
+=======
+Authors:
 Maris Ozols,
 Jan Hendriks,
 Casper,
@@ -26,3 +27,4 @@ Jonas van der Schaaf,
 Lenny Taelman,
 Dhyan Aranha.
 -/
+
