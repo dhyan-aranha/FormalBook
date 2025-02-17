@@ -632,6 +632,7 @@ lemma open_eq_implies_closed_eq (S T : Segment) :
     open_hull S = open_hull T → closed_hull S = closed_hull T := by
   sorry
 
+
 lemma open_hull_almost_unique (S T : Segment) :
     open_hull S = open_hull T → S = T ∨ S = reverse_segment T := by
   intro h
@@ -641,7 +642,77 @@ lemma open_hull_almost_unique (S T : Segment) :
     rw [h, h_clos]
   -- Now make a case distinction. If the open_hull consists of one point, both segments are degenerate
   -- Otherwise, the endpoints of the segments are exactly the boundary
-  sorry
+  have h20 : 2 ≠ 0 := Ne.symm (Nat.zero_ne_add_one 1)
+  cases' eq_or_ne (S 0) (S 1) with heq hneq
+  · have h_closed_hull : closed_hull S = {S 0} := by
+      have h_const : S = fun _ ↦ (S 0) := by
+        funext i
+        fin_cases i
+        · rfl
+        · exact Eq.symm heq
+      rw [h_const]
+      exact closed_hull_constant h20
+    have hT0 : T 0 = S 0 := by
+      rw [← Set.mem_singleton_iff, ← h_closed_hull, h_clos]
+      apply corner_in_closed_hull
+    have hT1 : T 1 = S 1 := by
+      rw [← Set.mem_singleton_iff, ← heq, ← h_closed_hull, h_clos]
+      apply corner_in_closed_hull
+    left
+    symm at hT0 hT1
+    funext i
+    fin_cases i <;> assumption
+  · have hTneq : T 0 ≠ T 1 := by
+      by_contra h2
+      have h_const_T : T = fun _ ↦ (T 0) := by
+        funext i
+        fin_cases i
+        · rfl
+        · exact Eq.symm h2
+      rw [h_const_T, closed_hull_constant h20] at h_clos
+      have hS0 : S 0 ∈ ({T 0} : Set ℝ²) := by
+        rw [← h_clos]
+        exact corner_in_closed_hull
+      have hS1 : S 1 ∈ ({T 0} : Set ℝ²) := by
+        rw [← h_clos]
+        exact corner_in_closed_hull
+      have h_eq : S 0 = S 1 := by
+        calc S 0 = T 0 := by exact hS0
+               _ = S 1 := by exact Eq.symm hS1
+      exact hneq h_eq
+    rw [boundary_seg hneq, boundary_seg hTneq] at h_boundary
+    have h_boundaryST : boundary S = boundary T := by
+      unfold boundary
+      rw [h, h_clos]
+    have h_boundary_points : {S 0 , S 1} = ({T 0, T 1} : Set ℝ²) := by
+      rw [← (boundary_seg_set hneq), ← (boundary_seg_set hTneq)]
+      exact h_boundaryST
+    cases' eq_or_ne (S 0) (T 0) with hl hr
+    · left
+      funext i
+      fin_cases i
+      · exact hl
+      · simp only [Fin.mk_one, Fin.isValue]
+        rw [← Set.singleton_eq_singleton_iff]
+        calc {S 1} = {S 0, S 1} \ {S 0} := Eq.symm (Set.pair_diff_left hneq)
+          _        = {T 0, T 1} \ {T 0} := by rw [h_boundary_points, hl]
+          _        = {T 1} := Set.pair_diff_left hTneq
+    · right
+      have hS0T1 : S 0 = T 1 := by
+        by_contra hF
+        have h : S 0 ∈ ({T 0, T 1} : Set ℝ²) := by
+          rw [← h_boundary_points]
+          simp only [Fin.isValue, Set.mem_insert_iff, Set.mem_singleton_iff, true_or]
+        apply Set.eq_or_mem_of_mem_insert at h
+        cases' h with h1 h2 <;> tauto
+      have hS1T0 : S 1 = T 0 := by
+        rw [← Set.singleton_eq_singleton_iff]
+        calc {S 1} = {S 0, S 1} \ {S 0} := by exact Eq.symm (Set.pair_diff_left hneq)
+                 _ = {T 0, T 1} \ {T 1} := by rw [h_boundary_points, hS0T1]
+                 _ = {T 0} := Set.pair_diff_right hTneq
+      funext i
+      fin_cases i <;> assumption
+
 
 lemma exists_segment_orientation_choice (Δ : Finset Triangle) : ∃ A : Finset Segment,
     triangulation_interior_basic_segments Δ = A ∪ Finset.image reverse_segment A ∧
