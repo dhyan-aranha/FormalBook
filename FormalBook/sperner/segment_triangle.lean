@@ -972,8 +972,8 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
 
 
 lemma interior_left_trans {u v w t : ℝ²}
-    (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
-    t ∈ open_hull (to_segment u w) := by
+(ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
+t ∈ open_hull (to_segment u w) := by
     by_cases huv : u = v
     · have hopen : open_hull (to_segment v v) = {v} := open_hull_constant (by norm_num) (P := v)
       rw [huv, hopen, Set.mem_singleton_iff] at ht
@@ -986,7 +986,7 @@ lemma interior_left_trans {u v w t : ℝ²}
       · exact open_sub_closed _ hv
 
 lemma union_of_open_hulls {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) :
- open_hull (to_segment u x) = open_hull (to_segment u w) ∪ open_hull (to_segment v x) := by sorry
+open_hull (to_segment u x) = open_hull (to_segment u w) ∪ open_hull (to_segment v x) := by sorry
 
 lemma colin_trans_right {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u w x := by
   have hw : w ∈ open_hull (to_segment u x) := by
@@ -1341,7 +1341,40 @@ def ClosedSymSeg : Sym2 ℝ² → Set ℝ² :=
   convert reverse_segment_closed_hull
   simp only [reverse_segment_to_segment]⟩
 
+
 lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
     (hLsub : closed_hull L ⊆ closed_hull (to_segment u w)) (hLv : v ∉ open_hull L) :
     closed_hull L ⊆ closed_hull (to_segment u v) ∨ closed_hull L ⊆ closed_hull (to_segment v w) := by
-    sorry
+
+    have hxl : ∃ x, x ∈ open_hull L := by
+     apply open_pol_nonempty
+     linarith
+    have hvw : v ≠ w := by
+      apply (middle_not_boundary_colin h).2
+    rcases hxl with ⟨x, hx⟩
+    by_cases hxl' : x ∈ closed_hull (to_segment u v)
+    constructor
+    · exact (colin_sub_aux h hLsub hLv hx hxl')
+    have hrevwu : closed_hull (to_segment w u) = closed_hull (reverse_segment (to_segment u w)) := by
+      rw [ reverse_segment_to_segment]
+    have hLsubrev : closed_hull L ⊆ closed_hull (to_segment w u) := by
+      rw [hrevwu]
+      rw [reverse_segment_closed_hull]
+      apply hLsub
+    have hxl'': x ∈ closed_hull (to_segment v w) := by
+       have hxlaux' : x ∈ closed_hull (to_segment u w) := by
+         apply hLsub
+         apply open_sub_closed _ hx
+       have hxlaux: closed_hull (to_segment u w) = closed_hull (to_segment u v) ∪ closed_hull (to_segment v w) := by
+         apply colin_decomp_closed h
+       tauto_set
+    have hxl''rev: x ∈ closed_hull (to_segment w v) := by
+      rw [← reverse_segment_closed_hull]
+      rw [reverse_segment_to_segment]
+      exact hxl''
+    · right
+      have hlrevvw : closed_hull L ⊆ closed_hull (to_segment w v) := by
+        apply colin_sub_aux (colin_reverse h) hLsubrev hLv hx hxl''rev
+      rw [← reverse_segment_to_segment] at hlrevvw
+      rw [reverse_segment_closed_hull] at hlrevvw
+      exact hlrevvw
