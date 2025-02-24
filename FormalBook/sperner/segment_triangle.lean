@@ -1094,38 +1094,6 @@ lemma sub_collinear_right' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ clos
       tauto
 
 
-
-/- The following two lemmas could be simplified. -/
-
-lemma open_intersect_closed {n : ℕ} {P : Fin n → ℝ²} :
-    open_hull P = open_hull P ∩ closed_hull P := by
-    rw [←boundary_union_open_closed]
-    tauto_set
-
-lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
-    closed_hull P \ boundary P = open_hull P := by
-    rw [boundary]
-    rw [Set.diff_diff_right]
-    ext z
-    constructor
-    · tauto_set
-    · intro hz
-      rw [open_intersect_closed]
-      simp only [sdiff_self, Set.bot_eq_empty, Set.empty_union, Set.mem_inter_iff]
-      constructor
-      apply open_sub_closed
-      apply hz
-      constructor
-      apply hz
-      apply open_sub_closed
-      apply hz
-
-
-lemma open_closed_hull_minus_boundary₂ {n : ℕ} {P : Fin n → ℝ²} :
-    closed_hull P \ boundary P = open_hull P := by
-  simp [boundary, open_sub_closed]
-
-
 lemma closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v}) :
 closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} := by
 by_cases hzw : z = w
@@ -1193,7 +1161,6 @@ by_cases hzw : z = w
 /- This lemma is ridiculous. See proof below.-/
 lemma corrollary_closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
 (hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
-
 by_contra hcontra
 have hv : v ∈ closed_hull (to_segment v w) \ {v} := by
   tauto_set
@@ -1418,9 +1385,6 @@ lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
       exact hlrevvw
 
 
-example {α : Type} {u v : α} : u = v ↔ u ∈ ({v} : Set α) := by
-  exact Eq.to_iff rfl
-  sorry
 
 lemma closed_hull_eq_imp_eq_triv {u v x y : ℝ²} (huv : u = v)
     (h : closed_hull (to_segment u v) = closed_hull (to_segment x y)) :
