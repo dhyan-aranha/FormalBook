@@ -1007,16 +1007,58 @@ t ∈ open_hull (to_segment u w) := by
       · exact corner_in_closed_hull (i := 0) (P := to_segment u w)
       · exact open_sub_closed _ hv
 
-lemma union_of_open_hulls {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) :
-open_hull (to_segment u x) = open_hull (to_segment u w) ∪ open_hull (to_segment v x) := by sorry
+--This definition is meant to help with showing that if u v w, and v w x are colinear, then so are u w x and u v x. In particular this definition gives the simplex that will be used to show that both v w are in the open hull of u x
+noncomputable def make_new_two_simplex (a b : Fin 2 → ℝ): (Fin 2 → ℝ ):= fun | 0 => a 0/(1 - a 1 * b 0) | 1 => a 1 * b 1 /(1 - a 1 *  b 0)
 
+--This lemma shows that the above defined simplex is indeed a two simplex
+lemma make_new_two_simplex_lem (a b : Fin 2 → ℝ)(ha_simplex : a ∈ open_simplex 2)(hb_simplex : b ∈ open_simplex 2): make_new_two_simplex a b ∈ open_simplex 2 := by
+  have hhelp :=  sub_pos.mpr (mul_lt_one_of_nonneg_of_lt_one_left (le_of_lt (ha_simplex.1 1)) (simplex_co_leq_1_open  (by norm_num) ha_simplex 1) (le_of_lt (simplex_co_leq_1_open (by norm_num) hb_simplex 0)))
+  constructor
+  · intro i ; fin_cases i
+    exact div_pos (ha_simplex.1 0)  hhelp
+    exact div_pos (mul_pos (ha_simplex.1 1) (hb_simplex.1 1))  hhelp
+  · unfold make_new_two_simplex
+    simp
+    have h : (a 0 + a 1 *b 1) / (1 - a 1 * b 0) = 1 --This h is probably not necessary
+    apply (div_eq_one_iff_eq (Ne.symm (ne_of_lt hhelp))).mpr
+    rw[simplex_open_sub_fin2 ha_simplex 1 ,simplex_open_sub_fin2 hb_simplex 1]
+    linarith
+    nth_rewrite 3[← h]
+    exact div_add_div_same (a 0) (a 1 * b 1) (1 - a 1 * b 0)
+
+--This lemma shows that indeed v is in the open hull, using the above defined simplex. It effectively also shows the same for w, (use two_colin_in_open_hull (colin_reverse h₂) (colin_reverse h₁), with  rw[← reverse_segment_to_segment])
+lemma two_colin_in_open_hull {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : v ∈ open_hull (to_segment u x) := by
+  rcases h₁ with ⟨h_u_neq_w, ⟨ a, ha_simplex, havuw⟩  ⟩
+  rcases h₂ with ⟨h_v_neq_x, ⟨ b, hb_simplex, hbwvx⟩  ⟩
+  simp[ to_segment] at *
+  use make_new_two_simplex a b
+  constructor
+  · exact make_new_two_simplex_lem a b ha_simplex hb_simplex
+  · simp[to_segment, make_new_two_simplex]
+    rw[← hbwvx] at havuw
+
+    have h2 : a 0 • u + (a 1 * b 0) • v + (a 1 * b 1) • x =  v
+    repeat rw[mul_smul]
+    simp at *
+    rwa[add_assoc]
+
+    have h1: a 0 • u + (a 1 * b 1) • x = (1 - (a 1 * b 0)) • v
+    rw[sub_smul, one_smul]
+    apply eq_sub_of_add_eq
+    nth_rewrite 2[← h2]
+    module
+    have h: (1 - a 1 * b 0) > 0 := sub_pos.mpr (mul_lt_one_of_nonneg_of_lt_one_left (le_of_lt (ha_simplex.1 1)) (simplex_co_leq_1_open  (by norm_num) ha_simplex 1) (le_of_lt (simplex_co_leq_1_open (by norm_num) hb_simplex 0)))
+    rw[← inv_smul_eq_iff₀ (Ne.symm (ne_of_lt h))] at h1
+    rw[← h1]
+    simp
+    module
+
+--These two lemmas show that if u v w and v w x then u v x and u w x are also colinear, starting with the latter
 lemma colin_trans_right {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u w x := by
-  have hw : w ∈ open_hull (to_segment u x) := by
-    rw [union_of_open_hulls h₁ h₂]
-    right
-    apply h₂.2
-  have hunx: u ≠ x := by
-    by_contra hcontra
+  have hw :=  two_colin_in_open_hull (colin_reverse h₂) (colin_reverse h₁)
+  rw[← reverse_segment_to_segment , reverse_segment_open_hull] at hw
+  constructor
+  · by_contra hcontra
     rw [hcontra] at hw
     have hux' : open_hull (to_segment x x) = {x} := by
        apply open_hull_constant
@@ -1025,17 +1067,12 @@ lemma colin_trans_right {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w
     have hwnx : w ≠ x := by
       apply (middle_not_boundary_colin h₂).2
     contradiction
-  constructor
-  apply hunx
-  apply hw
+  · exact hw
 
 lemma colin_trans_left {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w x) : colin u v x := by
-  have hv : v ∈ open_hull (to_segment u x) := by
-    rw [union_of_open_hulls h₁ h₂]
-    left
-    apply h₁.2
-  have hunx: u ≠ x := by
-    by_contra hcontra
+  have hv := two_colin_in_open_hull h₁ h₂
+  constructor
+  · by_contra hcontra
     rw [hcontra] at hv
     have hvx' : open_hull (to_segment x x) = {x} := by
        apply open_hull_constant
@@ -1044,14 +1081,7 @@ lemma colin_trans_left {u v w x : ℝ²} (h₁ : colin u v w) (h₂ : colin v w 
     have hvnx : v ≠ x := by
         apply h₂.1
     contradiction
-  constructor
-  apply hunx
-  apply hv
-
-
-
-
-
+  · exact hv
 
 lemma sub_collinear_left {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ open_hull (to_segment u v)) :
     colin u t v := ⟨(middle_not_boundary_colin hc).1,ht⟩
