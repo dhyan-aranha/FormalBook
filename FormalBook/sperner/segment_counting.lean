@@ -136,8 +136,7 @@ lemma avoiding_segment_set_sub_right {X : Finset ℝ²} {A : Set ℝ²} {S : Seg
     : to_segment x (S 1) ∈ avoiding_segment_set X A := by
   sorry
 
-example {a : ℕ} : ¬(a = 0) ↔ a ≠ 0 := by
-  simp only [ne_eq]
+
 
 lemma segment_induction {A : Set ℝ²} {X : Finset ℝ²}
     {f : Segment → Prop} (hBasic : ∀ {S}, S ∈ basic_avoiding_segment_set X A → f S)
@@ -422,8 +421,9 @@ lemma mod_two_mul₂ {a b : ℕ} (h : a % 2 = b % 2) : (2 * a) % 4 = (2 * b) % 4
       ←sub_eq_zero, ←Int.cast_sub, ZMod.intCast_zmod_eq_zero_iff_dvd] at *
   have ⟨c, hc⟩ := h
   exact ⟨c, by simp only [Nat.cast_mul, ←mul_sub, hc]; ring⟩
-
 -/
+
+
 
 lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {f : Segment → ℕ} (hf₁ : two_mod_function f)
