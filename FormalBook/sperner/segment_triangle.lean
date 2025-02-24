@@ -385,7 +385,29 @@ lemma reverse_segment_open_hull {L : Segment}
   exact Set.Subset.antisymm (haux _) (haux _)
 
 
+lemma segment_triv {L : Segment} : L 0 = L 1 ↔ ∃ x, closed_hull L = {x} := by
+  constructor
+  · intro h
+    exact ⟨L 0, by
+      convert closed_hull_constant (n := 2) (P := L 0) (by norm_num) using 2
+      ext i j;
+      fin_cases i <;> simp_all
+    ⟩
+  · intro ⟨x, hx⟩
+    have h₁₂ : L 0  ∈ ({x} : Set ℝ²) ∧ L 1  ∈ ({x} : Set ℝ²) := by
+      constructor <;> (rw [←hx]; exact corner_in_closed_hull )
+    rw [h₁₂.1, h₁₂.2]
 
+lemma segment_triv' {L : Segment} : L 0 = L 1 ↔ closed_hull L = {L 0} := by
+  rw [segment_triv]
+  constructor
+  · intro ⟨x, hx⟩
+    rw [hx]
+    suffices hL : L 0 ∈ ({x} : Set ℝ²)
+    · simp [hL.symm]
+    · rw [←hx]
+      exact corner_in_closed_hull
+  · exact fun h ↦ ⟨L 0, h⟩
 
 
 
@@ -1102,31 +1124,6 @@ lemma sub_collinear_right' {u v w t : ℝ²} (hc : colin u v w) (ht : t ∈ clos
       tauto
 
 
-
-lemma open_intersect_closed {n : ℕ} {P : Fin n → ℝ²} :
-    open_hull P = open_hull P ∩ closed_hull P := by
-    rw [←boundary_union_open_closed]
-    tauto_set
-
-
-lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
-    closed_hull P \ boundary P = open_hull P := by
-    rw [boundary]
-    rw [Set.diff_diff_right]
-    ext z
-    constructor
-    · tauto_set
-    · intro hz
-      rw [open_intersect_closed]
-      simp only [sdiff_self, Set.bot_eq_empty, Set.empty_union, Set.mem_inter_iff]
-      constructor
-      apply open_sub_closed
-      apply hz
-      constructor
-      apply hz
-      apply open_sub_closed
-      apply hz
-
 lemma closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v}) :
 closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} := by
 by_cases hzw : z = w
@@ -1190,15 +1187,23 @@ by_cases hzw : z = w
     tauto_set
   tauto_set
 
+
+/- This lemma is ridiculous. See proof below.-/
 lemma corrollary_closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
 (hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
-
 by_contra hcontra
 have hv : v ∈ closed_hull (to_segment v w) \ {v} := by
   tauto_set
 have hv' :  v ∉ closed_hull (to_segment v w) \ {v} := by
   simp_all only [ne_eq, Set.mem_diff, Set.mem_singleton_iff, not_true_eq_false, and_false]
 contradiction
+
+
+lemma corrollary_closed_in_clopen_right₂ {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
+(hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
+  by_contra h
+  have this := hclop h
+  simp at this
 
 
 lemma middle_intersection_empty {u v w : ℝ²} {h : colin u v w} :
@@ -1408,3 +1413,56 @@ lemma colin_sub {u v w : ℝ²} (h : colin u v w) {L : Segment}
       rw [← reverse_segment_to_segment] at hlrevvw
       rw [reverse_segment_closed_hull] at hlrevvw
       exact hlrevvw
+
+
+
+lemma closed_hull_eq_imp_eq_triv {u v x y : ℝ²} (huv : u = v)
+    (h : closed_hull (to_segment u v) = closed_hull (to_segment x y)) :
+    u = x ∧ u = y := by
+  rw [(segment_triv' (L := to_segment u v)).1 huv] at h
+  have hxy : x = y := by
+    refine (segment_triv (L := to_segment x y)).2 ?_
+    exact ⟨u, by simp [to_segment, ←h]⟩
+  rw [(segment_triv' (L := to_segment x y)).1 hxy] at h
+  simp_all [to_segment]
+
+
+lemma closed_hull_eq_imp_eq_or_rev_seg_aux {u v x y : ℝ²}
+    (h : closed_hull (to_segment u v) = closed_hull (to_segment x y))
+    : u = x ∨ u = y := by
+  by_cases huv : u = v
+  · simp [closed_hull_eq_imp_eq_triv huv h]
+  · have hxy : x ≠ y := by
+      intro hxy
+      apply huv
+      have this := closed_hull_eq_imp_eq_triv hxy h.symm
+      rw [←this.1, ←this.2]
+    by_contra hc; push_neg at hc
+    have hu : u ∈ open_hull (to_segment u v) := by
+      refine open_segment_sub' (L₁ := to_segment x y) (by simp only [h, subset_refl]) hxy ?_
+      rw [←open_closed_hull_minus_boundary, Set.mem_diff, ←h, boundary_seg_set hxy]
+      refine ⟨by convert corner_in_closed_hull (P := to_segment u v) (i := 0 ),?_⟩
+      simp_all [to_segment]
+    apply Set.eq_empty_iff_forall_not_mem.1 (boundary_int_open_empty (P := to_segment u v)) u
+    exact ⟨boundary_seg' huv 0 ,hu⟩
+
+lemma closed_hull_eq_imp_eq_or_rev_seg {u v x y : ℝ²}
+  (h : closed_hull (to_segment u v) = closed_hull (to_segment x y))
+    : (u = x ∧ v = y) ∨ (u = y ∧ v = x) := by
+  cases' closed_hull_eq_imp_eq_or_rev_seg_aux h with hu hu <;>
+    (
+      rw [←reverse_segment_closed_hull] at h
+      cases' closed_hull_eq_imp_eq_or_rev_seg_aux h with hv hv
+    )
+  all_goals try simp_all [to_segment]
+  all_goals simp_all [closed_hull_eq_imp_eq_triv (by rfl) h]
+
+lemma closed_hull_eq_imp_eq_or_rev {L₁ L₂ : Segment}
+    (h: closed_hull L₁ = closed_hull L₂) : L₁ = L₂ ∨ L₁ = reverse_segment L₂ := by
+  cases' closed_hull_eq_imp_eq_or_rev_seg h with hsame hrev
+  · left
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp_all
+  · right
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp_all [reverse_segment, to_segment]

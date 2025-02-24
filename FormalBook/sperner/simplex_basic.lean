@@ -185,3 +185,7 @@ lemma boundary_int_open_empty {n : ℕ} {P : Fin n → ℝ²} : boundary P ∩ o
 
 lemma boundary_union_open_closed {n : ℕ} {P : Fin n → ℝ²} :
     boundary P ∪ open_hull P = closed_hull P := Set.diff_union_of_subset (open_sub_closed P)
+
+lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
+    closed_hull P \ boundary P = open_hull P := by
+  simp [boundary, open_sub_closed]
