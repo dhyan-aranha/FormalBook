@@ -25,7 +25,7 @@ Below is a summary of our work, and in which files it is included in this reposi
    for n odd.
 
 3) In the [Sperner file](https://github.com/dhyan-aranha/FormalBook/tree/main/FormalBook/sperner) the proof Monsky's theorem is carried out (see  [segment_conting.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/sperner/segment_counting.lean)) as well
-  as the proof that even dissections always exist. This is by far the most technincal part of the work.  There are still a few sorrys in here which we hope to fill soon. For the latest developments in this file please check out the sperner branch. Here we would like to recognize
+  as the proof that even dissections always exist. This is by far the most technincal part of the work.  There are still a few sorrys which we hope to fill soon. For the latest developments in this file please check out the sperner branch. Here we would like to recognize
   the contributions of Pjotr Buys!
 
 4) Finally in [Triangle_corollary.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/Triangle_corollary.lean) we formalize the comparison
