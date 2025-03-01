@@ -15,7 +15,7 @@ Theorem: It is always possible to dissect a square into an even number of triang
 Below is a summary of our work, and in which files it is included in this repository. 
 
 1) In [Appendix.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/Appendix.lean),
-   it is shown that the real numbers admit a non-Archimedean valuation: v, to an orderd abelian group such tha,
+   it is shown that the real numbers admit a non-Archimedean valuation: v, with values in an orderd abelian group such that,
    v(1/2) > 1.
 
 2) In [Rainbow_triangles.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/sperner/Rainbow_triangles.lean)
