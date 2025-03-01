@@ -2,7 +2,7 @@
 
 Contributors (in alphabetical order): Dhyan Aranha, Pjotr Buys, Malvin Gattinger, Giacomo Grevink, Jan Hendriks, Thomas Koopman, Dion Leijnse, Thijs Maessen, Maris Ozols, Jonas van der Schaaf, Lenny Taelman
 
-In this fork of Moritz Firsching's [project](https://github.com/mo271/FormalBook) to formalize [Proofs from THE BOOK](https://link.springer.com/book/10.1007/978-3-662-57265-8) using [Lean4], we take up the job of formalizing Monsky's Theorem, Chapter 22: 
+In this fork of Moritz Firsching's [project](https://github.com/mo271/FormalBook) to formalize [Proofs from THE BOOK](https://link.springer.com/book/10.1007/978-3-662-57265-8) using [Lean4](https://leanprover.github.io/lean4/doc/whatIsLean.html), we take up the job of formalizing Monsky's Theorem, Chapter 22: 
 
 Theorem (Monsky) : It is not possible to dissect a square into an odd number of triangles of equal area. 
 
@@ -20,27 +20,18 @@ Below is a summary of our work, and in which files it is included in this reposi
 
 2) In [Rainbow_triangles.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/sperner/Rainbow_triangles.lean)
    using the valuation from 1) we construct a tri-coloring of the unit square S in R^2. We use this coloring to define the notion of
-   \emph{rainbow triangle}: a triangle whose vertices consist of three different colors. We also prove various properties about this coloring.
+   ***rainbow triangle***: a triangle whose vertices consist of three different colors. We also prove various properties about this coloring.
    Two important ones are: i) Any line in S containes at most two colors, ii) The area of a rainbow triangle cannot be 0 and it cannot be 1/n
    for n odd.
 
 3) In the [Sperner file](https://github.com/dhyan-aranha/FormalBook/tree/main/FormalBook/sperner) the proof Monsky's theorem is carried out (see  [segment_conting.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/sperner/segment_counting.lean)) as well
-  as the proof that even dissections always exist. There are still a few sorrys in here which we hope to fill soon. Also, here would like to recognize
+  as the proof that even dissections always exist. This is by far the most technincal part of the work.  There are still a few sorrys in here which we hope to fill soon. Also, here would like to recognize
   the contributions of Pjotr Buys!
 
 4) Finally in [Triangle_corollary.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/Triangle_corollary.lean) we formalize the comparison
    between the area of a triangle in R^2 given by measure theorem and the formula given in terms of the determinant.
 
-While this is our working repository, one can find a repository which just contains our files (and not the other files in the fork) here : https://github.com/dhyan-aranha/Monsky. Below you find the original ReadMe.
-     
-
- 
-
-
-
-
-
-
+While this is our working repository, one can find a repository which just contains our files (and not the other files in the fork) here : https://github.com/dhyan-aranha/Monsky. Below you will find the original ReadMe.
 
 # Formal BOOK
 
