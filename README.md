@@ -31,7 +31,7 @@ Below is a summary of our work, and in which files it is included in this reposi
 4) Finally in [Triangle_corollary.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/Triangle_corollary.lean) we formalize the comparison
    between the area of a triangle in R^2 given by measure theorem and the formula given in terms of the determinant.
 
-While this is our working repository, one can find a repository which just contains our files (and not the other files in the fork) here : https://github.com/dhyan-aranha/Monsky
+While this is our working repository, one can find a repository which just contains our files (and not the other files in the fork) here : https://github.com/dhyan-aranha/Monsky. Below you find the original ReadMe.
      
 
  
