@@ -12,7 +12,7 @@ We also formalize and prove the theorem that it is always possible to do this wi
 
 (This was carried out by Pjotr Buys in [Monsky_even](https://github.com/dhyan-aranha/FormalBook/tree/main/FormalBook/sperner))
 
-Below is a summary of our work, and in which files it is included in this repository. 
+Below is a summary of our work with links to the relevant files in this repository. 
 
 1) In [Appendix.lean](https://github.com/dhyan-aranha/FormalBook/blob/main/FormalBook/Appendix.lean),
    it is shown that the real numbers admit a non-Archimedean valuation: v, with values in an orderd abelian group such that,
