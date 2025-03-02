@@ -4,11 +4,11 @@ Contributors (in alphabetical order): Dhyan Aranha, Pjotr Buys, Malvin Gattinger
 
 In this fork of Moritz Firsching's [project](https://github.com/mo271/FormalBook) to formalize [Proofs from THE BOOK](https://link.springer.com/book/10.1007/978-3-662-57265-8) using [Lean4](https://leanprover.github.io/lean4/doc/whatIsLean.html), we take up the job of formalizing Monsky's Theorem, Chapter 22: 
 
-Theorem (Monsky) : It is not possible to dissect a square into an odd number of triangles of equal area. 
+***Theorem (Monsky)*** : It is not possible to dissect a square into an odd number of triangles of equal area. 
 
 We also formalize and prove the theorem that it is always possible to do this with an even number of triangles of equal area. 
 
-Theorem: It is always possible to dissect a square into an even number of triangles of equal area.
+***Theorem***: It is always possible to dissect a square into an even number of triangles of equal area.
 
 (This was carried out by Pjotr Buys in [Monsky_even](https://github.com/dhyan-aranha/FormalBook/tree/main/FormalBook/sperner))
 
