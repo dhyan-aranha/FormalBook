@@ -349,7 +349,7 @@ lemma det_0_triangle_imp_triv {T : Triangle} (hT : det T = 0) :
 
 
 
-theorem no_Color_lines (L : Segment) {Γ₀ : Type} (locg : LinearOrderedCommGroupWithZero Γ₀)
+theorem no_Color_lines (L : Segment) {Γ₀ : Type} [locg : LinearOrderedCommGroupWithZero Γ₀]
 (v : Valuation ℝ Γ₀) : ∃ c : Color, ∀ P ∈ closed_hull L, coloring v P ≠ c := by
 
 by_contra h
