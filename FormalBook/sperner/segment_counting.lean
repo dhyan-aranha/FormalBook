@@ -600,6 +600,17 @@ noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
 noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
   {T ∈ Δ | isRainbow T = 1}
 
+-- Given a collection of segments X and a segment S, give all elements of X with open_hull contained
+-- in open_hull S.
+noncomputable def basic_segment_segments (X : Finset Segment) (S : Segment) :=
+  filter (fun L ↦ open_hull L ⊆ open_hull S) X
+
+lemma segment_sum_splitting (A : Finset Segment) (X : Finset Segment)
+    (h1 : ∀ S ∈ X, open_hull S ⊆ ⋃ T ∈ A, open_hull T)
+    (h2 : ∀ S ∈ A, ∀  T ∈ A, S ≠ T → open_hull S ∩ open_hull T = ∅) (f : Segment → ℕ) :
+    ∑ S ∈ X, f S = ∑ T ∈ A, (∑ S ∈ basic_segment_segments X T, f S) := by
+  sorry
+
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum Δ % 4 = 2 := by
@@ -618,6 +629,12 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
 noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
 
+lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
+    triangle_basic_boundary Δ T =
+    @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
+    := by
+
+  sorry
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by
