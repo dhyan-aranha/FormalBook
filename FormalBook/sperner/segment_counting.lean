@@ -573,11 +573,30 @@ noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
 noncomputable def basic_segment_segments (X : Finset Segment) (S : Segment) :=
   filter (fun L ↦ open_hull L ⊆ open_hull S) X
 
-lemma segment_sum_splitting (A : Finset Segment) (X : Finset Segment)
-    (h1 : ∀ S ∈ X, open_hull S ⊆ ⋃ T ∈ A, open_hull T)
-    (h2 : ∀ S ∈ A, ∀  T ∈ A, S ≠ T → open_hull S ∩ open_hull T = ∅) (f : Segment → ℕ) :
-    ∑ S ∈ X, f S = ∑ T ∈ A, (∑ S ∈ basic_segment_segments X T, f S) := by
-  sorry
+lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset ℝ²)
+    (hA : A ⊆ avoiding_segment_set X AVOID)
+    (hDisj : ∀ S T, S ∈ A → T ∈ A → open_hull S ∩ open_hull T = ∅)
+    (f : Segment → ℕ) (hfTwoMod : two_mod_function f) (hSymm : symm_fun f):
+    (∑ S ∈ filter (fun S ↦ closed_hull S ⊆ (⋃ T ∈ A, closed_hull T)) (basic_avoiding_segment_set X AVOID), f S) % 4
+    = (2 * ∑ T ∈ A, f T) % 4 := by
+  have h_disj : (A.toSet).PairwiseDisjoint (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID)))
+      := by
+    sorry
+  have h_eq : filter (fun S ↦ closed_hull S ⊆ (⋃ T ∈ A, closed_hull T)) (basic_avoiding_segment_set X AVOID) =
+      Finset.disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj
+      := by
+    sorry
+  rw [h_eq]
+  rw [Finset.sum_disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj]
+  rw [← ZMod.natCast_eq_natCast_iff']
+  simp only [Nat.cast_sum, Nat.cast_mul, Nat.cast_ofNat, mul_sum]
+  -- use sum_two_mod_fun_seg
+  refine sum_congr rfl ?_
+  intro T hT
+  have bla := sum_two_mod_fun_seg (hA hT) hfTwoMod hSymm
+  rw [← ZMod.natCast_eq_natCast_iff'] at bla
+  convert bla <;> simp
+
 
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
@@ -597,6 +616,10 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
 noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
 
+lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j) :
+    open_hull (Tside T i) ∩ open_hull (Tside T j) = ∅ := by
+  sorry
+
 lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
     triangle_basic_boundary Δ T =
     @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
@@ -604,9 +627,17 @@ lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h :
 
   sorry
 
+noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i ↦ {Tside T i})
+
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by
   intro T hT
+  have h : triangle_basic_boundary Δ T =
+      filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
+    sorry
+  rw [h]
+  rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry isPurple sorry sorry]
+  unfold triangle_boundary
   -- Reduce the sum over the boundary to just the sum over the 3 boundary segments of T
   -- I think we have to use segment_decomposition in this proof.
 
@@ -656,21 +687,9 @@ def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
 
 
 lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
-    (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 := by
-  unfold triangulation_basic_segments at h
-  unfold basic_avoiding_segment_set at h
-  unfold avoiding_segment_set at h
-  unfold segment_set at h
-  simp_all only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists, Fin.isValue]
-  obtain ⟨left, right⟩ := h
-  obtain ⟨left, right_1⟩ := left
-  obtain ⟨w, h⟩ := left
-  obtain ⟨w_1, h⟩ := h
-  obtain ⟨left, right_2⟩ := h
-  obtain ⟨left, right_3⟩ := left
-  obtain ⟨left, right_4⟩ := left
-  subst right_2
-  exact right_3
+    (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 :=
+  segment_set_vertex_distinct (basic_avoiding_segment_set_sub h)
+
 
 theorem interior_purple_sum (Δ : Finset Triangle) :
     (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
