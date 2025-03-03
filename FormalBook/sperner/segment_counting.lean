@@ -5,7 +5,6 @@ import FormalBook.sperner.basic_definitions
 import FormalBook.sperner.Rainbow_triangles
 import FormalBook.sperner.square
 
-
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "Triangle" => Fin 3 → ℝ²
 local notation "Segment" => Fin 2 → ℝ²
@@ -14,6 +13,7 @@ local notation "Segment" => Fin 2 → ℝ²
 open Classical
 open BigOperators
 open Finset
+
 
 
 noncomputable def segment_set (X : Finset ℝ²) : Finset Segment :=
@@ -82,27 +82,10 @@ lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
       exact union_comm _ _
 
 
+lemma basic_segments_colin_disjoint {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
+    to_segment u v ∉ to_basic_segments C := by
 
-
-lemma basic_segments_colin_disjoint₂ {u v w : ℝ²} {C : Chain u v} (h : colin u v w) :
-    to_segment v w ∉ to_basic_segments C := by
-    induction C with
-  | basic          =>
-      simp only [to_basic_segments, mem_singleton]
-      exact fun h₂ ↦ (middle_not_boundary_colin h).2 (congrFun h₂ 1).symm
-  | join h₂ C ih =>
-      simp [to_basic_segments]
-      constructor
-      · apply ih
-        exact sub_collinear_right h h₂.2
-
-      · exact fun h₂ ↦ (middle_not_boundary_colin h).1 (congrFun h₂ 0).symm
-
-  lemma basic_segments_colin_disjoint {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
-    to_segment u v ∉ to_basic_segments C := by sorry
-
-
-
+  sorry
 
 lemma reverse_chain_basic_segments {u v : ℝ²} (C : Chain u v) :
     to_basic_segments (reverse_chain C) =
@@ -138,153 +121,129 @@ lemma segment_set_vertex_distinct {X : Finset ℝ²} {S : Segment}
   rw [←h₂]
   simpa [to_segment]
 
-lemma segment_set_reverse {X : Finset ℝ²} {S : Segment} (hS : S ∈ segment_set X ) :
-    reverse_segment S ∈ segment_set X := by
-  simp only [segment_set, ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product,
-    Prod.exists] at *
-  rcases hS with ⟨a, ⟨  b, h⟩⟩
-  rw[← h.2, reverse_segment_to_segment]
-  exact ⟨b, a, ⟨ ⟨ h.1.1.2,h.1.1.1 ⟩ , fun a_1 ↦ h.1.2 (id (Eq.symm a_1))⟩, by rfl  ⟩
-
-lemma avoiding_segment_set_reverse {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
-    (hS : S ∈ avoiding_segment_set X A) : reverse_segment S ∈ avoiding_segment_set X A := by
-  simp only[ avoiding_segment_set, mem_filter, reverse_segment_closed_hull ] at *
-  exact ⟨ segment_set_reverse hS.1, hS.2⟩
-
 lemma basic_avoiding_segment_set_reverse {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
-    (hS : S ∈ basic_avoiding_segment_set X A) : reverse_segment S ∈ basic_avoiding_segment_set X A := by
-  simp only[basic_avoiding_segment_set, mem_filter ,reverse_segment_open_hull] at *
-  exact ⟨ avoiding_segment_set_reverse hS.1, hS.2 ⟩
+    (hS : S ∈ basic_avoiding_segment_set X A)
+    : reverse_segment S ∈ basic_avoiding_segment_set X A := by
+  sorry
 
 lemma avoiding_segment_set_sub_left {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
     : to_segment (S 0) x ∈ avoiding_segment_set X A := by
-  simp only [avoiding_segment_set, mem_filter, Fin.isValue] at *
-  constructor
-  · simp only [segment_set, ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product,
-    Prod.exists, Fin.isValue] at *
-    rcases hS with ⟨⟨ a, ⟨ b, h⟩⟩, _⟩
-    exact ⟨a, x, ⟨ ⟨h.1.1.1 , hx⟩ , (middle_not_boundary_colin ⟨h.1.2 , by rw[h.2]; exact hxS ⟩).1⟩, by rw[← h.2] ; simp only [to_segment]  ⟩
-  · refine Set.disjoint_of_subset (closed_hull_convex ?_) (fun ⦃a⦄ a ↦ a) hS.2
-    intro i ; fin_cases i <;> simp only [to_segment, Fin.isValue, corner_in_closed_hull]
-    exact open_sub_closed S hxS
+  sorry
 
 lemma avoiding_segment_set_sub_right {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
     : to_segment x (S 1) ∈ avoiding_segment_set X A := by
-  rw[← reverse_segment_to_segment]
-  refine avoiding_segment_set_reverse (avoiding_segment_set_sub_left (avoiding_segment_set_reverse hS) hx ?_ )
-  rwa[← reverse_segment_open_hull]
+  sorry
 
 
 
+-- lemma segment_induction {A : Set ℝ²} {X : Finset ℝ²}
+--     {f : Segment → Prop} (hBasic : ∀ {S}, S ∈ basic_avoiding_segment_set X A → f S)
+--     (hJoin : ∀ {u v w}, u ∈ X → v ∈ X → w ∈ X → colin u v w → f (to_segment u v) →
+--     f (to_segment v w) → f (to_segment u w))
+--     : ∀ {S : Segment}, S ∈ avoiding_segment_set X A → f S := by
+--   intro S hS
+--   generalize Scard : (Finset.filter (fun p ↦ p ∈ open_hull S) X).card = n
+--   induction n using Nat.strong_induction_on generalizing S with
+--   | h N hN =>
+--   by_cases hN₀ : N = 0
+--   · apply hBasic
+--     simp only [basic_avoiding_segment_set, mem_filter]
+--     refine ⟨hS,?_⟩
+--     simp [hN₀, filter_eq_empty_iff] at Scard
+--     exact Scard
+--   · rw [←Scard, ←ne_eq, Finset.card_ne_zero, filter_nonempty_iff] at hN₀
+--     have ⟨x, ⟨hx, hxS⟩⟩ := hN₀
+--     have hcolin : colin (S 0) x (S 1) :=
+--       ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hxS⟩
+--     convert hJoin (segment_set_vertex (avoiding_segment_set_sub hS) 0) hx
+--         (segment_set_vertex (avoiding_segment_set_sub hS) 1) hcolin ?_ ?_
+--     · exact segment_rfl.symm
+--     · refine hN (Finset.filter (fun p ↦ p ∈ open_hull (to_segment (S 0) x)) X).card ?_
+--         (avoiding_segment_set_sub_left hS hx hxS) rfl
+--       sorry
+--     ·
+--       sorry
 
-lemma segment_induction {A : Set ℝ²} {X : Finset ℝ²}
-    {f : Segment → Prop} (hBasic : ∀ {S}, S ∈ basic_avoiding_segment_set X A → f S)
-    (hJoin : ∀ {u v w}, u ∈ X → v ∈ X → w ∈ X → colin u v w → f (to_segment u v) →
-    f (to_segment v w) → f (to_segment u w))
-    : ∀ {S : Segment}, S ∈ avoiding_segment_set X A → f S := by
-  intro S hS
-  generalize Scard : (Finset.filter (fun p ↦ p ∈ open_hull S) X).card = n
-  induction n using Nat.strong_induction_on generalizing S with
-  | h N hN =>
-  by_cases hN₀ : N = 0
-  · apply hBasic
-    simp only [basic_avoiding_segment_set, mem_filter]
-    refine ⟨hS,?_⟩
-    simp [hN₀, filter_eq_empty_iff] at Scard
-    exact Scard
-  · rw [←Scard, ←ne_eq, Finset.card_ne_zero, filter_nonempty_iff] at hN₀
-    have ⟨x, ⟨hx, hxS⟩⟩ := hN₀
-    have hcolin : colin (S 0) x (S 1) :=
-      ⟨segment_set_vertex_distinct (avoiding_segment_set_sub hS), hxS⟩
-    convert hJoin (segment_set_vertex (avoiding_segment_set_sub hS) 0) hx
-        (segment_set_vertex (avoiding_segment_set_sub hS) 1) hcolin ?_ ?_
-    · exact segment_rfl.symm
-    · refine hN (Finset.filter (fun p ↦ p ∈ open_hull (to_segment (S 0) x)) X).card ?_
-        (avoiding_segment_set_sub_left hS hx hxS) rfl
-      sorry
-    ·
-      sorry
+-- theorem segment_decomposition' {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
+--     (hS : S ∈ avoiding_segment_set X A) :
+--     ∃ (C : Chain (S 0) (S 1)),
+--     S = chain_to_big_segment C ∧
+--     (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
+--     = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
+--   revert S
+--   apply segment_induction
+--   · intro S hS
+--     use @Chain.basic (S 0) (S 1)
+--     simp only [chain_to_big_segment, Fin.isValue, segment_rfl,
+--       to_basic_segments, reverse_chain, true_and]
+--     ext L
+--     constructor
+--     · simp only [mem_filter, Fin.isValue, mem_union, mem_singleton,
+--         basic_avoiding_segment_set, avoiding_segment_set, segment_set,
+--         ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists,
+--         Fin.isValue, and_imp, forall_exists_index]
+--       intro a b  haX hbX hneq habL _ hLx hLS
+--       simp only [←habL, ←List.ofFn_inj,List.ofFn_succ, Fin.isValue, Fin.succ_zero_eq_one,
+--         List.ofFn_zero, List.cons.injEq, and_true, to_segment]
+--       by_contra hc; push_neg at hc
+--       have hf : a ∈ open_hull S ∨ b ∈ open_hull S := by
+--         rw [←habL] at hLS
+--         rw [@or_iff_not_imp_left]
+--         intro ha; by_contra hb
+--         have haB : a ∈ boundary S := by
+--           rw [boundary, Set.mem_diff]
+--           refine ⟨hLS (corner_in_closed_hull (i := ⟨0, by omega⟩)), ha⟩
+--         have hbB : b ∈ boundary S := by
+--           rw [boundary, Set.mem_diff]
+--           refine ⟨hLS (corner_in_closed_hull (i := ⟨1, by omega⟩)), hb⟩
+--         simp only [boundary_seg (segment_set_vertex_distinct (basic_avoiding_segment_set_sub hS)),
+--             coe_image, coe_univ, Set.image_univ, Set.mem_range] at hbB haB
+--         have ⟨i, hai⟩ := haB
+--         have ⟨j, hbj⟩ := hbB
+--         fin_cases i <;> fin_cases j <;> (
+--           simp only [Fin.zero_eta, Fin.isValue] at hai hbj
+--           rw [←hai, ←hbj] at hc hneq
+--           tauto
+--         )
+--       simp [basic_avoiding_segment_set] at hS
+--       cases' hf with haS hbS
+--       · exact hS.2 _ haX haS
+--       · exact hS.2 _ hbX hbS
+--     · simp only [Fin.isValue, mem_union, mem_singleton, mem_filter]
+--       rintro (hLS | hLS) <;> rw [hLS]
+--       · simpa
+--       · refine ⟨basic_avoiding_segment_set_reverse hS,?_⟩
+--         rw [←reverse_segment_closed_hull]
+--         rfl
 
-theorem segment_decomposition' {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
-    (hS : S ∈ avoiding_segment_set X A) :
-    ∃ (C : Chain (S 0) (S 1)),
-    S = chain_to_big_segment C ∧
-    (basic_avoiding_segment_set X A).filter (fun s ↦ closed_hull s ⊆ closed_hull S)
-    = to_basic_segments C ∪ (to_basic_segments (reverse_chain C)) := by
-  revert S
-  apply segment_induction
-  · intro S hS
-    use @Chain.basic (S 0) (S 1)
-    simp only [chain_to_big_segment, Fin.isValue, segment_rfl,
-      to_basic_segments, reverse_chain, true_and]
-    ext L
-    constructor
-    · simp only [mem_filter, Fin.isValue, mem_union, mem_singleton,
-        basic_avoiding_segment_set, avoiding_segment_set, segment_set,
-        ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists,
-        Fin.isValue, and_imp, forall_exists_index]
-      intro a b  haX hbX hneq habL _ hLx hLS
-      simp only [←habL, ←List.ofFn_inj,List.ofFn_succ, Fin.isValue, Fin.succ_zero_eq_one,
-        List.ofFn_zero, List.cons.injEq, and_true, to_segment]
-      by_contra hc; push_neg at hc
-      have hf : a ∈ open_hull S ∨ b ∈ open_hull S := by
-        rw [←habL] at hLS
-        rw [@or_iff_not_imp_left]
-        intro ha; by_contra hb
-        have haB : a ∈ boundary S := by
-          rw [boundary, Set.mem_diff]
-          refine ⟨hLS (corner_in_closed_hull (i := ⟨0, by omega⟩)), ha⟩
-        have hbB : b ∈ boundary S := by
-          rw [boundary, Set.mem_diff]
-          refine ⟨hLS (corner_in_closed_hull (i := ⟨1, by omega⟩)), hb⟩
-        simp only [boundary_seg (segment_set_vertex_distinct (basic_avoiding_segment_set_sub hS)),
-            coe_image, coe_univ, Set.image_univ, Set.mem_range] at hbB haB
-        have ⟨i, hai⟩ := haB
-        have ⟨j, hbj⟩ := hbB
-        fin_cases i <;> fin_cases j <;> (
-          simp only [Fin.zero_eta, Fin.isValue] at hai hbj
-          rw [←hai, ←hbj] at hc hneq
-          tauto
-        )
-      simp [basic_avoiding_segment_set] at hS
-      cases' hf with haS hbS
-      · exact hS.2 _ haX haS
-      · exact hS.2 _ hbX hbS
-    · simp only [Fin.isValue, mem_union, mem_singleton, mem_filter]
-      rintro (hLS | hLS) <;> rw [hLS]
-      · simpa
-      · refine ⟨basic_avoiding_segment_set_reverse hS,?_⟩
-        rw [←reverse_segment_closed_hull]
-        rfl
-
-  · intro u v w huX hvX hwX hc ⟨C₁,⟨hSC₁,hC₁⟩⟩ ⟨C₂,⟨hSC₂,hC₂⟩⟩
-    use glue_chains hc C₁ C₂
-    have haux {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
-      : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
-      simp only [←coe_inj, coe_union]; tauto_set
-    simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
-        basic_segments_glue, true_and, haux,
-        ←hC₁, ←hC₂]
-    ext L
-    simp [basic_avoiding_segment_set]
-    constructor
-    · intro ⟨h , hLS⟩
-      cases' colin_sub hc hLS (h.2 _ hvX) with hLleft hLright
-      · left
-        exact ⟨h,hLleft⟩
-      · right
-        exact ⟨h,hLright⟩
-    · rintro (hL | hR)
-      · refine ⟨hL.1, subset_trans hL.2 (closed_hull_convex ?_)⟩
-        intro i; fin_cases i
-        · exact corner_in_closed_hull (i := ⟨0, by omega⟩)
-        · exact open_sub_closed _ hc.2
-      · refine ⟨hR.1, subset_trans hR.2 (closed_hull_convex ?_)⟩
-        intro i; fin_cases i
-        · exact open_sub_closed _ hc.2
-        · exact corner_in_closed_hull (i := ⟨1, by omega⟩)
+--   · intro u v w huX hvX hwX hc ⟨C₁,⟨hSC₁,hC₁⟩⟩ ⟨C₂,⟨hSC₂,hC₂⟩⟩
+--     use glue_chains hc C₁ C₂
+--     have haux {A₁ A₂ A₃ A₄ : Finset (Fin 2 → ℝ²)}
+--       : (A₁ ∪ A₃) ∪ (A₄ ∪ A₂) = (A₁ ∪ A₂) ∪ (A₃ ∪ A₄) := by
+--       simp only [←coe_inj, coe_union]; tauto_set
+--     simp only [chain_to_big_segment_glue, segment_rfl, reverse_chain_glue,
+--         basic_segments_glue, true_and, haux,
+--         ←hC₁, ←hC₂]
+--     ext L
+--     simp [basic_avoiding_segment_set]
+--     constructor
+--     · intro ⟨h , hLS⟩
+--       cases' colin_sub hc hLS (h.2 _ hvX) with hLleft hLright
+--       · left
+--         exact ⟨h,hLleft⟩
+--       · right
+--         exact ⟨h,hLright⟩
+--     · rintro (hL | hR)
+--       · refine ⟨hL.1, subset_trans hL.2 (closed_hull_convex ?_)⟩
+--         intro i; fin_cases i
+--         · exact corner_in_closed_hull (i := ⟨0, by omega⟩)
+--         · exact open_sub_closed _ hc.2
+--       · refine ⟨hR.1, subset_trans hR.2 (closed_hull_convex ?_)⟩
+--         intro i; fin_cases i
+--         · exact open_sub_closed _ hc.2
+--         · exact corner_in_closed_hull (i := ⟨1, by omega⟩)
 
 
 
@@ -442,27 +401,11 @@ lemma symm_function_reverse_sum {f : Segment → ℕ} (hf : symm_fun f) {u v : �
     exact fun a ↦ hi (hi (hi a))
 
 
-lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2): (2 * a) % 4 = (2 * b) % 4 := by
-  rcases Nat.mod_two_eq_zero_or_one a with h' | h' <;> rw [h'] at h <;> have h := Eq.symm h
-  · rw [←Nat.even_iff] at h h'
-    rcases h with ⟨k, hk⟩
-    rcases h' with ⟨k', hk'⟩
-    rw [hk, hk', ←Nat.two_mul, ←Nat.two_mul, ←mul_assoc, ←mul_assoc]
-    simp
-  · rw [←Nat.odd_iff] at h h'
-    rcases h with ⟨k, hk⟩
-    rcases h' with ⟨k', hk'⟩
-    rw [hk, hk', mul_add, mul_add, ←Nat.mod_add_mod, ←Nat.mod_add_mod, ←mul_assoc, ←mul_assoc]
-    simp
-
-/- Following is a different proof:
-
-lemma mod_two_mul₂ {a b : ℕ} (h : a % 2 = b % 2) : (2 * a) % 4 = (2 * b) % 4 := by
+lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2) : (2 * a) % 4 = (2 * b) % 4 := by
   rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff',
       ←sub_eq_zero, ←Int.cast_sub, ZMod.intCast_zmod_eq_zero_iff_dvd] at *
   have ⟨c, hc⟩ := h
   exact ⟨c, by simp only [Nat.cast_mul, ←mul_sub, hc]; ring⟩
--/
 
 
 
