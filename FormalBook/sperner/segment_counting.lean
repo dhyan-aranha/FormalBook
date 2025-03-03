@@ -138,20 +138,44 @@ lemma segment_set_vertex_distinct {X : Finset ℝ²} {S : Segment}
   rw [←h₂]
   simpa [to_segment]
 
+lemma segment_set_reverse {X : Finset ℝ²} {S : Segment} (hS : S ∈ segment_set X ) :
+    reverse_segment S ∈ segment_set X := by
+  simp only [segment_set, ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product,
+    Prod.exists] at *
+  rcases hS with ⟨a, ⟨  b, h⟩⟩
+  rw[← h.2, reverse_segment_to_segment]
+  exact ⟨b, a, ⟨ ⟨ h.1.1.2,h.1.1.1 ⟩ , fun a_1 ↦ h.1.2 (id (Eq.symm a_1))⟩, by rfl  ⟩
+
+lemma avoiding_segment_set_reverse {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
+    (hS : S ∈ avoiding_segment_set X A) : reverse_segment S ∈ avoiding_segment_set X A := by
+  simp only[ avoiding_segment_set, mem_filter, reverse_segment_closed_hull ] at *
+  exact ⟨ segment_set_reverse hS.1, hS.2⟩
+
 lemma basic_avoiding_segment_set_reverse {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
-    (hS : S ∈ basic_avoiding_segment_set X A)
-    : reverse_segment S ∈ basic_avoiding_segment_set X A := by
-  sorry
+    (hS : S ∈ basic_avoiding_segment_set X A) : reverse_segment S ∈ basic_avoiding_segment_set X A := by
+  simp only[basic_avoiding_segment_set, mem_filter ,reverse_segment_open_hull] at *
+  exact ⟨ avoiding_segment_set_reverse hS.1, hS.2 ⟩
 
 lemma avoiding_segment_set_sub_left {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
     : to_segment (S 0) x ∈ avoiding_segment_set X A := by
-  sorry
+  simp only [avoiding_segment_set, mem_filter, Fin.isValue] at *
+  constructor
+  · simp only [segment_set, ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product,
+    Prod.exists, Fin.isValue] at *
+    rcases hS with ⟨⟨ a, ⟨ b, h⟩⟩, _⟩
+    exact ⟨a, x, ⟨ ⟨h.1.1.1 , hx⟩ , (middle_not_boundary_colin ⟨h.1.2 , by rw[h.2]; exact hxS ⟩).1⟩, by rw[← h.2] ; simp only [to_segment]  ⟩
+  · refine Set.disjoint_of_subset (closed_hull_convex ?_) (fun ⦃a⦄ a ↦ a) hS.2
+    intro i ; fin_cases i <;> simp only [to_segment, Fin.isValue, corner_in_closed_hull]
+    exact open_sub_closed S hxS
 
 lemma avoiding_segment_set_sub_right {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {x : ℝ²} (hx : x ∈ X) (hxS : x ∈ open_hull S)
     : to_segment x (S 1) ∈ avoiding_segment_set X A := by
-  sorry
+  rw[← reverse_segment_to_segment]
+  refine avoiding_segment_set_reverse (avoiding_segment_set_sub_left (avoiding_segment_set_reverse hS) hx ?_ )
+  rwa[← reverse_segment_open_hull]
+
 
 
 
