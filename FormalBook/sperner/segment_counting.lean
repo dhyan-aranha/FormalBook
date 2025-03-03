@@ -82,8 +82,33 @@ lemma basic_segments_glue {u v w : ℝ²} (h : colin u v w) (CL : Chain u v)
       exact union_comm _ _
 
 
+lemma basic_segment_in_open_hull {u v: ℝ²} (C : Chain u v) {S : Segment}
+    (hS : S ∈ to_basic_segments C) : open_hull S ⊆ open_hull (to_segment u v) := by
+  induction C with
+  |basic         => simp only [to_basic_segments, mem_singleton] at *; rw [hS]
+  |join h₂ C ih  =>
+    simp only [to_basic_segments, mem_union, mem_singleton] at *
+    cases' hS with hS hS
+    · refine subset_trans (ih hS) ?_
+      -- Trivial from now.
+      sorry
+    · rw [hS]
+      -- Same trivial from now.
+      sorry
+
+
+
 lemma basic_segments_colin_disjoint {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
     to_segment u v ∉ to_basic_segments C := by
+  intro hc
+  have this := basic_segment_in_open_hull _ hc
+
+  sorry
+
+lemma basic_segments_colin_disjoint2 {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
+    to_segment v u ∉ to_basic_segments C := by
+  intro hc
+  have this := basic_segment_in_open_hull _ hc
 
   sorry
 
