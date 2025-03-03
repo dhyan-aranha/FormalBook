@@ -90,11 +90,9 @@ lemma basic_segment_in_open_hull {u v: ℝ²} (C : Chain u v) {S : Segment}
     simp only [to_basic_segments, mem_union, mem_singleton] at *
     cases' hS with hS hS
     · refine subset_trans (ih hS) ?_
-      -- Trivial from now.
-      sorry
+      apply right_open_hull_in_colin; exact h₂
     · rw [hS]
-      -- Same trivial from now.
-      sorry
+      apply left_open_hull_in_colin; exact h₂
 
 
 
@@ -102,25 +100,88 @@ lemma basic_segments_colin_disjoint {u v w : ℝ²} {C : Chain v w} (h : colin u
     to_segment u v ∉ to_basic_segments C := by
   intro hc
   have this := basic_segment_in_open_hull _ hc
+  have other : open_hull (to_segment u v) ∩ open_hull (to_segment v w) = ∅ := by
+    apply colin_intersection_open_hulls_empty
+    apply h
+  have nonempty : ∃ (b : ℝ²), b ∈ open_hull (to_segment u v) := by
+    apply open_pol_nonempty
+    linarith
+  rcases nonempty with ⟨p, q⟩
+  have contra' :  p ∈ open_hull (to_segment v w) := by
+      tauto_set
+  have contra : open_hull (to_segment u v) ∩ open_hull (to_segment v w) ≠ ∅ := by
+    rw [← Set.nonempty_iff_ne_empty]
+    tauto
+  contradiction
 
-  sorry
 
 lemma basic_segments_colin_disjoint2 {u v w : ℝ²} {C : Chain v w} (h : colin u v w) :
     to_segment v u ∉ to_basic_segments C := by
   intro hc
   have this := basic_segment_in_open_hull _ hc
+  rw [← reverse_segment_to_segment, reverse_segment_open_hull] at this
+  have other : open_hull (to_segment u v) ∩ open_hull (to_segment v w) = ∅ := by
+    apply colin_intersection_open_hulls_empty
+    apply h
+  have nonempty : ∃ (b : ℝ²), b ∈ open_hull (to_segment u v) := by
+    apply open_pol_nonempty
+    linarith
+  rcases nonempty with ⟨p, q⟩
+  have contra' :  p ∈ open_hull (to_segment v w) := by
+      tauto_set
+  have contra : open_hull (to_segment u v) ∩ open_hull (to_segment v w) ≠ ∅ := by
+    rw [← Set.nonempty_iff_ne_empty]
+    tauto
+  contradiction
 
-  sorry
+lemma basic_segments_colin_disjoint_reverse {u v w : ℝ²}{C : Chain v w} (h : colin u v w) :
+    to_segment  u v ∉ to_basic_segments (reverse_chain C ):= by
+    intro hc
+    have this := basic_segment_in_open_hull _ hc
+    have other : open_hull (to_segment u v) ∩ open_hull (to_segment v w) = ∅ := by
+      apply colin_intersection_open_hulls_empty
+      apply h
+    have nonempty : ∃ (b : ℝ²), b ∈ open_hull (to_segment u v) := by
+      apply open_pol_nonempty
+      linarith
+    rcases nonempty with ⟨p, q⟩
+    have contra' :  p ∈ open_hull (to_segment w v) := by
+        tauto_set
+    have contra : open_hull (to_segment u v) ∩ open_hull (to_segment v w) ≠ ∅ := by
+      rw [← Set.nonempty_iff_ne_empty]
+      have hvw : open_hull (to_segment v w) = open_hull (to_segment w v) := by
+        rw [← reverse_segment_to_segment, reverse_segment_open_hull]
+      rw [hvw]
+      tauto
+    contradiction
 
 lemma reverse_chain_basic_segments {u v : ℝ²} (C : Chain u v) :
     to_basic_segments (reverse_chain C) =
     Finset.image (fun S ↦ reverse_segment S) (to_basic_segments C) := by
-  sorry
+  induction C with
+  |basic         => rfl
+  | join _ _ ih   =>
+      simp only [reverse_chain, to_basic_segments, basic_segments_glue, ih, Finset.image_union]
+      congr 1
 
 lemma reverse_chain_basic_segments_disjoint {u v : ℝ²} (C : Chain u v) (huv : u ≠ v) :
     Disjoint (to_basic_segments C) (to_basic_segments (reverse_chain C)) := by
+  induction C with
+  | basic =>
+      simp [to_basic_segments, reverse_chain]
+      exact fun h ↦ huv (congrFun h 1)
+  | @join x y z h₂ C ih =>
+      simp [to_basic_segments, reverse_chain, basic_segments_glue, reverse_chain_glue]
+      constructor
+      constructor
+      · have hyz : y ≠ z := (middle_not_boundary_colin h₂).2
+        exact ih hyz
+      · apply basic_segments_colin_disjoint_reverse h₂
+      constructor
+      · apply basic_segments_colin_disjoint2 h₂
+      · have hxy : x ≠ y := (middle_not_boundary_colin h₂).1
+        exact fun h ↦ hxy (congrFun h 1)
 
-  sorry
 
 lemma segment_set_vertex {X : Finset ℝ²} {S : Segment}
   (hS : S ∈ segment_set X) : ∀ i, S i ∈ X := by
