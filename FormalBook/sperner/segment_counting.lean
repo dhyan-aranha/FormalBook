@@ -463,7 +463,7 @@ noncomputable def isRainbow : Triangle → ℕ :=
 lemma isPurple_two_mod_function : two_mod_function isPurple := by
   unfold two_mod_function
   intro u v w hColin
-  sorry
+  sorry -- uses that only two colors occur on a single line
 
 lemma isPurple_symm_function : symm_fun isPurple := by
   unfold symm_fun
@@ -628,127 +628,54 @@ lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
 def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
   {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
 
-lemma open_eq_implies_closed_eq (S T : Segment) :
-    open_hull S = open_hull T → closed_hull S = closed_hull T := by
-  sorry
 
+lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
+    (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 := by
+  unfold triangulation_basic_segments at h
+  unfold basic_avoiding_segment_set at h
+  unfold avoiding_segment_set at h
+  unfold segment_set at h
+  simp_all only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists, Fin.isValue]
+  obtain ⟨left, right⟩ := h
+  obtain ⟨left, right_1⟩ := left
+  obtain ⟨w, h⟩ := left
+  obtain ⟨w_1, h⟩ := h
+  obtain ⟨left, right_2⟩ := h
+  obtain ⟨left, right_3⟩ := left
+  obtain ⟨left, right_4⟩ := left
+  subst right_2
+  exact right_3
 
-lemma open_hull_almost_unique (S T : Segment) :
-    open_hull S = open_hull T → S = T ∨ S = reverse_segment T := by
-  intro h
-  have h_clos := open_eq_implies_closed_eq S T h
-  have h_boundary : boundary S = boundary T := by
-    unfold boundary
-    rw [h, h_clos]
-  -- Now make a case distinction. If the open_hull consists of one point, both segments are degenerate
-  -- Otherwise, the endpoints of the segments are exactly the boundary
-  have h20 : 2 ≠ 0 := Ne.symm (Nat.zero_ne_add_one 1)
-  cases' eq_or_ne (S 0) (S 1) with heq hneq
-  · have h_closed_hull : closed_hull S = {S 0} := by
-      have h_const : S = fun _ ↦ (S 0) := by
-        funext i
-        fin_cases i
-        · rfl
-        · exact Eq.symm heq
-      rw [h_const]
-      exact closed_hull_constant h20
-    have hT0 : T 0 = S 0 := by
-      rw [← Set.mem_singleton_iff, ← h_closed_hull, h_clos]
-      apply corner_in_closed_hull
-    have hT1 : T 1 = S 1 := by
-      rw [← Set.mem_singleton_iff, ← heq, ← h_closed_hull, h_clos]
-      apply corner_in_closed_hull
-    left
-    symm at hT0 hT1
-    funext i
-    fin_cases i <;> assumption
-  · have hTneq : T 0 ≠ T 1 := by
-      by_contra h2
-      have h_const_T : T = fun _ ↦ (T 0) := by
-        funext i
-        fin_cases i
-        · rfl
-        · exact Eq.symm h2
-      rw [h_const_T, closed_hull_constant h20] at h_clos
-      have hS0 : S 0 ∈ ({T 0} : Set ℝ²) := by
-        rw [← h_clos]
-        exact corner_in_closed_hull
-      have hS1 : S 1 ∈ ({T 0} : Set ℝ²) := by
-        rw [← h_clos]
-        exact corner_in_closed_hull
-      have h_eq : S 0 = S 1 := by
-        calc S 0 = T 0 := by exact hS0
-               _ = S 1 := by exact Eq.symm hS1
-      exact hneq h_eq
-    rw [boundary_seg hneq, boundary_seg hTneq] at h_boundary
-    have h_boundaryST : boundary S = boundary T := by
-      unfold boundary
-      rw [h, h_clos]
-    have h_boundary_points : {S 0 , S 1} = ({T 0, T 1} : Set ℝ²) := by
-      rw [← (boundary_seg_set hneq), ← (boundary_seg_set hTneq)]
-      exact h_boundaryST
-    cases' eq_or_ne (S 0) (T 0) with hl hr
-    · left
-      funext i
-      fin_cases i
-      · exact hl
-      · simp only [Fin.mk_one, Fin.isValue]
-        rw [← Set.singleton_eq_singleton_iff]
-        calc {S 1} = {S 0, S 1} \ {S 0} := Eq.symm (Set.pair_diff_left hneq)
-          _        = {T 0, T 1} \ {T 0} := by rw [h_boundary_points, hl]
-          _        = {T 1} := Set.pair_diff_left hTneq
-    · right
-      have hS0T1 : S 0 = T 1 := by
-        by_contra hF
-        have h : S 0 ∈ ({T 0, T 1} : Set ℝ²) := by
-          rw [← h_boundary_points]
-          simp only [Fin.isValue, Set.mem_insert_iff, Set.mem_singleton_iff, true_or]
-        apply Set.eq_or_mem_of_mem_insert at h
-        cases' h with h1 h2 <;> tauto
-      have hS1T0 : S 1 = T 0 := by
-        rw [← Set.singleton_eq_singleton_iff]
-        calc {S 1} = {S 0, S 1} \ {S 0} := by exact Eq.symm (Set.pair_diff_left hneq)
-                 _ = {T 0, T 1} \ {T 1} := by rw [h_boundary_points, hS0T1]
-                 _ = {T 0} := Set.pair_diff_right hTneq
-      funext i
-      fin_cases i <;> assumption
-
-
-lemma exists_segment_orientation_choice (Δ : Finset Triangle) : ∃ A : Finset Segment,
-    triangulation_interior_basic_segments Δ = A ∪ Finset.image reverse_segment A ∧
-    Disjoint A (Finset.image reverse_segment A) := by
-  -- Idea: show that the natural map from triangulation_interior_basic_segments Δ to
-  -- triangulation_interior_basic_segments_hulls Δ is surjective, and every fiber has exactly
-  -- two elements.
-  sorry
-
-theorem interior_purple_sum (Δ : Finset Triangle):
+theorem interior_purple_sum (Δ : Finset Triangle) :
     (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
-  cases' (exists_segment_orientation_choice Δ) with A h
-  obtain ⟨hU, hdisj⟩ := h
-  have h_U_disj : triangulation_interior_basic_segments Δ = A.disjUnion (image reverse_segment A) hdisj := by
-    rw [hU]
-    exact Eq.symm (disjUnion_eq_union _ _ _)
-  rw [h_U_disj]
-  rw [Finset.sum_disjUnion]
-  have inv' : ∀ S ∈ A, reverse_segment (reverse_segment S) = S := by
-    intro S hS
+  rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff']
+  simp only [Nat.cast_sum, Int.cast_sum, Int.cast_natCast, CharP.cast_eq_zero, Int.cast_zero]
+  apply (Finset.sum_involution (fun x ↦ (fun y ↦ reverse_segment x)))
+  · intro a ha
+    rw [isPurple_symm_function, ← two_mul, mul_eq_zero]
+    left
+    rfl
+  · intro a ha h1
+    by_contra h
+    have h_eq : a 0 = a 1 := by
+      unfold reverse_segment at h
+      conv => left; rw [← h]
+      unfold to_segment
+      rfl
+    unfold triangulation_interior_basic_segments at ha
+    rw [mem_filter] at ha
+    apply basic_seg_non_degenerate ha.1
+    exact h_eq
+  · intro a ha
+    unfold triangulation_interior_basic_segments at *
+    rw [mem_filter] at *
+    constructor
+    · unfold triangulation_basic_segments at *
+      exact basic_avoiding_segment_set_reverse ha.1
+    · rw [reverse_segment_open_hull]
+      exact ha.right
+  · intro a ha
     exact reverse_segment_involution
-  have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
-    intro S hS
-    exact reverse_segment_involution
-  have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
-    fun S a ↦ mem_image_of_mem reverse_segment a
-  have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
-    simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-      reverse_segment_involution, imp_self, implies_true]
-  have htriv : ∀ S ∈ image reverse_segment A, isPurple S = isPurple (reverse_segment S) := by
-    intro S hS
-    exact Eq.symm (isPurple_symm_function S)
-  rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
-    h_mem₂ h_mem₁ inv₂' inv' htriv]
-  rw [← two_mul]
-  simp only [Nat.mul_mod_right, Nat.zero_mod]
 
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
