@@ -204,7 +204,8 @@ lemma segment_induction {A : Set ℝ²} {X : Finset ℝ²}
     · refine hN (Finset.filter (fun p ↦ p ∈ open_hull (to_segment (S 0) x)) X).card ?_
         (avoiding_segment_set_sub_left hS hx hxS) rfl
       sorry
-    ·
+    · refine hN (Finset.filter (fun p ↦ p ∈ open_hull (to_segment x (S 1))) X).card ?_
+        (avoiding_segment_set_sub_right hS hx hxS) rfl
       sorry
 
 theorem segment_decomposition' {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
@@ -484,29 +485,54 @@ lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
 
 
 
-
 def color : ℝ² → Fin 3 := sorry -- can use the construction using valuations here
 
 def red : Fin 3 := 0
 def blue : Fin 3 := 1
 def green : Fin 3 := 2
+variable {Γ₀ : Type} [LinearOrderedCommGroupWithZero Γ₀]
+variable (v : Valuation ℝ Γ₀)
 
 
 -- The following function determines whether a segment is purple. We want to sum the value
 -- of this function over all segments, so we let it take values in ℕ
 noncomputable def isPurple : Segment → ℕ :=
-    fun S ↦ if ( (color (S 0) = red ∧ color (S 1) = blue) ∨ (color (S 0) = blue ∧ color (S 1) = red)) then 1 else 0
+    fun S ↦ if ( (coloring v (S 0) = Color.Red ∧ coloring v (S 1) = Color.Blue) ∨ (coloring v (S 0) = Color.Blue ∧ coloring v (S 1) = Color.Red)) then 1 else 0
 
 noncomputable def isRainbow : Triangle → ℕ :=
     fun T ↦ if (Function.Surjective (color ∘ T)) then 1 else 0
 
 
-lemma isPurple_two_mod_function : two_mod_function isPurple := by
-  unfold two_mod_function
-  intro u v w hColin
-  sorry -- uses that only two colors occur on a single line
 
-lemma isPurple_symm_function : symm_fun isPurple := by
+
+lemma isPurple_two_mod_function : two_mod_function (isPurple v) := by
+  unfold two_mod_function
+  intro x y z hColin
+  have h := no_Color_lines (to_segment x z) v
+  --In order to use the no color lines, we need that all our points are in the closed hull, to prove this was slightly frustrating
+  have hhelpz : z = (to_segment x z) 1  := by rfl
+  have hhelpx : x = (to_segment x z) 0  := by rfl
+  have hx : x ∈ closed_hull (to_segment x z) := by  nth_rewrite 2[hhelpx] ; exact corner_in_closed_hull
+  have hz : z ∈ closed_hull (to_segment x z) := by  nth_rewrite 2[hhelpz] ; exact corner_in_closed_hull
+  have hy : y ∈ closed_hull (to_segment x z) := by  exact (open_sub_closed (to_segment x z) hColin.2)
+
+  --This finishes the aux lemmas
+  rcases h with ⟨ c, hnotc⟩
+  have hx1 := hnotc x hx ; have hy1 := hnotc y hy ; have hz1 := hnotc z hz
+  clear hhelpx hhelpz hx hy hz hColin hnotc
+  simp[isPurple]
+
+  generalize hcx : coloring v x = cx at hx1
+  generalize hcy : coloring v y = cy at hy1
+  generalize hcz : coloring v z = cz at hz1
+  simp only [to_segment]
+  simp_rw [hcx, hcy, hcz]
+  -- I am doing an induction over 81 cases.... I hope it is not too slow
+  induction c <;> induction cx <;> induction cy <;> induction cz <;> simp only [reduceCtorEq,
+    and_false, and_true, or_self, ↓reduceIte, add_zero, Nat.zero_mod] <;> tauto
+
+
+lemma isPurple_symm_function : symm_fun (isPurple v) := by
   unfold symm_fun
   intro S
   unfold isPurple reverse_segment
@@ -592,7 +618,7 @@ noncomputable def triangulation_all_segments (Δ : Finset Triangle) : Finset Seg
   avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)
 
 noncomputable def purple_sum (Δ : Finset Triangle) : ℕ :=
-  ∑ (S ∈ triangulation_boundary_basic_segments Δ), isPurple S
+  ∑ (S ∈ triangulation_boundary_basic_segments Δ), isPurple v S
 
 noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
   ∑ (T ∈ Δ), isRainbow T
@@ -600,20 +626,9 @@ noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
 noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
   {T ∈ Δ | isRainbow T = 1}
 
--- Given a collection of segments X and a segment S, give all elements of X with open_hull contained
--- in open_hull S.
-noncomputable def basic_segment_segments (X : Finset Segment) (S : Segment) :=
-  filter (fun L ↦ open_hull L ⊆ open_hull S) X
-
-lemma segment_sum_splitting (A : Finset Segment) (X : Finset Segment)
-    (h1 : ∀ S ∈ X, open_hull S ⊆ ⋃ T ∈ A, open_hull T)
-    (h2 : ∀ S ∈ A, ∀  T ∈ A, S ≠ T → open_hull S ∩ open_hull T = ∅) (f : Segment → ℕ) :
-    ∑ S ∈ X, f S = ∑ T ∈ A, (∑ S ∈ basic_segment_segments X T, f S) := by
-  sorry
-
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    purple_sum Δ % 4 = 2 := by
+    purple_sum v Δ % 4 = 2 := by
   -- Strategy: show that triangulation_boundary_basic_segments Δ is the disjoint union over the
   -- segments contained in the four sides of the squares. Then for each side, use that the purple
   -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
@@ -629,15 +644,9 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
 noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
 
-lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
-    triangle_basic_boundary Δ T =
-    @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
-    := by
-
-  sorry
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
-    2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple S) % 4 := by
+    2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
   intro T hT
   -- Reduce the sum over the boundary to just the sum over the 3 boundary segments of T
   -- I think we have to use segment_decomposition in this proof.
@@ -686,54 +695,127 @@ lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
 def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
   {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
 
+lemma open_eq_implies_closed_eq (S T : Segment) :
+    open_hull S = open_hull T → closed_hull S = closed_hull T := by
+  sorry
 
-lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
-    (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 := by
-  unfold triangulation_basic_segments at h
-  unfold basic_avoiding_segment_set at h
-  unfold avoiding_segment_set at h
-  unfold segment_set at h
-  simp_all only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists, Fin.isValue]
-  obtain ⟨left, right⟩ := h
-  obtain ⟨left, right_1⟩ := left
-  obtain ⟨w, h⟩ := left
-  obtain ⟨w_1, h⟩ := h
-  obtain ⟨left, right_2⟩ := h
-  obtain ⟨left, right_3⟩ := left
-  obtain ⟨left, right_4⟩ := left
-  subst right_2
-  exact right_3
 
-theorem interior_purple_sum (Δ : Finset Triangle) :
-    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
-  rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff']
-  simp only [Nat.cast_sum, Int.cast_sum, Int.cast_natCast, CharP.cast_eq_zero, Int.cast_zero]
-  apply (Finset.sum_involution (fun x ↦ (fun y ↦ reverse_segment x)))
-  · intro a ha
-    rw [isPurple_symm_function, ← two_mul, mul_eq_zero]
+lemma open_hull_almost_unique (S T : Segment) :
+    open_hull S = open_hull T → S = T ∨ S = reverse_segment T := by
+  intro h
+  have h_clos := open_eq_implies_closed_eq S T h
+  have h_boundary : boundary S = boundary T := by
+    unfold boundary
+    rw [h, h_clos]
+  -- Now make a case distinction. If the open_hull consists of one point, both segments are degenerate
+  -- Otherwise, the endpoints of the segments are exactly the boundary
+  have h20 : 2 ≠ 0 := Ne.symm (Nat.zero_ne_add_one 1)
+  cases' eq_or_ne (S 0) (S 1) with heq hneq
+  · have h_closed_hull : closed_hull S = {S 0} := by
+      have h_const : S = fun _ ↦ (S 0) := by
+        funext i
+        fin_cases i
+        · rfl
+        · exact Eq.symm heq
+      rw [h_const]
+      exact closed_hull_constant h20
+    have hT0 : T 0 = S 0 := by
+      rw [← Set.mem_singleton_iff, ← h_closed_hull, h_clos]
+      apply corner_in_closed_hull
+    have hT1 : T 1 = S 1 := by
+      rw [← Set.mem_singleton_iff, ← heq, ← h_closed_hull, h_clos]
+      apply corner_in_closed_hull
     left
-    rfl
-  · intro a ha h1
-    by_contra h
-    have h_eq : a 0 = a 1 := by
-      unfold reverse_segment at h
-      conv => left; rw [← h]
-      unfold to_segment
-      rfl
-    unfold triangulation_interior_basic_segments at ha
-    rw [mem_filter] at ha
-    apply basic_seg_non_degenerate ha.1
-    exact h_eq
-  · intro a ha
-    unfold triangulation_interior_basic_segments at *
-    rw [mem_filter] at *
-    constructor
-    · unfold triangulation_basic_segments at *
-      exact basic_avoiding_segment_set_reverse ha.1
-    · rw [reverse_segment_open_hull]
-      exact ha.right
-  · intro a ha
+    symm at hT0 hT1
+    funext i
+    fin_cases i <;> assumption
+  · have hTneq : T 0 ≠ T 1 := by
+      by_contra h2
+      have h_const_T : T = fun _ ↦ (T 0) := by
+        funext i
+        fin_cases i
+        · rfl
+        · exact Eq.symm h2
+      rw [h_const_T, closed_hull_constant h20] at h_clos
+      have hS0 : S 0 ∈ ({T 0} : Set ℝ²) := by
+        rw [← h_clos]
+        exact corner_in_closed_hull
+      have hS1 : S 1 ∈ ({T 0} : Set ℝ²) := by
+        rw [← h_clos]
+        exact corner_in_closed_hull
+      have h_eq : S 0 = S 1 := by
+        calc S 0 = T 0 := by exact hS0
+               _ = S 1 := by exact Eq.symm hS1
+      exact hneq h_eq
+    rw [boundary_seg hneq, boundary_seg hTneq] at h_boundary
+    have h_boundaryST : boundary S = boundary T := by
+      unfold boundary
+      rw [h, h_clos]
+    have h_boundary_points : {S 0 , S 1} = ({T 0, T 1} : Set ℝ²) := by
+      rw [← (boundary_seg_set hneq), ← (boundary_seg_set hTneq)]
+      exact h_boundaryST
+    cases' eq_or_ne (S 0) (T 0) with hl hr
+    · left
+      funext i
+      fin_cases i
+      · exact hl
+      · simp only [Fin.mk_one, Fin.isValue]
+        rw [← Set.singleton_eq_singleton_iff]
+        calc {S 1} = {S 0, S 1} \ {S 0} := Eq.symm (Set.pair_diff_left hneq)
+          _        = {T 0, T 1} \ {T 0} := by rw [h_boundary_points, hl]
+          _        = {T 1} := Set.pair_diff_left hTneq
+    · right
+      have hS0T1 : S 0 = T 1 := by
+        by_contra hF
+        have h : S 0 ∈ ({T 0, T 1} : Set ℝ²) := by
+          rw [← h_boundary_points]
+          simp only [Fin.isValue, Set.mem_insert_iff, Set.mem_singleton_iff, true_or]
+        apply Set.eq_or_mem_of_mem_insert at h
+        cases' h with h1 h2 <;> tauto
+      have hS1T0 : S 1 = T 0 := by
+        rw [← Set.singleton_eq_singleton_iff]
+        calc {S 1} = {S 0, S 1} \ {S 0} := by exact Eq.symm (Set.pair_diff_left hneq)
+                 _ = {T 0, T 1} \ {T 1} := by rw [h_boundary_points, hS0T1]
+                 _ = {T 0} := Set.pair_diff_right hTneq
+      funext i
+      fin_cases i <;> assumption
+
+
+lemma exists_segment_orientation_choice (Δ : Finset Triangle) : ∃ A : Finset Segment,
+    triangulation_interior_basic_segments Δ = A ∪ Finset.image reverse_segment A ∧
+    Disjoint A (Finset.image reverse_segment A) := by
+  -- Idea: show that the natural map from triangulation_interior_basic_segments Δ to
+  -- triangulation_interior_basic_segments_hulls Δ is surjective, and every fiber has exactly
+  -- two elements.
+  sorry
+
+theorem interior_purple_sum (Δ : Finset Triangle):
+    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 2 = 0 % 2 := by
+  cases' (exists_segment_orientation_choice Δ) with A h
+  obtain ⟨hU, hdisj⟩ := h
+  have h_U_disj : triangulation_interior_basic_segments Δ = A.disjUnion (image reverse_segment A) hdisj := by
+    rw [hU]
+    exact Eq.symm (disjUnion_eq_union _ _ _)
+  rw [h_U_disj]
+  rw [Finset.sum_disjUnion]
+  have inv' : ∀ S ∈ A, reverse_segment (reverse_segment S) = S := by
+    intro S hS
     exact reverse_segment_involution
+  have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
+    intro S hS
+    exact reverse_segment_involution
+  have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
+    fun S a ↦ mem_image_of_mem reverse_segment a
+  have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
+    simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+      reverse_segment_involution, imp_self, implies_true]
+  have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
+    intro S hS
+    exact Eq.symm (isPurple_symm_function v S)
+  rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
+    h_mem₂ h_mem₁ inv₂' inv' htriv]
+  rw [← two_mul]
+  simp only [Nat.mul_mod_right, Nat.zero_mod]
 
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
@@ -755,17 +837,17 @@ lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f
 
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
-    2 * rainbow_sum Δ % 4 = purple_sum Δ % 4 := by
+    2 * rainbow_sum Δ % 4 = purple_sum v Δ % 4 := by
   /-
     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
     or over all triangles first.
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl rainbow_triangle_purple_sum, ←sum_nat_mod]
-  rw [split_segment_sum Δ hCover isPurple isPurple_symm_function]
-  have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 4 = 0 := by
-    exact mod_two_mul (interior_purple_sum Δ)
+  rw [sum_congr rfl (rainbow_triangle_purple_sum v) , ←sum_nat_mod]
+  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
+  have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
+    exact mod_two_mul (interior_purple_sum v Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
 
 
