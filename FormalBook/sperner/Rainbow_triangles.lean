@@ -360,16 +360,15 @@ theorem no_Color_lines
   rcases hr with ⟨z, hz, hzr⟩
   rcases hb with ⟨x, hx, hxb⟩
   rcases hg with ⟨y, hy, hyg⟩
-  let Tseg : Fin 3 → ℝ² := fun | 0 => L 0 | 1 => L 0 | 2 => L 1
-  have hTseg : det Tseg = 0 := det_triv_triangle (L 0) (L 1)
-  have rain1: det (fun | 0 => x | 1 => y | 2 => z) = 0 := by
+  have hTseg : det (fun | 0 => L 0 | 1 => L 0 | 2 => L 1) = 0 := det_triv_triangle (L 0) (L 1)
+  let xyz : Fin 3 → ℝ² := fun | 0 => x | 1 => y | 2 => z
+  have det0 : det xyz = 0 := by
     rw [Lhull_equals_Thull L] at hx hy hz
     exact det_0_triangle_imp_triv hTseg x y z hx hy hz
-  have vrain1 : v (det (fun | 0 => x | 1 => y | 2 => z)) = v 0 := by
-    rw [rain1]
-  rw [v.map_zero] at vrain1
-  have rain2: v (det (fun | 0 => x | 1 => y | 2 => z)) ≥ 1 := by
-    have h_det : det (fun | 0 => x | 1 => y | 2 => z) =
+  have vdet0 : v (det xyz) = 0 := by
+    rw [det0, ←v.map_zero]
+  have vdet1 : v (det xyz) ≥ 1 := by
+    have h_det : det xyz =
       (x 0 * y 1 + x 1 * z 0 + y 0 * z 1 - y 1 * z 0 - x 1 * y 0 - x 0 * z 1) := by
       simp [det]
       ring_nf
@@ -378,13 +377,9 @@ theorem no_Color_lines
     exact hxb
     exact hyg
     exact hzr
-  have contra: v (det (fun | 0 => x | 1 => y | 2 => z)) = 0 ∧
-  v (det (fun | 0 => x | 1 => y | 2 => z)) ≥ 1 := by
-    exact ⟨vrain1, rain2⟩
-  have ⟨h1, h2⟩ := contra
   have h3 : (0 : Γ₀) ≥ 1 := by
-    rw [h1] at h2
-    exact h2
+    rw [vdet0] at vdet1
+    exact vdet1
   exact not_le_of_gt (zero_lt_one) h3
 
 -- We show next that the coloring of (0,0) is red, (0,1) is green and (1,0) is blue.
@@ -510,4 +505,3 @@ theorem no_odd_rainbow_triangle
     rw [v1]
     apply bound2
   exact bound3.not_le bound
-
