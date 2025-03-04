@@ -992,6 +992,20 @@ lemma colin_decomp_closed {u v w :ℝ²} (h :colin u v w ) : closed_hull (to_seg
     rw [huv, to_segment]
   exact ⟨ht hcolin, (ht (colin_reverse hcolin)).symm⟩
 
+lemma left_open_hull_in_colin {u v w : ℝ²} {h: colin u v w} :
+  open_hull (to_segment u v) ⊆ open_hull (to_segment u w) := by
+  apply open_segment_sub'
+  have this := colin_decomp_closed h
+  tauto_set
+  rw [to_segment, to_segment]; exact (middle_not_boundary_colin h).1
+
+lemma right_open_hull_in_colin {u v w : ℝ²} {h : colin u v w}
+  : open_hull (to_segment v w) ⊆ open_hull (to_segment u w) := by
+  apply open_segment_sub'
+  have this := colin_decomp_closed h
+  tauto_set
+  rw [to_segment, to_segment]; exact (middle_not_boundary_colin h).2
+
 
 lemma interior_left_trans {u v w t : ℝ²}
 (ht : t ∈ open_hull (to_segment u v)) (hv : v ∈ open_hull (to_segment u w)) :
@@ -1240,6 +1254,34 @@ have hg : closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} :=
 have hg' : v ∉ closed_hull (to_segment z w) := by
   exact corrollary_closed_in_clopen_right (middle_not_boundary_colin h).2 hzvwv hg
 contradiction
+
+
+lemma colin_intersection_open_hulls_empty {u v w :ℝ²}{h : colin u v w} :
+open_hull (to_segment u v) ∩ open_hull (to_segment v w) = ∅ := by
+
+have huv : open_hull (to_segment u v) ⊆ closed_hull (to_segment u v) := by
+  apply open_sub_closed
+have hvw : open_hull (to_segment v w) ⊆  (closed_hull (to_segment v w) \ {v}) := by
+  intro x hx
+  have hvwclosed : x ∈ closed_hull (to_segment v w) := by
+    apply open_sub_closed
+    apply hx
+  have hnx: x ≠ v := by
+    rw [← open_closed_hull_minus_boundary] at hx
+    rw [boundary_seg_set] at hx
+    tauto_set
+    exact (middle_not_boundary_colin h).2
+  tauto_set
+have hclopen : closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) = ∅ := by
+  apply middle_intersection_empty
+  apply h
+tauto_set
+
+
+
+
+
+
 
 
 
