@@ -553,7 +553,7 @@ noncomputable def isPurple : Segment → ℕ :=
     fun S ↦ if ( (coloring v (S 0) = Color.Red ∧ coloring v (S 1) = Color.Blue) ∨ (coloring v (S 0) = Color.Blue ∧ coloring v (S 1) = Color.Red)) then 1 else 0
 
 noncomputable def isRainbow : Triangle → ℕ :=
-    fun T ↦ if (Function.Surjective (color ∘ T)) then 1 else 0
+    fun T ↦ if (Function.Surjective (coloring v ∘ T)) then 1 else 0
 
 
 
@@ -674,10 +674,10 @@ noncomputable def purple_sum (Δ : Finset Triangle) : ℕ :=
   ∑ (S ∈ triangulation_boundary_basic_segments Δ), isPurple v S
 
 noncomputable def rainbow_sum (Δ : Finset Triangle) : ℕ :=
-  ∑ (T ∈ Δ), isRainbow T
+  ∑ (T ∈ Δ), isRainbow v  T
 
 noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
-  {T ∈ Δ | isRainbow T = 1}
+  {T ∈ Δ | isRainbow v T = 1}
 
 -- Given a collection of segments X and a segment S, give all elements of X with open_hull contained
 -- in open_hull S.
@@ -719,7 +719,7 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
 
 
 theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
-    rainbow_sum Δ = (rainbow_triangles Δ).card := by
+    rainbow_sum v Δ = (rainbow_triangles v Δ).card := by
   unfold rainbow_sum rainbow_triangles isRainbow
   simp only [sum_boole, Nat.cast_id, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
 
@@ -741,13 +741,13 @@ lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h :
 noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i ↦ {Tside T i})
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
-    2 * isRainbow T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
+    2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
   intro T hT
   have h : triangle_basic_boundary Δ T =
       filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
     sorry
   rw [h]
-  rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry isPurple sorry sorry]
+  rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v)  sorry sorry]
   unfold triangle_boundary
   -- Reduce the sum over the boundary to just the sum over the 3 boundary segments of T
   -- I think we have to use segment_decomposition in this proof.
@@ -803,7 +803,7 @@ lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
 
 
 theorem interior_purple_sum (Δ : Finset Triangle) :
-    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple S) % 2 = 0 % 2 := by
+    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 2 = 0 % 2 := by
   rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff']
   simp only [Nat.cast_sum, Int.cast_sum, Int.cast_natCast, CharP.cast_eq_zero, Int.cast_zero]
   apply (Finset.sum_involution (fun x ↦ (fun y ↦ reverse_segment x)))
@@ -832,21 +832,21 @@ theorem interior_purple_sum (Δ : Finset Triangle) :
       exact ha.right
   · intro a ha
     exact reverse_segment_involution
-  have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
-    intro S hS
-    exact reverse_segment_involution
-  have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
-    fun S a ↦ mem_image_of_mem reverse_segment a
-  have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
-    simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-      reverse_segment_involution, imp_self, implies_true]
-  have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
-    intro S hS
-    exact Eq.symm (isPurple_symm_function v S)
-  rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
-    h_mem₂ h_mem₁ inv₂' inv' htriv]
-  rw [← two_mul]
-  simp only [Nat.mul_mod_right, Nat.zero_mod]
+  -- have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
+  --   intro S hS
+  --   exact reverse_segment_involution
+  -- have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
+  --   fun S a ↦ mem_image_of_mem reverse_segment a
+  -- have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
+  --   simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+  --     reverse_segment_involution, imp_self, implies_true]
+  -- have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
+  --   intro S hS
+  --   exact Eq.symm (isPurple_symm_function v S)
+  -- rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
+  --   h_mem₂ h_mem₁ inv₂' inv' htriv]
+  -- rw [← two_mul]
+  -- simp only [Nat.mul_mod_right, Nat.zero_mod]
 
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
@@ -868,7 +868,7 @@ lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f
 
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
-    2 * rainbow_sum Δ % 4 = purple_sum v Δ % 4 := by
+    2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
     or over all triangles first.
@@ -883,7 +883,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
 
 
 theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    ∃ T ∈ Δ, isRainbow T = 1 := by
+    ∃ T ∈ Δ, isRainbow v T = 1 := by
   sorry -- easy, follows from above
 
 
