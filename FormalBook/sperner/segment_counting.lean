@@ -727,9 +727,15 @@ theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
 noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
 
-lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j) :
-    open_hull (Tside T i) ∩ open_hull (Tside T j) = ∅ := by
-  sorry
+lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j)(hdet : det T ≠ 0) :
+    Disjoint (open_hull (Tside T i))  (open_hull (Tside T j)) := by
+  by_contra h1
+  rw [@Set.not_disjoint_iff] at h1
+  rcases h1 with ⟨x ,hi,hj ⟩
+  have hx  := closed_side_sub (open_sub_closed _ hi)
+  rw[←  mem_open_side hdet hx i] at hi
+  rw[←  mem_open_side hdet hx j] at hj
+  exact Ne.symm (ne_of_lt (hj.2 i h)) hi.1
 
 lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
     triangle_basic_boundary Δ T =
