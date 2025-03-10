@@ -684,6 +684,10 @@ noncomputable def rainbow_triangles (Δ : Finset Triangle) : Finset Triangle :=
 noncomputable def basic_segment_segments (X : Finset Segment) (S : Segment) :=
   filter (fun L ↦ open_hull L ⊆ open_hull S) X
 
+lemma closed_inc_implies_open_inc (S T : Segment) (hneq : S 0 ≠ S 1) (h : closed_hull S ⊆ closed_hull T) :
+    open_hull S ⊆ open_hull T := by
+  sorry
+
 lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset ℝ²)
     (hA : A ⊆ avoiding_segment_set X AVOID)
     (hDisj : ∀ S T, S ∈ A → T ∈ A → open_hull S ∩ open_hull T = ∅)
@@ -692,16 +696,65 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
     = (2 * ∑ T ∈ A, f T) % 4 := by
   have h_disj : (A.toSet).PairwiseDisjoint (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID)))
       := by
-    sorry
+    intro S hS T hT hST Y hY h
+    have h := hDisj S T hS hT
+    simp_all only [mem_coe, ne_eq, le_eq_subset, bot_eq_empty, subset_empty]
+    have h_nontriv : ∀ L ∈ Y, L 0 ≠ L 1 := by
+      intro L hL
+      apply @segment_set_vertex_distinct X L
+      have hY_segment_set : Y ⊆ segment_set X := by
+        calc Y ⊆ filter (fun S_1 ↦ closed_hull S_1 ⊆ closed_hull S) (basic_avoiding_segment_set X AVOID) := hY
+             _ ⊆ basic_avoiding_segment_set X AVOID := by exact filter_subset _ _
+             _ ⊆ avoiding_segment_set X AVOID := by exact filter_subset _ _
+             _ ⊆ segment_set X := by exact filter_subset _ _
+      exact hY_segment_set hL
+    have hLS : ∀ L ∈ Y, open_hull L ⊆ open_hull S := by
+      intro L hL
+      apply closed_inc_implies_open_inc L S
+      · exact h_nontriv L hL
+      · have h2 := hY hL
+        rw [mem_filter] at h2
+        exact h2.right
+    have hLT : ∀ L ∈ Y, open_hull L ⊆ open_hull T := by
+      intro L hL
+      apply closed_inc_implies_open_inc L T
+      · exact h_nontriv L hL
+      · have h2 := h hL
+        rw [mem_filter] at h2
+        exact h2.right
+    have hST := hDisj S T hS hT
+    ext L
+    constructor
+    · intro hL
+      have hNonEmpty : open_hull L ≠ ∅ := by
+        simp_all only [ne_eq]
+        obtain ⟨w, h_1⟩ := open_pol_nonempty (by linarith) L
+        intro a
+        simp_all only [Set.mem_empty_iff_false]
+      have hEmpty : open_hull L ⊆ ∅ := by
+        calc open_hull L ⊆ open_hull S ∩ open_hull T := by exact Set.subset_inter_iff.mpr ⟨(hLS L hL), (hLT L hL)⟩
+                       _ = ∅                         := by exact hDisj S T hS hT
+      simp_all only [ne_eq, Set.subset_empty_iff]
+    · tauto
   have h_eq : filter (fun S ↦ closed_hull S ⊆ (⋃ T ∈ A, closed_hull T)) (basic_avoiding_segment_set X AVOID) =
       Finset.disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj
       := by
-    sorry
+    ext L
+    rw [mem_filter, Finset.mem_disjiUnion]
+    constructor
+    · intro hL
+
+      sorry
+    · intro hL
+      cases' hL with S hS
+      constructor
+      · simp_all only [mem_filter]
+      ·
+        sorry
   rw [h_eq]
   rw [Finset.sum_disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj]
   rw [← ZMod.natCast_eq_natCast_iff']
   simp only [Nat.cast_sum, Nat.cast_mul, Nat.cast_ofNat, mul_sum]
-  -- use sum_two_mod_fun_seg
   refine sum_congr rfl ?_
   intro T hT
   have bla := sum_two_mod_fun_seg (hA hT) hfTwoMod hSymm
@@ -750,7 +803,7 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
   rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v)  sorry sorry]
   unfold triangle_boundary
   -- Reduce the sum over the boundary to just the sum over the 3 boundary segments of T
-  -- I think we have to use segment_decomposition in this proof.
+
 
   -- Then the result follows by an explicit computation
   sorry
