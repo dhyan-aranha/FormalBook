@@ -136,10 +136,10 @@ lemma segment_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square)
 
 
 /- A version that states that the open_unit_square is open. -/
+
 lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_hull unit_square) :
     ∃ (ε : ℝ), ε > 0 ∧ ∀ (n : ℕ), x + (1 / (n : ℝ)) • (ε • y) ∈ open_hull unit_square := by
   simp_rw [open_unit_square_eq]
-
   sorry
 
 
@@ -362,3 +362,214 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
     specialize hεΔ (min ε ε') (lt_min hε hε') (min_le_left ε ε')
     specialize hεΔ' (min ε ε') (lt_min hε hε') (min_le_right ε ε')
     exact is_cover_open_el_imp_eq hCover.2 hΔ' hΔ hεΔ' hεΔ
+
+
+-- In this part we show that the the faces of the unit square are faces in the sense of convex
+-- geometry. (see: https://en.wikipedia.org/wiki/Convex_set#Face_of_a_convex_set)
+-- there are many sorries introduced here but nearly all of them are repeated arguments of what has
+-- already been written. 
+
+noncomputable def top_face: Segment := fun | 0 => v 0 1 | 1 => v 1 1
+
+noncomputable def bottom_face: Segment := fun | 0 => v 0 0 | 1 => v 0 1
+
+noncomputable def left_face: Segment := fun | 0 => v 0 0 | 1 => v 0 1
+
+noncomputable def right_face: Segment := fun | 0 => v 1 0 | 1 => v 1 1
+
+lemma top_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
+ (hx: x ∈ closed_hull unit_square)
+(hy : y ∈ closed_hull unit_square) : x ∈ closed_hull top_face ∧
+y ∈ closed_hull top_face := by
+
+have hr : ∃ (r : ℝ ), 0 < r ∧ r < 1 ∧ p = (1 - r) • x + r • y := by
+  rw [open_segment_interval_im, seg_vec] at hp
+  simp only [Fin.isValue, Set.mem_image, Set.mem_Ioo] at hp
+  obtain ⟨r, hr1, hr2⟩ := hp
+  use r
+  constructor
+  · exact hr1.1
+  constructor
+  · exact hr1.2
+  rw [to_segment, to_segment] at hr2
+  rw [← hr2]
+  module
+
+rcases hr with ⟨r, hr1, hr2, hr3⟩
+
+have hp1 : p 1 = (1 - r) * x 1 + r * y 1 := by
+  rw [hr3]
+  simp only [Fin.isValue, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
+have hp1' : p 1  = 1 := by
+  unfold closed_hull at hpface
+  simp at hpface
+  rcases hpface with ⟨α, hα, hpα⟩
+  have hp1aux : α 0 • top_face 0 1 + α 1 • top_face 1 1 = p 1 := by
+    rw [← hpα]
+    rw [top_face, top_face]
+    tauto
+  rw [top_face, top_face] at hp1aux
+  simp only [Fin.isValue, v₁_val, smul_eq_mul, mul_one] at hp1aux
+  have hαsum : α 0 + α 1 = 1 := by
+    unfold closed_simplex at hα
+    simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_setOf_eq] at hα
+    exact hα.2
+  rw [hαsum] at hp1aux
+  exact hp1aux.symm
+rw [hp1'] at hp1
+
+have hx1 : x 1 = 1 := by sorry
+have hy1 : y 1 = 1 := by sorry
+
+constructor
+· rw [closed_unit_square_eq] at hx
+  have hx0 : 0 ≤ x 0 ∧ x 0 ≤ 1 := by
+   exact hx 0
+  have hxtopface : (1- x 0) • top_face 0 + x 0 • top_face 1 = x := by
+    ext i
+    fin_cases i
+    · simp [top_face, v]
+    · simp [top_face, v]
+      apply hx1.symm
+  unfold closed_hull
+  simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image]
+  use fun | 0 => 1 - x 0 | 1 => x 0
+  refine ⟨⟨?_,?_⟩,?_⟩
+  · intro i
+    fin_cases i
+    · simp [hx0]
+    · linarith
+  · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
+  · rw [hxtopface]
+
+· rw [closed_unit_square_eq] at hy
+  have hy0 : 0 ≤ y 0 ∧ y 0 ≤ 1 := by
+   exact hy 0
+  have hytopface : (1- y 0) • top_face 0 + y 0 • top_face 1 = y := by
+    ext i
+    fin_cases i
+    · simp [top_face, v]
+    · simp [top_face, v]
+      apply hy1.symm
+  unfold closed_hull
+  simp only [Fin.sum_univ_two, Fin.isValue, Set.mem_image]
+  use fun | 0 => 1 - y 0 | 1 => y 0
+  refine ⟨⟨?_,?_⟩,?_⟩
+  · intro i
+    fin_cases i
+    · simp [hy0]
+    · linarith
+  · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
+  · rw [hytopface]
+
+lemma top_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
+  (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
+  closed_hull (to_segment x y) ⊆ closed_hull top_face := by
+
+  have hxtop : x ∈ closed_hull top_face := by
+    exact (top_face_convex hpface hp hx hy).1
+  have hytop : y ∈ closed_hull top_face := by
+    exact (top_face_convex hpface hp hx hy).2
+  apply closed_hull_convex
+  intro i
+  fin_cases i
+  · exact hxtop
+  · exact hytop
+
+
+lemma bottom_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull bottom_face) (hp : p ∈ open_hull (to_segment x y))
+ (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) : x ∈ closed_hull bottom_face ∧
+y ∈ closed_hull bottom_face := by sorry
+
+lemma bottom_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull bottom_face) (hp : p ∈ open_hull (to_segment x y))
+  (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
+  closed_hull (to_segment x y) ⊆ closed_hull bottom_face := by sorry
+
+lemma left_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull left_face) (hp : p ∈ open_hull (to_segment x y))
+ (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) : x ∈ closed_hull left_face ∧
+y ∈ closed_hull left_face := by sorry
+
+lemma left_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull left_face) (hp : p ∈ open_hull (to_segment x y))
+  (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
+  closed_hull (to_segment x y) ⊆ closed_hull left_face := by sorry
+
+lemma right_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull right_face) (hp : p ∈ open_hull (to_segment x y))
+ (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) : x ∈ closed_hull right_face ∧
+y ∈ closed_hull right_face := by sorry
+
+lemma right_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull right_face) (hp : p ∈ open_hull (to_segment x y))
+  (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
+  closed_hull (to_segment x y) ⊆ closed_hull right_face := by sorry
+
+lemma boundary_union_of_faces : closed_hull top_face ∪ closed_hull bottom_face ∪
+closed_hull left_face ∪ closed_hull right_face = boundary unit_square := by sorry
+
+
+lemma line_in_boundary {x : ℝ²} {L : Segment} (hL: closed_hull L ⊆ closed_hull unit_square)
+(hboundary: x ∈ open_hull L ∩ boundary unit_square) : closed_hull L ⊆ boundary unit_square := by
+
+rw [← boundary_union_of_faces] at hboundary
+by_cases hbound : x ∈ closed_hull top_face ∨  x ∈ closed_hull bottom_face ∨  x ∈ closed_hull left_face
+∨  x ∈ closed_hull right_face
+rcases hbound with htop | hbot | hleft | hright
+· have hLtop : closed_hull L ⊆ closed_hull top_face := by
+    apply top_face_convex₂ htop hboundary.1
+    simp only [Fin.zero_eta, Fin.isValue]
+    have hLtop0 : L 0 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLtop0
+    simp only [Fin.mk_one, Fin.isValue]
+    have hLtop1 : L 1 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLtop1
+  have htopbound : closed_hull top_face ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces]
+    tauto
+  exact subset_trans hLtop htopbound
+
+· have hLbot : closed_hull L ⊆ closed_hull bottom_face := by
+    apply bottom_face_convex₂ hbot hboundary.1
+    simp only [Fin.zero_eta, Fin.isValue]
+    have hLbot0 : L 0 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLbot0
+    simp only [Fin.mk_one, Fin.isValue]
+    have hLbot1 : L 1 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLbot1
+  have hbotbound : closed_hull bottom_face ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces]
+    tauto_set
+  exact subset_trans hLbot hbotbound
+
+· have hLleft : closed_hull L ⊆ closed_hull left_face := by
+    apply left_face_convex₂ hleft hboundary.1
+    simp only [Fin.zero_eta, Fin.isValue]
+    have hLleft0 : L 0 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLleft0
+    simp only [Fin.mk_one, Fin.isValue]
+    have hLleft1 : L 1 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLleft1
+  have hleftbound : closed_hull left_face ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces]
+    tauto_set
+  exact subset_trans hLleft hleftbound
+
+· have hLright : closed_hull L ⊆ closed_hull right_face := by
+    apply right_face_convex₂ hright hboundary.1
+    simp only [Fin.zero_eta, Fin.isValue]
+    have hLright0 : L 0 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLright0
+    simp only [Fin.mk_one, Fin.isValue]
+    have hLright1 : L 1 ∈ closed_hull L := by
+      apply corner_in_closed_hull
+    exact hL hLright1
+  have hrightbound : closed_hull right_face ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces]
+    tauto_set
+  exact subset_trans hLright hrightbound
+
+simp_all only [Set.mem_inter_iff, Set.mem_union, not_or, or_self, and_false]

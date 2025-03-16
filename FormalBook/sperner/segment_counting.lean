@@ -509,11 +509,6 @@ lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
 
 
 
-
-
-
-
-
 def color : ℝ² → Fin 3 := sorry -- can use the construction using valuations here
 
 def red : Fin 3 := 0
@@ -569,6 +564,43 @@ noncomputable def triangulation_interior_basic_segments (Δ : Finset Triangle) :
 
 noncomputable def is_triangulation (Δ : Finset Triangle) : Prop :=
   is_cover (closed_hull unit_square) Δ.toSet
+
+
+lemma segment_in_interior_or_boundary {Δ : Finset Triangle} (hCover : is_triangulation Δ)
+    {L : Segment} (hL : L ∈ triangulation_basic_segments Δ) :
+  open_hull L ⊆ boundary unit_square ∨ open_hull L ⊆ open_hull unit_square := by
+
+  have hclosed : closed_hull unit_square = boundary unit_square ∪ open_hull unit_square := by
+    rw [← boundary_union_open_closed]
+  have hT : ∃ T ∈ Δ, closed_hull L ⊆ closed_hull T := by
+    sorry
+  rcases hT with ⟨t, ht⟩
+  have hLunitS : closed_hull L ⊆ closed_hull unit_square := by
+    apply is_cover_sub at hCover
+    simp only [mem_coe] at hCover
+    specialize hCover t ht.1
+    exact subset_trans ht.2 hCover
+  by_cases h : open_hull L ⊆ boundary unit_square
+  · left
+    exact h
+  have hLclosed : open_hull L ⊆ closed_hull unit_square := by
+    exact subset_trans (open_sub_closed L) hLunitS
+  right
+  · have this : ∀ x, x ∈ open_hull L → x ∉ boundary unit_square  := by
+      by_contra hcontra
+      have hcontra' : ∃ x, x ∈ open_hull L ∩ boundary unit_square := by
+        simp_all only [not_forall, Classical.not_imp, Decidable.not_not, Set.mem_inter_iff]
+        simp only [exists_prop] at hcontra
+        exact hcontra
+      have that : closed_hull L ⊆ boundary unit_square := by
+        obtain ⟨x, hx⟩ := hcontra'
+        apply line_in_boundary hLunitS hx
+      have that' : open_hull L ⊆ boundary unit_square := by
+        have hopen : open_hull L ⊆ closed_hull L := by
+          apply open_sub_closed
+        apply _root_.trans hopen that
+      contradiction
+    tauto_set
 
 
 lemma triangulation_boundary_union (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
