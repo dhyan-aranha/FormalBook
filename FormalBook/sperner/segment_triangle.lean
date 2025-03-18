@@ -1508,3 +1508,4 @@ lemma closed_hull_eq_imp_eq_or_rev {L₁ L₂ : Segment}
   · right
     ext i j
     fin_cases i <;> fin_cases j <;> simp_all [reverse_segment, to_segment]
+
