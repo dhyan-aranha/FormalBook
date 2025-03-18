@@ -367,7 +367,7 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
 -- In this part we show that the the faces of the unit square are faces in the sense of convex
 -- geometry. (see: https://en.wikipedia.org/wiki/Convex_set#Face_of_a_convex_set)
 -- there are many sorries introduced here but nearly all of them are repeated arguments of what has
--- already been written. 
+-- already been written.
 
 noncomputable def top_face: Segment := fun | 0 => v 0 1 | 1 => v 1 1
 
@@ -573,3 +573,6 @@ rcases hbound with htop | hbot | hleft | hright
   exact subset_trans hLright hrightbound
 
 simp_all only [Set.mem_inter_iff, Set.mem_union, not_or, or_self, and_false]
+
+lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
+unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
