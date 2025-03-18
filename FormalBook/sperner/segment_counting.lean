@@ -1077,7 +1077,8 @@ noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finse
 lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
-    := by sorry
+    := by
+    sorry
 
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
@@ -1390,9 +1391,21 @@ lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
 lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
     filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
         filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
-
-  sorry
-
+  ext x
+  constructor
+  · intro h
+    simp at h
+    rcases h with ⟨h1, h2⟩
+    rcases h1 with ⟨h1, h1'⟩
+    rcases h2 with ⟨h2, h2'⟩
+    have int : triangulation_boundary_basic_segments Δ ∩ triangulation_interior_basic_segments Δ = ∅ := by
+      exact triangulation_boundary_intersection Δ
+    rw [← int]
+    simp only [mem_inter]
+    constructor
+    · exact h1
+    · exact h2
+  tauto
 
 /-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
     S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
