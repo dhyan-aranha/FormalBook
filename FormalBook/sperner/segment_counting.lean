@@ -1038,14 +1038,14 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
     rw [mem_filter, Finset.mem_disjiUnion]
     constructor
     · intro hL
+      simp only [mem_filter]
 
       sorry
     · intro hL
       cases' hL with S hS
       constructor
       · simp_all only [mem_filter]
-      ·
-        sorry
+      · sorry
   rw [h_eq]
   rw [Finset.sum_disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj]
   rw [← ZMod.natCast_eq_natCast_iff']
@@ -1077,8 +1077,7 @@ noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finse
 lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
-    := by
-  sorry
+    := by sorry
 
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
@@ -1108,12 +1107,151 @@ lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j)(hdet : 
   rw[←  mem_open_side hdet hx j] at hj
   exact Ne.symm (ne_of_lt (hj.2 i h)) hi.1
 
-lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (h : T ∈ Δ) :
+lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (hdet : det T ≠ 0) (h : T ∈ Δ) :
     triangle_basic_boundary Δ T =
     @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
     := by
+    ext S
+    constructor
+    · intro hS
+      unfold triangle_basic_boundary at hS
+      rw [mem_filter] at hS
+      rcases hS with ⟨α, hα ⟩
+      rw [boundary_is_union_sides] at hα
+      have TsideS : ∃ i : Fin 3, closed_hull S ⊆ closed_hull (Tside T i) := by
+        unfold triangulation_basic_segments at α
+        unfold basic_avoiding_segment_set at α
+        rw [mem_filter] at α
+        unfold avoiding_segment_set at α
+        rw [mem_filter] at α
+        rcases α with ⟨δ, hδ⟩
+        rcases δ with ⟨η, hη⟩
+        unfold triangulation_avoiding_set at hη
 
-  sorry
+        have xopoenhullS : ∃ x, x ∈ open_hull S := by
+          apply open_pol_nonempty
+          linarith
+
+        rcases xopoenhullS with ⟨x, hx⟩
+
+        have xclosedhullS : x ∈ closed_hull S := by
+          exact open_sub_closed S hx
+
+        have xinboundaryT : x ∈ boundary T := by
+          rw [boundary_is_union_sides]
+          apply hα at xclosedhullS
+          exact xclosedhullS
+          apply hdet
+
+        have xinTsideopen: ∃ i : Fin 3, x ∈ open_hull (Tside T i) := by
+          apply el_in_boundary_imp_side
+          · apply hdet
+          · apply xinboundaryT
+          · by_contra hcontra
+            simp at hcontra
+            rcases hcontra with ⟨i, hi⟩
+            have hcontra' : x ∈ triangulation_points Δ := by
+              unfold triangulation_points
+              rw [hi]
+              simp
+              use T
+              constructor
+              · exact h
+              · by_cases hfin : i = 0 ∨ i = 1
+                · rcases hfin with (hfin | hfin)
+                  · left
+                    rw [hfin]
+                  · right
+                    left
+                    rw [hfin]
+                · have i2: i = 2 := by
+                    fin_cases i
+                    · simp at hfin
+                    · simp at hfin
+                    · simp at hfin
+                      simp
+                  right
+                  right
+                  rw [i2]
+            apply hδ at hcontra'
+            contradiction
+
+        rcases xinTsideopen with ⟨i, hi⟩
+        use i
+        apply seg_sub_side
+        · apply hdet
+        · apply hx
+        · apply hi
+        · by_contra hcontra
+          have nonemp' : Set.Nonempty (open_hull T ∩ closed_hull S) := by
+            exact Set.nonempty_iff_ne_empty.mpr hcontra
+          have nonempt : ∃ z,  z ∈ open_hull T ∧ z ∈ closed_hull S := by
+            exact nonemp'
+          rcases nonempt with ⟨z, hz⟩
+          simp only [Set.disjoint_iUnion_right] at hη
+          specialize hη T
+          tauto_set
+        · by_contra hcontra
+          simp at hcontra
+          rcases hcontra with ⟨j, hj⟩
+          have tj : T j ∈ triangulation_points Δ := by
+            unfold triangulation_points
+            simp only [Fin.isValue, mem_biUnion, mem_insert, mem_singleton]
+            use T
+            constructor
+            · exact h
+            · by_cases hfin : j = 0 ∨ j = 1
+              · rcases hfin with (hfin | hfin)
+                · left
+                  rw [hfin]
+                · right
+                  left
+                  rw [hfin]
+              · have j2: j = 2 := by
+                  fin_cases j
+                  · simp at hfin
+                  · simp at hfin
+                  · simp at hfin
+                    simp
+                right
+                right
+                rw [j2]
+          apply hδ at tj
+          contradiction
+
+      rcases TsideS with ⟨i, hi ⟩
+      simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
+      use i
+      unfold basic_segment_segments
+      rw [mem_filter]
+      constructor
+      · unfold triangle_basic_boundary
+        rw [mem_filter]
+        constructor
+        apply α
+        have this : closed_hull (Tside T i)  ⊆ boundary T := by
+          apply side_in_boundary hdet
+        tauto_set
+      · apply open_segment_sub'
+        apply hi
+        unfold triangulation_basic_segments at α
+        unfold basic_avoiding_segment_set at α
+        rw [mem_filter] at α
+        unfold avoiding_segment_set at α
+        rw [mem_filter] at α
+        rcases α with ⟨β, hβ⟩
+        rcases β with ⟨γ, hγ ⟩
+        apply segment_set_vertex_distinct
+        apply γ
+      apply hdet
+
+    · intro hS
+      simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
+      rcases hS with ⟨a, ha⟩
+      unfold basic_segment_segments at ha
+      rw [mem_filter] at ha
+      apply ha.1
+
 
 noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i ↦ {Tside T i})
 
@@ -1122,7 +1260,55 @@ lemma color_trichotomy (c : Color) : c = Color.Red ∨ c = Color.Blue ∨ c = Co
 
 lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq : i ≠ j):
     T i ≠ T j := by
-  sorry
+  by_contra hcontra
+  have hk : ∃ k : Fin 3, i ≠ k  ∧  j ≠ k := by
+    fin_cases i
+    · simp only [Fin.zero_eta, Fin.isValue, ne_eq]
+      by_cases hj : j = 1
+      · subst hj
+        use 2
+        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+      · use 1
+        simp only [Fin.isValue, zero_ne_one, not_false_eq_true, true_and]
+        use hj
+    · simp only [Fin.mk_one, Fin.isValue, ne_eq]
+      by_cases hj : j = 0
+      · subst hj
+        use 2
+        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+      · use 0
+        simp only [Fin.isValue, one_ne_zero, not_false_eq_true, true_and]
+        use hj
+    · simp only [Fin.reduceFinMk, ne_eq, Fin.isValue]
+      by_cases hj : j = 0
+      · subst hj
+        use 1
+        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+      · use 0
+        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, true_and]
+        use hj
+  rcases hk with ⟨k, hik, hjk⟩
+  have hT : ∃ b, σ b = (fun | 0 =>  i | 1 =>  j | 2 => k) := by
+    apply fun_in_bijections
+    exact hneq; exact hik; exact hjk
+  rcases hT with ⟨b, hb⟩
+  have det0 : det T = 0 := by
+    rw [det_perm b]
+    have T' : T ∘ σ b = fun | 0 => T i | 1 => T j | 2 => T k := by
+      simp_all only [ne_eq]
+      ext x i_1 : 2
+      simp_all only [Function.comp_apply]
+      split
+      next x => simp_all only
+      next x => simp_all only
+      next x => simp_all only
+    have det0' : det (fun | 0 => T i | 1 => T j | 2 => T k) = 0 := by
+      rw [hcontra]
+      exact det_triv_triangle (T j) (T k)
+    rw [T', det0']
+    linarith
+  contradiction
+
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
