@@ -371,7 +371,7 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
 
 noncomputable def top_face: Segment := fun | 0 => v 0 1 | 1 => v 1 1
 
-noncomputable def bottom_face: Segment := fun | 0 => v 0 0 | 1 => v 0 1
+noncomputable def bottom_face: Segment := fun | 0 => v 0 0 | 1 => v 1 0
 
 noncomputable def left_face: Segment := fun | 0 => v 0 0 | 1 => v 0 1
 

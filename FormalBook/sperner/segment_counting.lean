@@ -1078,525 +1078,908 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
-    sorry
-
-
-theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    purple_sum v Δ % 4 = 2 := by
-  -- Strategy: show that triangulation_boundary_basic_segments Δ is the disjoint union over the
-  -- segments contained in the four sides of the squares. Then for each side, use that the purple
-  -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
-  sorry
-
-
-theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
-    rainbow_sum v Δ = (rainbow_triangles v Δ).card := by
-  unfold rainbow_sum rainbow_triangles isRainbow
-  simp only [sum_boole, Nat.cast_id, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
-
-
-noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
-    {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
-
-lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j)(hdet : det T ≠ 0) :
-    Disjoint (open_hull (Tside T i))  (open_hull (Tside T j)) := by
-  by_contra h1
-  rw [@Set.not_disjoint_iff] at h1
-  rcases h1 with ⟨x ,hi,hj ⟩
-  have hx  := closed_side_sub (open_sub_closed _ hi)
-  rw[←  mem_open_side hdet hx i] at hi
-  rw[←  mem_open_side hdet hx j] at hj
-  exact Ne.symm (ne_of_lt (hj.2 i h)) hi.1
-
-lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (hdet : det T ≠ 0) (h : T ∈ Δ) :
-    triangle_basic_boundary Δ T =
-    @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
-    := by
     ext S
     constructor
     · intro hS
-      unfold triangle_basic_boundary at hS
-      rw [mem_filter] at hS
-      rcases hS with ⟨α, hα ⟩
-      rw [boundary_is_union_sides] at hα
-      have TsideS : ∃ i : Fin 3, closed_hull S ⊆ closed_hull (Tside T i) := by
-        unfold triangulation_basic_segments at α
-        unfold basic_avoiding_segment_set at α
-        rw [mem_filter] at α
-        unfold avoiding_segment_set at α
-        rw [mem_filter] at α
-        rcases α with ⟨δ, hδ⟩
-        rcases δ with ⟨η, hη⟩
-        unfold triangulation_avoiding_set at hη
+      simp only [top_eq_univ, mem_biUnion, mem_univ, true_and]
+      unfold is_triangulation at hCovering
+      unfold is_cover at hCovering
+      simp at hCovering
 
-        have xopoenhullS : ∃ x, x ∈ open_hull S := by
-          apply open_pol_nonempty
-          linarith
+      unfold triangulation_boundary_basic_segments at hS
+      simp only [mem_filter] at hS
+      unfold triangulation_basic_segments at hS
+      unfold basic_avoiding_segment_set at hS
+      simp only [mem_filter, mem_image, mem_product, Prod.exists] at hS
+      unfold avoiding_segment_set at hS
+      simp only [mem_filter] at hS
+      rcases hS with ⟨α, hα⟩
+      rcases α with ⟨δ, hδ⟩
+      rcases δ with ⟨η, hη⟩
 
-        rcases xopoenhullS with ⟨x, hx⟩
+      have xopoenhullS : ∃ x, x ∈ open_hull S := by
+        apply open_pol_nonempty
+        linarith
 
-        have xclosedhullS : x ∈ closed_hull S := by
-          exact open_sub_closed S hx
+      rcases xopoenhullS with ⟨x, hx⟩
 
-        have xinboundaryT : x ∈ boundary T := by
-          rw [boundary_is_union_sides]
-          apply hα at xclosedhullS
-          exact xclosedhullS
-          apply hdet
+      have xinboundary : x ∈ boundary unit_square := by
+        tauto_set
 
-        have xinTsideopen: ∃ i : Fin 3, x ∈ open_hull (Tside T i) := by
-          apply el_in_boundary_imp_side
-          · apply hdet
-          · apply xinboundaryT
-          · by_contra hcontra
-            simp at hcontra
-            rcases hcontra with ⟨i, hi⟩
-            have hcontra' : x ∈ triangulation_points Δ := by
-              unfold triangulation_points
-              rw [hi]
-              simp
-              use T
-              constructor
-              · exact h
-              · by_cases hfin : i = 0 ∨ i = 1
-                · rcases hfin with (hfin | hfin)
-                  · left
-                    rw [hfin]
-                  · right
-                    left
-                    rw [hfin]
-                · have i2: i = 2 := by
-                    fin_cases i
-                    · simp at hfin
-                    · simp at hfin
-                    · simp at hfin
-                      simp
-                  right
-                  right
-                  rw [i2]
-            apply hδ at hcontra'
-            contradiction
+      rw [← boundary_union_of_faces] at xinboundary
+      simp only [Set.mem_union] at xinboundary
 
-        rcases xinTsideopen with ⟨i, hi⟩
-        use i
-        apply seg_sub_side
-        · apply hdet
-        · apply hx
-        · apply hi
-        · by_contra hcontra
-          have nonemp' : Set.Nonempty (open_hull T ∩ closed_hull S) := by
-            exact Set.nonempty_iff_ne_empty.mpr hcontra
-          have nonempt : ∃ z,  z ∈ open_hull T ∧ z ∈ closed_hull S := by
-            exact nonemp'
-          rcases nonempt with ⟨z, hz⟩
-          simp only [Set.disjoint_iUnion_right] at hη
-          specialize hη T
-          tauto_set
-        · by_contra hcontra
-          simp at hcontra
-          rcases hcontra with ⟨j, hj⟩
-          have tj : T j ∈ triangulation_points Δ := by
-            unfold triangulation_points
-            simp only [Fin.isValue, mem_biUnion, mem_insert, mem_singleton]
-            use T
-            constructor
-            · exact h
-            · by_cases hfin : j = 0 ∨ j = 1
-              · rcases hfin with (hfin | hfin)
-                · left
-                  rw [hfin]
-                · right
-                  left
-                  rw [hfin]
-              · have j2: j = 2 := by
-                  fin_cases j
-                  · simp at hfin
-                  · simp at hfin
-                  · simp at hfin
-                    simp
-                right
-                right
-                rw [j2]
-          apply hδ at tj
-          contradiction
+      have openSinclosedS : open_hull S ⊆ closed_hull unit_square := by
+        exact subset_trans hα (boundary_sub_closed unit_square)
 
-      rcases TsideS with ⟨i, hi ⟩
-      simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
-      use i
-      unfold basic_segment_segments
+
+      unfold triangulation_points at η
+      unfold segment_set at η
+      simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_product, Prod.exists] at η
+      simp at η
+      rcases η with ⟨S0, S1, hT'⟩
+      cases' hT' with ν hν
+      cases' ν with τ hτ
+      cases' τ with ρ hρ
+      cases' ρ with σ hσ
+
+      have S01' : ∀ i : Fin 2, to_segment S0 S1 i = S i := by
+          intro i
+          fin_cases i
+          · simp only [Fin.zero_eta, Fin.isValue]
+            rw [hν]
+          · simp only [Fin.mk_one, Fin.isValue]
+            rw [hν]
+      have S0' : S0 = S 0 := by
+        rw [← S01' 0, to_segment]
+      have S1' : S1 = S 1 := by
+        rw [← S01' 1, to_segment]
+
+
+      have S01 : S 0 ≠ S 1 := by
+        rw [S0', S1'] at hτ
+        exact hτ
+
+      rcases hσ with ⟨m, hm⟩
+
+      have sigma : closed_hull σ ⊆ closed_hull unit_square := by
+        rw [hCovering]
+        intro z hz
+        simp only [Set.mem_iUnion, exists_prop]
+        use σ
+
+      have S0m : S 0 ∈ closed_hull unit_square := by
+        rw [S0'] at hm
+        cases' hm with hm1 hm2
+        · rw [hm1]
+          have this' : σ 0 ∈ closed_hull σ := by
+            apply corner_in_closed_hull
+          exact sigma this'
+
+        cases' hm2 with hm2' hm2''
+        · rw [hm2']
+          have this' : σ 1 ∈ closed_hull σ := by
+            apply corner_in_closed_hull
+          exact sigma this'
+        · rw [hm2'']
+          have this' : σ 2 ∈ closed_hull σ := by
+            apply corner_in_closed_hull
+          exact sigma this'
+
+
+      rcases hρ with ⟨y, hy⟩
+
+      have : closed_hull y ⊆ closed_hull unit_square := by
+        rw [hCovering]
+        intro z hz
+        simp only [Set.mem_iUnion, exists_prop]
+        use y
+        constructor
+        · apply hy.1
+        · apply hz
+
+      have S1m : S 1 ∈ closed_hull unit_square := by
+        rw [S1'] at hy
+        cases' hy with hy1 hy2
+        cases' hy2 with hy1' hy1''
+        · rw [hy1']
+          have this' : y 0 ∈ closed_hull y := by
+            apply corner_in_closed_hull
+          exact this this'
+        cases' hy1'' with hy2' hy2''
+        · rw [hy2']
+          have this' : y 1 ∈ closed_hull y := by
+            apply corner_in_closed_hull
+          exact this this'
+        · rw [hy2'']
+          have this' : y 2 ∈ closed_hull y := by
+            apply corner_in_closed_hull
+          exact this this'
+
+
+      cases' xinboundary with q hq
+      cases' q with qq hqq
+      cases' qq with m1 hm1
+
+      have SinTop : closed_hull S ⊆ closed_hull top_face := by
+        apply top_face_convex₂
+        apply m1
+        apply hx
+        simp only [Fin.zero_eta, Fin.isValue]
+        apply S0m
+        apply S1m
+      use 2
+      unfold square_boundary_basic
       rw [mem_filter]
       constructor
-      · unfold triangle_basic_boundary
+      · unfold triangulation_boundary_basic_segments
         rw [mem_filter]
         constructor
-        apply α
-        have this : closed_hull (Tside T i)  ⊆ boundary T := by
-          apply side_in_boundary hdet
-        tauto_set
-      · apply open_segment_sub'
-        apply hi
-        unfold triangulation_basic_segments at α
-        unfold basic_avoiding_segment_set at α
-        rw [mem_filter] at α
-        unfold avoiding_segment_set at α
-        rw [mem_filter] at α
-        rcases α with ⟨β, hβ⟩
-        rcases β with ⟨γ, hγ ⟩
-        apply segment_set_vertex_distinct
-        apply γ
-      apply hdet
+        · unfold triangulation_basic_segments
+          unfold basic_avoiding_segment_set
+          rw [mem_filter]
+          constructor
+          · unfold avoiding_segment_set
+            rw [mem_filter]
+            constructor
+            · unfold triangulation_points
+              unfold segment_set
+              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
+              use S 0
+              use S 1
+              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
+                mem_singleton, ne_eq, segment_rfl, and_true]
+              constructor
+              constructor
+              · use σ
+                constructor
+                · apply m
+                · rw [S0'] at hm
+                  apply hm
+              · use y
+                constructor
+                · apply hy.1
+                · rw [S1'] at hy
+                  apply hy.2
+              apply S01
+            · apply hη
+          · apply hδ
+        · apply hα
 
-    · intro hS
-      simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
-      rcases hS with ⟨a, ha⟩
-      unfold basic_segment_segments at ha
-      rw [mem_filter] at ha
-      apply ha.1
+      · unfold square_boundary_big
+        simp only
+        have openSinTop :  open_hull S ⊆ open_hull top_face := by
+          apply open_segment_sub
+          intro i
+          fin_cases i
+          · simp only [Fin.zero_eta, Fin.isValue]
+            have S0: S 0 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · simp only [Fin.mk_one, Fin.isValue]
+            have S1: S 1 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · apply S01
 
+        apply openSinTop
 
-noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i ↦ {Tside T i})
+      use 0
+      unfold square_boundary_basic
+      rw [mem_filter]
+      constructor
+      · unfold triangulation_boundary_basic_segments
+        rw [mem_filter]
+        constructor
+        · unfold triangulation_basic_segments
+          unfold basic_avoiding_segment_set
+          rw [mem_filter]
+          constructor
+          · unfold avoiding_segment_set
+            rw [mem_filter]
+            constructor
+            · unfold triangulation_points
+              unfold segment_set
+              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
+              use S 0
+              use S 1
+              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
+                mem_singleton, ne_eq, segment_rfl, and_true]
+              constructor
+              constructor
+              · use σ
+                constructor
+                · apply m
+                · rw [S0'] at hm
+                  apply hm
+              · use y
+                constructor
+                · apply hy.1
+                · rw [S1'] at hy
+                  apply hy.2
+              apply S01
+            · apply hη
+          · apply hδ
+        · apply hα
 
-lemma color_trichotomy (c : Color) : c = Color.Red ∨ c = Color.Blue ∨ c = Color.Green := by
-  induction c <;> simp
+      have SinBot : closed_hull S ⊆ closed_hull bottom_face := by
+        apply bottom_face_convex₂
+        apply hm1
+        apply hx
+        simp only [Fin.zero_eta, Fin.isValue]
+        apply S0m
+        apply S1m
 
-lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq : i ≠ j):
-    T i ≠ T j := by
-  by_contra hcontra
-  have hk : ∃ k : Fin 3, i ≠ k  ∧  j ≠ k := by
-    fin_cases i
-    · simp only [Fin.zero_eta, Fin.isValue, ne_eq]
-      by_cases hj : j = 1
-      · subst hj
-        use 2
-        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
-      · use 1
-        simp only [Fin.isValue, zero_ne_one, not_false_eq_true, true_and]
-        use hj
-    · simp only [Fin.mk_one, Fin.isValue, ne_eq]
-      by_cases hj : j = 0
-      · subst hj
-        use 2
-        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
-      · use 0
-        simp only [Fin.isValue, one_ne_zero, not_false_eq_true, true_and]
-        use hj
-    · simp only [Fin.reduceFinMk, ne_eq, Fin.isValue]
-      by_cases hj : j = 0
-      · subst hj
-        use 1
-        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
-      · use 0
-        simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, true_and]
-        use hj
-  rcases hk with ⟨k, hik, hjk⟩
-  have hT : ∃ b, σ b = (fun | 0 =>  i | 1 =>  j | 2 => k) := by
-    apply fun_in_bijections
-    exact hneq; exact hik; exact hjk
-  rcases hT with ⟨b, hb⟩
-  have det0 : det T = 0 := by
-    rw [det_perm b]
-    have T' : T ∘ σ b = fun | 0 => T i | 1 => T j | 2 => T k := by
-      simp_all only [ne_eq]
-      ext x i_1 : 2
-      simp_all only [Function.comp_apply]
-      split
-      next x => simp_all only
-      next x => simp_all only
-      next x => simp_all only
-    have det0' : det (fun | 0 => T i | 1 => T j | 2 => T k) = 0 := by
-      rw [hcontra]
-      exact det_triv_triangle (T j) (T k)
-    rw [T', det0']
-    linarith
-  contradiction
+      · unfold square_boundary_big
+        simp only
+        have openSinBot :  open_hull S ⊆ open_hull bottom_face := by
+          apply open_segment_sub
+          intro i
+          fin_cases i
+          · simp only [Fin.zero_eta, Fin.isValue]
+            have S0: S 0 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · simp only [Fin.mk_one, Fin.isValue]
+            have S1: S 1 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · apply S01
 
+        apply openSinBot
 
-lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
-    2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
-  intro T hT
-  have h : triangle_basic_boundary Δ T =
-      filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
-    sorry
-  rw [h]
-  rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
-  unfold triangle_boundary
-  simp [Set.biUnion_univ]
-  rw [Finset.sum_biUnion _, Fin.sum_univ_three]
-  · simp
-    simp [isPurple, Tside]
-    simp [isRainbow, Function.Surjective]
-    rcases color_trichotomy (coloring v (T 0)) with (hc0 | hc0 | hc0) <;>
-    rcases color_trichotomy (coloring v (T 1)) with (hc1 | hc1 | hc1) <;>
-    rcases color_trichotomy (coloring v (T 2)) with (hc2 | hc2 | hc2) <;>
-    (
-      split <;>
-      (
-      rename_i h_surj
-      simp [hc0, hc1, hc2]
-      )
-    )
-    all_goals try (have ⟨cR, hR⟩ := h_surj Color.Red)
-    all_goals try (have ⟨cB, hB⟩ := h_surj Color.Blue)
-    all_goals try (have ⟨cG, hG⟩ := h_surj Color.Green)
-    all_goals try (fin_cases cR <;> simp_all)
-    all_goals try (fin_cases cB <;> simp_all)
-    all_goals try (fin_cases cG <;> simp_all)
-    all_goals
-      refine h_surj ?_
-      intro b
-      rcases color_trichotomy b with (hb | hb | hb)
-    all_goals rw [hb]
-    all_goals try (exact ⟨0, hc0⟩)
-    all_goals try (exact ⟨1, hc1⟩)
-    all_goals try (exact ⟨2, hc2⟩)
-  · intro i _ j _ hij
-    have h_diff_points01 : T 0 ≠ T 1 := by sorry
-    have h_diff_points02 : T 0 ≠ T 2 := by sorry
-    have h_diff_points12 : T 1 ≠ T 2 := by sorry
-    simp
-    -- Annoying
-    suffices hs : ¬ Tside T j 0 = Tside T i 0
-    · by_contra h_contra
-      exact hs (congrFun h_contra 0)
-    · unfold Tside
-      fin_cases i <;> fin_cases j <;> simp only [Fin.isValue, not_true_eq_false]
-      all_goals try (
-        simp_all only [ne_eq, coe_univ, Fin.zero_eta, Set.mem_univ, not_true_eq_false]
-      )
-      all_goals try (rw [not_false_eq_true]; trivial)
-      all_goals (intro h_contra; apply (Eq.symm) at h_contra)
-      · exact h_diff_points12 h_contra
-      · exact h_diff_points01 h_contra
-      · exact h_diff_points02 h_contra
+      use 1
+      unfold square_boundary_basic
+      rw [mem_filter]
+      constructor
+      · unfold triangulation_boundary_basic_segments
+        rw [mem_filter]
+        constructor
+        · unfold triangulation_basic_segments
+          unfold basic_avoiding_segment_set
+          rw [mem_filter]
+          constructor
+          · unfold avoiding_segment_set
+            rw [mem_filter]
+            constructor
+            · unfold triangulation_points
+              unfold segment_set
+              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
+              use S 0
+              use S 1
+              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
+                mem_singleton, ne_eq, segment_rfl, and_true]
+              constructor
+              constructor
+              · use σ
+                constructor
+                · apply m
+                · rw [S0'] at hm
+                  apply hm
+              · use y
+                constructor
+                · apply hy.1
+                · rw [S1'] at hy
+                  apply hy.2
+              apply S01
+            · apply hη
+          · apply hδ
+        · apply hα
 
+      have SinLeft : closed_hull S ⊆ closed_hull left_face := by
+        apply left_face_convex₂
+        apply hqq
+        apply hx
+        simp only [Fin.zero_eta, Fin.isValue]
+        apply S0m
+        apply S1m
 
-
-lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
-    filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ ∪
-        triangulation_interior_basic_segments Δ) =
-    filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ) ∪
-        filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_interior_basic_segments Δ) := by
-  intro a
-  ext a_1 : 1
-  simp_all only [mem_filter, mem_union]
-  apply Iff.intro
-  · intro a_2
-    simp_all only [and_true]
-  · intro a_2
-    cases a_2 with
-    | inl h => simp_all only [true_or, and_self]
-    | inr h_1 => simp_all only [or_true, and_self]
-
-
-lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
-    filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
-        filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
-  ext x
-  constructor
-  · intro h
-    simp at h
-    rcases h with ⟨h1, h2⟩
-    rcases h1 with ⟨h1, h1'⟩
-    rcases h2 with ⟨h2, h2'⟩
-    have int : triangulation_boundary_basic_segments Δ ∩ triangulation_interior_basic_segments Δ = ∅ := by
-      exact triangulation_boundary_intersection Δ
-    rw [← int]
-    simp only [mem_inter]
-    constructor
-    · exact h1
-    · exact h2
-  tauto
-
-/-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
-    S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
-  sorry
-
-lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
-    S ∈ triangulation_interior_basic_segments Δ ↔ reverse_segment S ∈ triangulation_interior_basic_segments Δ := by
-  unfold triangulation_interior_basic_segments
-  repeat rw [mem_filter]
-  constructor <;> intro a <;> obtain ⟨left, right⟩ := a
-  · rw [← reverse_open_hull_basic, reverse_segment_open_hull]
-    exact ⟨left, right⟩
-  · rw [reverse_open_hull_basic, ← reverse_segment_open_hull]
-    exact ⟨left, right⟩-/
-
-def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
-  {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
-
-
-lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
-    (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 :=
-  segment_set_vertex_distinct (basic_avoiding_segment_set_sub h)
-
-
-theorem interior_purple_sum (Δ : Finset Triangle) :
-    (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 2 = 0 % 2 := by
-  rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff']
-  simp only [Nat.cast_sum, Int.cast_sum, Int.cast_natCast, CharP.cast_eq_zero, Int.cast_zero]
-  apply (Finset.sum_involution (fun x ↦ (fun y ↦ reverse_segment x)))
-  · intro a ha
-    rw [isPurple_symm_function, ← two_mul, mul_eq_zero]
-    left
-    rfl
-  · intro a ha h1
-    by_contra h
-    have h_eq : a 0 = a 1 := by
-      unfold reverse_segment at h
-      conv => left; rw [← h]
-      unfold to_segment
-      rfl
-    unfold triangulation_interior_basic_segments at ha
-    rw [mem_filter] at ha
-    apply basic_seg_non_degenerate ha.1
-    exact h_eq
-  · intro a ha
-    unfold triangulation_interior_basic_segments at *
-    rw [mem_filter] at *
-    constructor
-    · unfold triangulation_basic_segments at *
-      exact basic_avoiding_segment_set_reverse ha.1
-    · rw [reverse_segment_open_hull]
-      exact ha.right
-  · intro a ha
-    exact reverse_segment_involution
-  -- have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
-  --   intro S hS
-  --   exact reverse_segment_involution
-  -- have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
-  --   fun S a ↦ mem_image_of_mem reverse_segment a
-  -- have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
-  --   simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-  --     reverse_segment_involution, imp_self, implies_true]
-  -- have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
-  --   intro S hS
-  --   exact Eq.symm (isPurple_symm_function v S)
-  -- rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
-  --   h_mem₂ h_mem₁ inv₂' inv' htriv]
-  -- rw [← two_mul]
-  -- simp only [Nat.mul_mod_right, Nat.zero_mod]
-
-
-lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
-    (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
-    ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
-    2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
-  /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
-  unfold triangle_basic_boundary
-  rw [triangulation_boundary_union Δ hCover]
-  have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-        (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
-          isPurple x.snd) % 4
-        = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
-          (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
-    := by -/
-  sorry
-
-
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
-    2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
-  /-
-    Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
-    or over all triangles first.
-  -/
-  unfold rainbow_sum purple_sum
-  rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl (rainbow_triangle_purple_sum v) , ←sum_nat_mod]
-  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
-  have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
-    exact mod_two_mul (interior_purple_sum v Δ)
-  rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
-
-
-theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
-    ∃ T ∈ Δ, isRainbow v T = 1 := by
-  sorry -- easy, follows from above
-
-
--- Old stuff from Lenny
-/- section noncomputable
-
-def color : ℝ² → Fin 3 := sorry
-
-def red : Fin 3 := 0
-def blue : Fin 3 := 1
-def green : Fin 3 := 2
-
-lemma no_three_colors_on_a_line (L : Segment) :
-    ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
-
-lemma color00 : color (v 0 0) = red := sorry
-lemma color01 : color (v 0 1) = blue := sorry
-lemma color10 : color (v 1 0) = green := sorry
-lemma color11 : color (v 1 1) = blue := sorry
-
-
-/-
-  Define incidence relation between segments and triangles
--/
-
-def side (T : Triangle) (i : Fin 3) : Segment :=
-  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
-
-def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
-  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
-
-
-/-
-  A segment is purple if it runs from 0 to 1 or 1 to 0
--/
-
-def IsPurple (L : Segment) : Prop :=
-  (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
-
-
-/-
-  Parity of number of purple basic segments on a segment
--/
-
-noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
-  {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
-
-lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : IsPurple L) :
-  (purple_segments X L.val).card % 2 = 1 := sorry
-
-lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : ¬ IsPurple L) :
-  (purple_segments X L.val).card % 2 = 0 := sorry
+      · unfold square_boundary_big
+        simp only
+        have openSinLeft :  open_hull S ⊆ open_hull left_face := by
+          apply open_segment_sub
+          intro i
+          fin_cases i
+          · simp only [Fin.zero_eta, Fin.isValue]
+            have S0: S 0 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · simp only [Fin.mk_one, Fin.isValue]
+            have S1: S 1 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · apply S01
+        apply openSinLeft
 
 
 
-/-
-  Now we assume given a dissection S. Write X for the set of all segments in the dissection
--/
+      use 3
+      unfold square_boundary_basic
+      rw [mem_filter]
+      constructor
+      · unfold triangulation_boundary_basic_segments
+        rw [mem_filter]
+        constructor
+        · unfold triangulation_basic_segments
+          unfold basic_avoiding_segment_set
+          rw [mem_filter]
+          constructor
+          · unfold avoiding_segment_set
+            rw [mem_filter]
+            constructor
+            · unfold triangulation_points
+              unfold segment_set
+              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
+              use S 0
+              use S 1
+              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
+                mem_singleton, ne_eq, segment_rfl, and_true]
+              constructor
+              constructor
+              · use σ
+                constructor
+                · apply m
+                · rw [S0'] at hm
+                  apply hm
+              · use y
+                constructor
+                · apply hy.1
+                · rw [S1'] at hy
+                  apply hy.2
+              apply S01
+            · apply hη
+          · apply hδ
+        · apply hα
 
-variable (S : Finset Triangle) (hS : is_cover unit_square S)
+      · have SinRight : closed_hull S ⊆ closed_hull right_face := by
+          apply right_face_convex₂
+          apply hq
+          apply hx
+          simp only [Fin.zero_eta, Fin.isValue]
+          apply S0m
+          apply S1m
 
-def X : SegmentSet := sorry
-lemma hX : complete_segment_set X := sorry
-def B := {  L : X | basis_segment X L }
+        unfold square_boundary_big
+        simp only
+        have openSinRight :  open_hull S ⊆ open_hull right_face := by
+          apply open_segment_sub
+          intro i
+          fin_cases i
+          · simp only [Fin.zero_eta, Fin.isValue]
+            have S0: S 0 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · simp only [Fin.mk_one, Fin.isValue]
+            have S1: S 1 ∈ closed_hull S := by
+              apply corner_in_closed_hull
+            tauto_set
+          · apply S01
+        apply openSinRight
 
-/-
-  For any triangle in the dissection, the number of purple segments on its boundary
-  is odd iff the triangle is rainbow
-  TODO: probably should be 2 mod 4, given that segments are counted with
-  both orientations
--/
-
-def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
-
-lemma purple_odd_iff_rainbow (T : S) :
-  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
-  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
+    intro hS
+    simp at hS
+    cases' hS with i hi
+    unfold square_boundary_basic at hi
+    rw [mem_filter] at hi
+    apply hi.1
 
 
-/-
-  Main goal for our group:
--/
+-- theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
+--     purple_sum v Δ % 4 = 2 := by
+--   -- Strategy: show that triangulation_boundary_basic_segments Δ is the disjoint union over the
+--   -- segments contained in the four sides of the squares. Then for each side, use that the purple
+--   -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
+--   sorry
 
-theorem monsky_rainbow  :
-    ∃ T ∈ S, IsRainbow T := sorry
--/
+
+-- theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
+--     rainbow_sum v Δ = (rainbow_triangles v Δ).card := by
+--   unfold rainbow_sum rainbow_triangles isRainbow
+--   simp only [sum_boole, Nat.cast_id, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
+
+
+-- noncomputable def triangle_basic_boundary (Δ : Finset Triangle) (T : Triangle) :=
+--     {S ∈ triangulation_basic_segments Δ | closed_hull S ⊆ boundary T}
+
+-- lemma triangle_edges_disjoint (T : Triangle) (i j : Fin 3) (h : i ≠ j)(hdet : det T ≠ 0) :
+--     Disjoint (open_hull (Tside T i))  (open_hull (Tside T j)) := by
+--   by_contra h1
+--   rw [@Set.not_disjoint_iff] at h1
+--   rcases h1 with ⟨x ,hi,hj ⟩
+--   have hx  := closed_side_sub (open_sub_closed _ hi)
+--   rw[←  mem_open_side hdet hx i] at hi
+--   rw[←  mem_open_side hdet hx j] at hj
+--   exact Ne.symm (ne_of_lt (hj.2 i h)) hi.1
+
+-- lemma triangle_boundary_decomposition {Δ : Finset Triangle} {T : Triangle} (hdet : det T ≠ 0) (h : T ∈ Δ) :
+--     triangle_basic_boundary Δ T =
+--     @Finset.biUnion (Fin 3) Segment _ ⊤ (fun i ↦ (basic_segment_segments (triangle_basic_boundary Δ T) (Tside T i)))
+--     := by
+--     ext S
+--     constructor
+--     · intro hS
+--       unfold triangle_basic_boundary at hS
+--       rw [mem_filter] at hS
+--       rcases hS with ⟨α, hα ⟩
+--       rw [boundary_is_union_sides] at hα
+--       have TsideS : ∃ i : Fin 3, closed_hull S ⊆ closed_hull (Tside T i) := by
+--         unfold triangulation_basic_segments at α
+--         unfold basic_avoiding_segment_set at α
+--         rw [mem_filter] at α
+--         unfold avoiding_segment_set at α
+--         rw [mem_filter] at α
+--         rcases α with ⟨δ, hδ⟩
+--         rcases δ with ⟨η, hη⟩
+--         unfold triangulation_avoiding_set at hη
+
+--         have xopoenhullS : ∃ x, x ∈ open_hull S := by
+--           apply open_pol_nonempty
+--           linarith
+
+--         rcases xopoenhullS with ⟨x, hx⟩
+
+--         have xclosedhullS : x ∈ closed_hull S := by
+--           exact open_sub_closed S hx
+
+--         have xinboundaryT : x ∈ boundary T := by
+--           rw [boundary_is_union_sides]
+--           apply hα at xclosedhullS
+--           exact xclosedhullS
+--           apply hdet
+
+--         have xinTsideopen: ∃ i : Fin 3, x ∈ open_hull (Tside T i) := by
+--           apply el_in_boundary_imp_side
+--           · apply hdet
+--           · apply xinboundaryT
+--           · by_contra hcontra
+--             simp at hcontra
+--             rcases hcontra with ⟨i, hi⟩
+--             have hcontra' : x ∈ triangulation_points Δ := by
+--               unfold triangulation_points
+--               rw [hi]
+--               simp
+--               use T
+--               constructor
+--               · exact h
+--               · by_cases hfin : i = 0 ∨ i = 1
+--                 · rcases hfin with (hfin | hfin)
+--                   · left
+--                     rw [hfin]
+--                   · right
+--                     left
+--                     rw [hfin]
+--                 · have i2: i = 2 := by
+--                     fin_cases i
+--                     · simp at hfin
+--                     · simp at hfin
+--                     · simp at hfin
+--                       simp
+--                   right
+--                   right
+--                   rw [i2]
+--             apply hδ at hcontra'
+--             contradiction
+
+--         rcases xinTsideopen with ⟨i, hi⟩
+--         use i
+--         apply seg_sub_side
+--         · apply hdet
+--         · apply hx
+--         · apply hi
+--         · by_contra hcontra
+--           have nonemp' : Set.Nonempty (open_hull T ∩ closed_hull S) := by
+--             exact Set.nonempty_iff_ne_empty.mpr hcontra
+--           have nonempt : ∃ z,  z ∈ open_hull T ∧ z ∈ closed_hull S := by
+--             exact nonemp'
+--           rcases nonempt with ⟨z, hz⟩
+--           simp only [Set.disjoint_iUnion_right] at hη
+--           specialize hη T
+--           tauto_set
+--         · by_contra hcontra
+--           simp at hcontra
+--           rcases hcontra with ⟨j, hj⟩
+--           have tj : T j ∈ triangulation_points Δ := by
+--             unfold triangulation_points
+--             simp only [Fin.isValue, mem_biUnion, mem_insert, mem_singleton]
+--             use T
+--             constructor
+--             · exact h
+--             · by_cases hfin : j = 0 ∨ j = 1
+--               · rcases hfin with (hfin | hfin)
+--                 · left
+--                   rw [hfin]
+--                 · right
+--                   left
+--                   rw [hfin]
+--               · have j2: j = 2 := by
+--                   fin_cases j
+--                   · simp at hfin
+--                   · simp at hfin
+--                   · simp at hfin
+--                     simp
+--                 right
+--                 right
+--                 rw [j2]
+--           apply hδ at tj
+--           contradiction
+
+--       rcases TsideS with ⟨i, hi ⟩
+--       simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
+--       use i
+--       unfold basic_segment_segments
+--       rw [mem_filter]
+--       constructor
+--       · unfold triangle_basic_boundary
+--         rw [mem_filter]
+--         constructor
+--         apply α
+--         have this : closed_hull (Tside T i)  ⊆ boundary T := by
+--           apply side_in_boundary hdet
+--         tauto_set
+--       · apply open_segment_sub'
+--         apply hi
+--         unfold triangulation_basic_segments at α
+--         unfold basic_avoiding_segment_set at α
+--         rw [mem_filter] at α
+--         unfold avoiding_segment_set at α
+--         rw [mem_filter] at α
+--         rcases α with ⟨β, hβ⟩
+--         rcases β with ⟨γ, hγ ⟩
+--         apply segment_set_vertex_distinct
+--         apply γ
+--       apply hdet
+
+--     · intro hS
+--       simp_all only [ne_eq, top_eq_univ, mem_biUnion, mem_univ, true_and]
+--       rcases hS with ⟨a, ha⟩
+--       unfold basic_segment_segments at ha
+--       rw [mem_filter] at ha
+--       apply ha.1
+
+
+-- noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i ↦ {Tside T i})
+
+-- lemma color_trichotomy (c : Color) : c = Color.Red ∨ c = Color.Blue ∨ c = Color.Green := by
+--   induction c <;> simp
+
+-- lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq : i ≠ j):
+--     T i ≠ T j := by
+--   by_contra hcontra
+--   have hk : ∃ k : Fin 3, i ≠ k  ∧  j ≠ k := by
+--     fin_cases i
+--     · simp only [Fin.zero_eta, Fin.isValue, ne_eq]
+--       by_cases hj : j = 1
+--       · subst hj
+--         use 2
+--         simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+--       · use 1
+--         simp only [Fin.isValue, zero_ne_one, not_false_eq_true, true_and]
+--         use hj
+--     · simp only [Fin.mk_one, Fin.isValue, ne_eq]
+--       by_cases hj : j = 0
+--       · subst hj
+--         use 2
+--         simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+--       · use 0
+--         simp only [Fin.isValue, one_ne_zero, not_false_eq_true, true_and]
+--         use hj
+--     · simp only [Fin.reduceFinMk, ne_eq, Fin.isValue]
+--       by_cases hj : j = 0
+--       · subst hj
+--         use 1
+--         simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, and_self]
+--       · use 0
+--         simp only [Fin.isValue, Fin.reduceEq, not_false_eq_true, true_and]
+--         use hj
+--   rcases hk with ⟨k, hik, hjk⟩
+--   have hT : ∃ b, σ b = (fun | 0 =>  i | 1 =>  j | 2 => k) := by
+--     apply fun_in_bijections
+--     exact hneq; exact hik; exact hjk
+--   rcases hT with ⟨b, hb⟩
+--   have det0 : det T = 0 := by
+--     rw [det_perm b]
+--     have T' : T ∘ σ b = fun | 0 => T i | 1 => T j | 2 => T k := by
+--       simp_all only [ne_eq]
+--       ext x i_1 : 2
+--       simp_all only [Function.comp_apply]
+--       split
+--       next x => simp_all only
+--       next x => simp_all only
+--       next x => simp_all only
+--     have det0' : det (fun | 0 => T i | 1 => T j | 2 => T k) = 0 := by
+--       rw [hcontra]
+--       exact det_triv_triangle (T j) (T k)
+--     rw [T', det0']
+--     linarith
+--   contradiction
+
+
+-- lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
+--     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
+--   intro T hT
+--   have h : triangle_basic_boundary Δ T =
+--       filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
+--     sorry
+--   rw [h]
+--   rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
+--   unfold triangle_boundary
+--   simp [Set.biUnion_univ]
+--   rw [Finset.sum_biUnion _, Fin.sum_univ_three]
+--   · simp
+--     simp [isPurple, Tside]
+--     simp [isRainbow, Function.Surjective]
+--     rcases color_trichotomy (coloring v (T 0)) with (hc0 | hc0 | hc0) <;>
+--     rcases color_trichotomy (coloring v (T 1)) with (hc1 | hc1 | hc1) <;>
+--     rcases color_trichotomy (coloring v (T 2)) with (hc2 | hc2 | hc2) <;>
+--     (
+--       split <;>
+--       (
+--       rename_i h_surj
+--       simp [hc0, hc1, hc2]
+--       )
+--     )
+--     all_goals try (have ⟨cR, hR⟩ := h_surj Color.Red)
+--     all_goals try (have ⟨cB, hB⟩ := h_surj Color.Blue)
+--     all_goals try (have ⟨cG, hG⟩ := h_surj Color.Green)
+--     all_goals try (fin_cases cR <;> simp_all)
+--     all_goals try (fin_cases cB <;> simp_all)
+--     all_goals try (fin_cases cG <;> simp_all)
+--     all_goals
+--       refine h_surj ?_
+--       intro b
+--       rcases color_trichotomy b with (hb | hb | hb)
+--     all_goals rw [hb]
+--     all_goals try (exact ⟨0, hc0⟩)
+--     all_goals try (exact ⟨1, hc1⟩)
+--     all_goals try (exact ⟨2, hc2⟩)
+--   · intro i _ j _ hij
+--     have h_diff_points01 : T 0 ≠ T 1 := by sorry
+--     have h_diff_points02 : T 0 ≠ T 2 := by sorry
+--     have h_diff_points12 : T 1 ≠ T 2 := by sorry
+--     simp
+--     -- Annoying
+--     suffices hs : ¬ Tside T j 0 = Tside T i 0
+--     · by_contra h_contra
+--       exact hs (congrFun h_contra 0)
+--     · unfold Tside
+--       fin_cases i <;> fin_cases j <;> simp only [Fin.isValue, not_true_eq_false]
+--       all_goals try (
+--         simp_all only [ne_eq, coe_univ, Fin.zero_eta, Set.mem_univ, not_true_eq_false]
+--       )
+--       all_goals try (rw [not_false_eq_true]; trivial)
+--       all_goals (intro h_contra; apply (Eq.symm) at h_contra)
+--       · exact h_diff_points12 h_contra
+--       · exact h_diff_points01 h_contra
+--       · exact h_diff_points02 h_contra
+
+
+
+-- lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
+--     filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ ∪
+--         triangulation_interior_basic_segments Δ) =
+--     filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_boundary_basic_segments Δ) ∪
+--         filter (fun S ↦ closed_hull S ⊆ boundary T) (triangulation_interior_basic_segments Δ) := by
+--   intro a
+--   ext a_1 : 1
+--   simp_all only [mem_filter, mem_union]
+--   apply Iff.intro
+--   · intro a_2
+--     simp_all only [and_true]
+--   · intro a_2
+--     cases a_2 with
+--     | inl h => simp_all only [true_or, and_self]
+--     | inr h_1 => simp_all only [or_true, and_self]
+
+
+-- lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
+--     filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
+--         filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
+--   ext x
+--   constructor
+--   · intro h
+--     simp at h
+--     rcases h with ⟨h1, h2⟩
+--     rcases h1 with ⟨h1, h1'⟩
+--     rcases h2 with ⟨h2, h2'⟩
+--     have int : triangulation_boundary_basic_segments Δ ∩ triangulation_interior_basic_segments Δ = ∅ := by
+--       exact triangulation_boundary_intersection Δ
+--     rw [← int]
+--     simp only [mem_inter]
+--     constructor
+--     · exact h1
+--     · exact h2
+--   tauto
+
+-- /-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
+--     S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
+--   sorry
+
+-- lemma interior_iff_reverse_interior (Δ : Finset Triangle) (S : Segment) :
+--     S ∈ triangulation_interior_basic_segments Δ ↔ reverse_segment S ∈ triangulation_interior_basic_segments Δ := by
+--   unfold triangulation_interior_basic_segments
+--   repeat rw [mem_filter]
+--   constructor <;> intro a <;> obtain ⟨left, right⟩ := a
+--   · rw [← reverse_open_hull_basic, reverse_segment_open_hull]
+--     exact ⟨left, right⟩
+--   · rw [reverse_open_hull_basic, ← reverse_segment_open_hull]
+--     exact ⟨left, right⟩-/
+
+-- def triangulation_interior_basic_segments_hulls (Δ : Finset Triangle) :=
+--   {open_hull S | S ∈ triangulation_interior_basic_segments Δ}
+
+
+-- lemma basic_seg_non_degenerate {Δ : Finset Triangle} {S : Segment}
+--     (h : S ∈ triangulation_basic_segments Δ) : S 0 ≠ S 1 :=
+--   segment_set_vertex_distinct (basic_avoiding_segment_set_sub h)
+
+
+-- theorem interior_purple_sum (Δ : Finset Triangle) :
+--     (∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 2 = 0 % 2 := by
+--   rw [←Int.natCast_inj, Int.natCast_mod, Int.natCast_mod, ←ZMod.intCast_eq_intCast_iff']
+--   simp only [Nat.cast_sum, Int.cast_sum, Int.cast_natCast, CharP.cast_eq_zero, Int.cast_zero]
+--   apply (Finset.sum_involution (fun x ↦ (fun y ↦ reverse_segment x)))
+--   · intro a ha
+--     rw [isPurple_symm_function, ← two_mul, mul_eq_zero]
+--     left
+--     rfl
+--   · intro a ha h1
+--     by_contra h
+--     have h_eq : a 0 = a 1 := by
+--       unfold reverse_segment at h
+--       conv => left; rw [← h]
+--       unfold to_segment
+--       rfl
+--     unfold triangulation_interior_basic_segments at ha
+--     rw [mem_filter] at ha
+--     apply basic_seg_non_degenerate ha.1
+--     exact h_eq
+--   · intro a ha
+--     unfold triangulation_interior_basic_segments at *
+--     rw [mem_filter] at *
+--     constructor
+--     · unfold triangulation_basic_segments at *
+--       exact basic_avoiding_segment_set_reverse ha.1
+--     · rw [reverse_segment_open_hull]
+--       exact ha.right
+--   · intro a ha
+--     exact reverse_segment_involution
+--   -- have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
+--   --   intro S hS
+--   --   exact reverse_segment_involution
+--   -- have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
+--   --   fun S a ↦ mem_image_of_mem reverse_segment a
+--   -- have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
+--   --   simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+--   --     reverse_segment_involution, imp_self, implies_true]
+--   -- have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
+--   --   intro S hS
+--   --   exact Eq.symm (isPurple_symm_function v S)
+--   -- rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
+--   --   h_mem₂ h_mem₁ inv₂' inv' htriv]
+--   -- rw [← two_mul]
+--   -- simp only [Nat.mul_mod_right, Nat.zero_mod]
+
+
+-- lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
+--     (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
+--     ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
+--     2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
+--   /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
+--   unfold triangle_basic_boundary
+--   rw [triangulation_boundary_union Δ hCover]
+--   have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+--         (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
+--           isPurple x.snd) % 4
+--         = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+--           (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
+--           (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
+--           (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
+--     := by -/
+--   sorry
+
+
+-- theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
+--     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
+--   /-
+--     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
+--     or over all triangles first.
+--   -/
+--   unfold rainbow_sum purple_sum
+--   rw [mul_sum, sum_nat_mod]
+--   rw [sum_congr rfl (rainbow_triangle_purple_sum v) , ←sum_nat_mod]
+--   rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
+--   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
+--     exact mod_two_mul (interior_purple_sum v Δ)
+--   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
+
+
+-- theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
+--     ∃ T ∈ Δ, isRainbow v T = 1 := by
+--   sorry -- easy, follows from above
+
+
+-- -- Old stuff from Lenny
+-- /- section noncomputable
+
+-- def color : ℝ² → Fin 3 := sorry
+
+-- def red : Fin 3 := 0
+-- def blue : Fin 3 := 1
+-- def green : Fin 3 := 2
+
+-- lemma no_three_colors_on_a_line (L : Segment) :
+--     ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
+
+-- lemma color00 : color (v 0 0) = red := sorry
+-- lemma color01 : color (v 0 1) = blue := sorry
+-- lemma color10 : color (v 1 0) = green := sorry
+-- lemma color11 : color (v 1 1) = blue := sorry
+
+
+-- /-
+--   Define incidence relation between segments and triangles
+-- -/
+
+-- def side (T : Triangle) (i : Fin 3) : Segment :=
+--   fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
+
+-- def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
+--   ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
+
+
+-- /-
+--   A segment is purple if it runs from 0 to 1 or 1 to 0
+-- -/
+
+-- def IsPurple (L : Segment) : Prop :=
+--   (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
+
+
+-- /-
+--   Parity of number of purple basic segments on a segment
+-- -/
+
+-- noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
+--   {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
+
+-- lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+--   (L : X) (hL : IsPurple L) :
+--   (purple_segments X L.val).card % 2 = 1 := sorry
+
+-- lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
+--   (L : X) (hL : ¬ IsPurple L) :
+--   (purple_segments X L.val).card % 2 = 0 := sorry
+
+
+
+-- /-
+--   Now we assume given a dissection S. Write X for the set of all segments in the dissection
+-- -/
+
+-- variable (S : Finset Triangle) (hS : is_cover unit_square S)
+
+-- def X : SegmentSet := sorry
+-- lemma hX : complete_segment_set X := sorry
+-- def B := {  L : X | basis_segment X L }
+
+-- /-
+--   For any triangle in the dissection, the number of purple segments on its boundary
+--   is odd iff the triangle is rainbow
+--   TODO: probably should be 2 mod 4, given that segments are counted with
+--   both orientations
+-- -/
+
+-- def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
+
+-- lemma purple_odd_iff_rainbow (T : S) :
+--   (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
+--   (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
+
+
+-- /-
+--   Main goal for our group:
+-- -/
+
+-- theorem monsky_rainbow  :
+--     ∃ T ∈ S, IsRainbow T := sorry
+-- -/
