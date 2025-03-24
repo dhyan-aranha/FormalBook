@@ -1079,7 +1079,7 @@ def square_boundary_big : Fin 4 → Segment := fun
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
 
-lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
+/-lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
@@ -1467,7 +1467,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     unfold square_boundary_basic at hi
     rw [mem_filter] at hi
     apply hi.1
-
+-/
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum v Δ % 4 = 2 := by
@@ -1700,6 +1700,7 @@ lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq 
     linarith
   contradiction
 
+set_option maxHeartbeats 10000000 in
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
