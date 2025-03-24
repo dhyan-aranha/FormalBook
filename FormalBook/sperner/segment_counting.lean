@@ -1474,6 +1474,8 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   -- Strategy: show that triangulation_boundary_basic_segments Δ is the disjoint union over the
   -- segments contained in the four sides of the squares. Then for each side, use that the purple
   -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
+  unfold purple_sum
+
   sorry
 
 
@@ -1699,12 +1701,27 @@ lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq 
   contradiction
 
 
-lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
   intro T hT
   have h : triangle_basic_boundary Δ T =
       filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
-    sorry
+    rw [triangle_boundary_decomposition (non_degen T hT) hT]
+    unfold triangle_boundary
+    ext S
+    constructor
+    · intro h
+      rw [mem_filter]
+      rw [mem_biUnion] at h
+      cases' h with i hi
+      constructor
+      · unfold basic_segment_segments at hi
+        unfold triangle_basic_boundary at hi
+        unfold triangulation_basic_segments at hi
+        simp_all only [ne_eq, top_eq_univ, mem_univ, mem_filter, true_and]
+      ·
+        sorry
+    · sorry
   rw [h]
   rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold triangle_boundary
@@ -1738,9 +1755,9 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}: ∀ T ∈ Δ,
     all_goals try (exact ⟨1, hc1⟩)
     all_goals try (exact ⟨2, hc2⟩)
   · intro i _ j _ hij
-    have h_diff_points01 : T 0 ≠ T 1 := by sorry
-    have h_diff_points02 : T 0 ≠ T 2 := by sorry
-    have h_diff_points12 : T 1 ≠ T 2 := by sorry
+    have h_diff_points01 : T 0 ≠ T 1 := different_points T (non_degen T) 0 1 (by decide)
+    have h_diff_points02 : T 0 ≠ T 2 := different_points T (non_degen T) 0 2 (by decide)
+    have h_diff_points12 : T 1 ≠ T 2 := different_points T (non_degen T) 1 2 (by decide)
     simp
     -- Annoying
     suffices hs : ¬ Tside T j 0 = Tside T i 0
@@ -1870,7 +1887,8 @@ lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f
   sorry
 
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ) :
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ)
+    (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
@@ -1878,7 +1896,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl (rainbow_triangle_purple_sum v) , ←sum_nat_mod]
+  rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
   rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
