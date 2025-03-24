@@ -1649,6 +1649,8 @@ noncomputable def triangle_boundary (T : Triangle) := Finset.biUnion ⊤ (fun i 
 lemma color_trichotomy (c : Color) : c = Color.Red ∨ c = Color.Blue ∨ c = Color.Green := by
   induction c <;> simp
 
+
+/- Move to other file and simplify using nondegen_triangle_imp_nondegen_side-/
 lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq : i ≠ j):
     T i ≠ T j := by
   by_contra hcontra
@@ -1743,9 +1745,10 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
     all_goals try (have ⟨cR, hR⟩ := h_surj Color.Red)
     all_goals try (have ⟨cB, hB⟩ := h_surj Color.Blue)
     all_goals try (have ⟨cG, hG⟩ := h_surj Color.Green)
-    all_goals try (fin_cases cR <;> simp_all)
-    all_goals try (fin_cases cB <;> simp_all)
-    all_goals try (fin_cases cG <;> simp_all)
+    all_goals try (fin_cases cR <;> simp_all only [ne_eq, Fin.mk_one, Fin.zero_eta])
+    all_goals try (fin_cases cB <;> simp_all only [ne_eq, Fin.mk_one, Fin.zero_eta])
+    all_goals try (fin_cases cG <;> simp_all only [ne_eq, Fin.mk_one, Fin.zero_eta])
+
     all_goals
       refine h_surj ?_
       intro b
