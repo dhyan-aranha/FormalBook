@@ -1701,6 +1701,26 @@ lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq 
     linarith
   contradiction
 
+lemma triangle_sides_different (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hij : i ≠ j) :
+    Tside T i ≠ Tside T j := by
+  have h_diff_points01 : T 0 ≠ T 1 := different_points T h_det 0 1 (by decide)
+  have h_diff_points02 : T 0 ≠ T 2 := different_points T h_det 0 2 (by decide)
+  have h_diff_points21 : T 2 ≠ T 1 := different_points T h_det 2 1 (by decide)
+  simp
+  suffices hs : ¬ Tside T i 0 = Tside T j 0
+  · by_contra h_contra
+    exact hs (congrFun h_contra 0)
+  · unfold Tside
+    fin_cases i <;> fin_cases j <;> simp only [Fin.isValue, not_true_eq_false]
+    all_goals try (
+      simp_all only [ne_eq, coe_univ, Fin.zero_eta, Set.mem_univ, not_true_eq_false]
+    )
+    all_goals try (rw [not_false_eq_true]; trivial)
+    all_goals (intro h_contra; apply (Eq.symm) at h_contra)
+    · exact h_diff_points21 h_contra
+    · exact h_diff_points01 h_contra
+    · exact h_diff_points02 h_contra
+
 set_option maxHeartbeats 10000000 in
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
@@ -1735,9 +1755,19 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
   have h1 : triangle_boundary T ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
     sorry
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
-    intro S L hS hL
+    intro S L hS hL hSL
     unfold triangle_boundary at hS hL
-    sorry
+    simp only [top_eq_univ, mem_biUnion, mem_univ, mem_singleton, true_and] at hS
+    simp only [top_eq_univ, mem_biUnion, mem_univ, mem_singleton, true_and] at hL
+    cases' hS with i hi
+    cases' hL with j hj
+    rw [hi, hj] at hSL
+    rw [hi, hj]
+    rw [← Set.disjoint_iff_inter_eq_empty]
+    have hij : i ≠ j := by
+      by_contra h_contra
+      tauto
+    exact triangle_edges_disjoint T i j hij (non_degen T hT)
   rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold triangle_boundary
   simp [Set.biUnion_univ]
@@ -1769,26 +1799,9 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
     all_goals try (exact ⟨0, hc0⟩)
     all_goals try (exact ⟨1, hc1⟩)
     all_goals try (exact ⟨2, hc2⟩)
-  · intro i _ j _ hij
-    have h_diff_points01 : T 0 ≠ T 1 := different_points T (non_degen T hT) 0 1 (by decide)
-    have h_diff_points02 : T 0 ≠ T 2 := different_points T (non_degen T hT) 0 2 (by decide)
-    have h_diff_points12 : T 1 ≠ T 2 := different_points T (non_degen T hT) 1 2 (by decide)
-    simp
-    -- Annoying
-    suffices hs : ¬ Tside T j 0 = Tside T i 0
-    · by_contra h_contra
-      exact hs (congrFun h_contra 0)
-    · unfold Tside
-      fin_cases i <;> fin_cases j <;> simp only [Fin.isValue, not_true_eq_false]
-      all_goals try (
-        simp_all only [ne_eq, coe_univ, Fin.zero_eta, Set.mem_univ, not_true_eq_false]
-      )
-      all_goals try (rw [not_false_eq_true]; trivial)
-      all_goals (intro h_contra; apply (Eq.symm) at h_contra)
-      · exact h_diff_points12 h_contra
-      · exact h_diff_points01 h_contra
-      · exact h_diff_points02 h_contra
-
+  · intro j _ i _ hij
+    simp only [disjoint_singleton_right, mem_singleton]
+    exact (triangle_sides_different T (non_degen T hT) i j hij.symm)
 
 
 lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
