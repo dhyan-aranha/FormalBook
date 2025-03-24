@@ -411,6 +411,16 @@ lemma segment_triv' {L : Segment} : L 0 = L 1 ↔ closed_hull L = {L 0} := by
 
 
 
+
+lemma seg_sub_seg {L₁ L₂ L₃ : Segment}  (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂)
+    (h₃ : closed_hull L₁ ⊆ closed_hull L₃) (h₂₃ : Disjoint (open_hull L₂) (boundary L₃))
+  : closed_hull L₂ ⊆ closed_hull L₃ := by
+
+  sorry
+
+
+
+
 /- Triangles -/
 
 /-
@@ -1508,4 +1518,3 @@ lemma closed_hull_eq_imp_eq_or_rev {L₁ L₂ : Segment}
   · right
     ext i j
     fin_cases i <;> fin_cases j <;> simp_all [reverse_segment, to_segment]
-
