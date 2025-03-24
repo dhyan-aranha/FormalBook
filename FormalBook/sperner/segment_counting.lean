@@ -1038,14 +1038,18 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
     rw [mem_filter, Finset.mem_disjiUnion]
     constructor
     · intro hL
+      simp_all only [mem_filter, true_and]
 
       sorry
     · intro hL
       cases' hL with S hS
       constructor
       · simp_all only [mem_filter]
-      ·
-        sorry
+      · rw [mem_filter] at hS
+        have h : closed_hull S ⊆ ⋃ T ∈ A, closed_hull T := by
+          refine Set.subset_biUnion_of_mem ?_
+          exact hS.1
+        tauto_set
   rw [h_eq]
   rw [Finset.sum_disjiUnion A (fun T ↦ (filter (fun S ↦ closed_hull S ⊆ closed_hull T) (basic_avoiding_segment_set X AVOID))) h_disj]
   rw [← ZMod.natCast_eq_natCast_iff']
@@ -1204,9 +1208,18 @@ lemma boundary_filter_union (Δ : Finset Triangle) (T : Triangle) : T ∈ Δ →
 lemma boundary_filter_intersection (Δ : Finset Triangle) (T : Δ) :
     filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_boundary_basic_segments Δ) ∩
         filter (fun S ↦ closed_hull S ⊆ boundary T.val) (triangulation_interior_basic_segments Δ) = ∅ := by
+  ext S
+  constructor
+  · intro hS
+    simp_all only [mem_inter, mem_filter, not_mem_empty]
+    obtain ⟨T, property⟩ := T
+    obtain ⟨left, right⟩ := hS
+    obtain ⟨left, right_1⟩ := left
+    obtain ⟨left_1, right⟩ := right
+    simp_all only
 
-  sorry
-
+    sorry
+  · tauto
 
 /-lemma reverse_open_hull_basic (Δ : Finset Triangle) (S : Segment) :
     S ∈ triangulation_basic_segments Δ ↔ reverse_segment S ∈ triangulation_basic_segments Δ := by
@@ -1261,28 +1274,14 @@ theorem interior_purple_sum (Δ : Finset Triangle) :
       exact ha.right
   · intro a ha
     exact reverse_segment_involution
-  -- have inv₂' : ∀ S ∈ (image reverse_segment A), reverse_segment (reverse_segment S) = S := by
-  --   intro S hS
-  --   exact reverse_segment_involution
-  -- have h_mem₁ : ∀ S ∈ A, reverse_segment S ∈ image reverse_segment A :=
-  --   fun S a ↦ mem_image_of_mem reverse_segment a
-  -- have h_mem₂ : ∀ S ∈ image reverse_segment A, reverse_segment S ∈ A := by
-  --   simp only [mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
-  --     reverse_segment_involution, imp_self, implies_true]
-  -- have htriv : ∀ S ∈ image reverse_segment A, isPurple v S = isPurple v (reverse_segment S) := by
-  --   intro S hS
-  --   exact Eq.symm (isPurple_symm_function v S)
-  -- rw [Finset.sum_bij' (fun S ↦ (fun _ ↦ reverse_segment S)) (fun S ↦ (fun _ ↦ reverse_segment S))
-  --   h_mem₂ h_mem₁ inv₂' inv' htriv]
-  -- rw [← two_mul]
-  -- simp only [Nat.mul_mod_right, Nat.zero_mod]
+
 
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
     (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
     ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
     2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
-  /-rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ isPurple y)]
+  /- rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ ((isPurple v) y))]
   unfold triangle_basic_boundary
   rw [triangulation_boundary_union Δ hCover]
   have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
@@ -1292,7 +1291,7 @@ lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f
           (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
           (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
           (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
-    := by -/
+    := by sorry-/
   sorry
 
 
