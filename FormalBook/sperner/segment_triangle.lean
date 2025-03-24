@@ -410,8 +410,6 @@ lemma segment_triv' {L : Segment} : L 0 = L 1 ↔ closed_hull L = {L 0} := by
   · exact fun h ↦ ⟨L 0, h⟩
 
 
-
-
 lemma seg_sub_seg {L₁ L₂ L₃ : Segment}  (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂)
     (h₃ : closed_hull L₁ ⊆ closed_hull L₃) (h₂₃ : Disjoint (open_hull L₂) (boundary L₃))
   : closed_hull L₂ ⊆ closed_hull L₃ := by
@@ -419,6 +417,16 @@ lemma seg_sub_seg {L₁ L₂ L₃ : Segment}  (h₁ : L₁ 0 ≠ L₁ 1) (h₂ :
   sorry
 
 
+lemma seg_open_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
+  Set.Infinite (open_hull L) := by
+  rw [open_segment_interval_im]
+  refine Set.Infinite.image ?_ (Set.Ioo_infinite (by norm_num))
+  intro a ha b hb heq
+  rw [seg_vec, add_left_cancel_iff, ←sub_eq_zero, ←sub_smul, smul_eq_zero] at heq
+  cases' heq with this this
+  · linarith
+  · exfalso
+    exact h ((seg_vec_zero_iff L).mp this)
 
 
 /- Triangles -/
