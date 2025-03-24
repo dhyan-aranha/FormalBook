@@ -1706,7 +1706,9 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
   intro T hT
   have h : triangle_basic_boundary Δ T =
       filter (fun S ↦ closed_hull S ⊆ (⋃ L ∈ triangle_boundary T, closed_hull L)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)) := by
-    rw [triangle_boundary_decomposition (non_degen T hT) hT]
+    unfold triangle_basic_boundary triangulation_basic_segments
+    -- suffices boundary T = ⋃
+    /-rw [triangle_boundary_decomposition (non_degen T hT) hT]
     unfold triangle_boundary
     ext S
     constructor
@@ -1721,7 +1723,8 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
         simp_all only [ne_eq, top_eq_univ, mem_univ, mem_filter, true_and]
       ·
         sorry
-    · sorry
+    · sorry-/
+    sorry
   rw [h]
   rw [segment_sum_splitting (triangle_boundary T) (triangulation_avoiding_set Δ) (triangulation_points Δ) sorry sorry (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold triangle_boundary
@@ -1755,9 +1758,9 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
     all_goals try (exact ⟨1, hc1⟩)
     all_goals try (exact ⟨2, hc2⟩)
   · intro i _ j _ hij
-    have h_diff_points01 : T 0 ≠ T 1 := different_points T (non_degen T) 0 1 (by decide)
-    have h_diff_points02 : T 0 ≠ T 2 := different_points T (non_degen T) 0 2 (by decide)
-    have h_diff_points12 : T 1 ≠ T 2 := different_points T (non_degen T) 1 2 (by decide)
+    have h_diff_points01 : T 0 ≠ T 1 := different_points T (non_degen T hT) 0 1 (by decide)
+    have h_diff_points02 : T 0 ≠ T 2 := different_points T (non_degen T hT) 0 2 (by decide)
+    have h_diff_points12 : T 1 ≠ T 2 := different_points T (non_degen T hT) 1 2 (by decide)
     simp
     -- Annoying
     suffices hs : ¬ Tside T j 0 = Tside T i 0
