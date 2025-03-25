@@ -1080,7 +1080,7 @@ def square_boundary_big : Fin 4 → Segment := fun
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
 
-/-lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
+lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_triangulation Δ):
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
@@ -1468,7 +1468,7 @@ noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finse
     unfold square_boundary_basic at hi
     rw [mem_filter] at hi
     apply hi.1
--/
+
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum v Δ % 4 = 2 := by
@@ -1723,7 +1723,9 @@ lemma triangle_sides_different (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3
 
 set_option maxHeartbeats 10000000 in
 
-lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+    (h_intersections : ∀ T T', T ∈ Δ → T' ∈ Δ → T ≠ T' → open_hull T ∩ open_hull T' = ∅)
+    : ∀ T ∈ Δ,
     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
   intro T hT
   have h : triangle_basic_boundary Δ T =
@@ -1753,7 +1755,34 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
 
   rw [h]
   have h1 : triangle_boundary T ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
-    sorry
+    unfold triangle_boundary avoiding_segment_set triangulation_avoiding_set triangulation_points
+    simp only [top_eq_univ, Set.disjoint_iUnion_right, Fin.isValue,
+      biUnion_subset_iff_forall_subset, mem_univ, singleton_subset_iff, mem_filter, forall_const]
+    intro i
+    constructor
+    · unfold segment_set
+      simp only [ne_eq, Fin.isValue, product_eq_sprod, mem_image, mem_filter, mem_product,
+        mem_biUnion, mem_insert, mem_singleton, Prod.exists]
+      use (Tside T i 0), (Tside T i 1)
+      simp only [Fin.isValue, (nondegen_triangle_imp_nondegen_side i (non_degen T hT)),
+        not_false_eq_true, and_true, segment_rfl]
+      constructor <;> (
+        use T
+        refine ⟨hT, ?_⟩
+        unfold Tside
+        fin_cases i <;> simp only [Fin.isValue, true_or, or_true]
+      )
+    · intro T' hT'
+      cases' eq_or_ne T T' with h_eq h_neq
+      · rw [← h_eq]
+        suffices h_boundary_open : Disjoint (boundary T) (open_hull T)
+        · have h_boundary := side_in_boundary (non_degen T hT) i
+          tauto_set
+        · unfold boundary
+          tauto_set
+      · have h_int := h_intersections T T' hT hT' h_neq
+        -- TODO: this would follow easily if we change h_intersections to something less symmetric
+        sorry
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
     intro S L hS hL hSL
     unfold triangle_boundary at hS hL
@@ -1916,7 +1945,8 @@ lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f
 
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ)
-    (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
+    (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+    (h_intersections : ∀ T T', T ∈ Δ → T' ∈ Δ → T ≠ T' → open_hull T ∩ open_hull T' = ∅) :
     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
     Split the rainbow_sum to a sum over all basic segments. One can then sum over all segments first
@@ -1924,7 +1954,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
+  rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen h_intersections) , ←sum_nat_mod]
   rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
