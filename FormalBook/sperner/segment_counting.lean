@@ -1077,6 +1077,9 @@ def square_boundary_big : Fin 4 → Segment := fun
   | 2 => top
   | 3 => right
 
+noncomputable def square_boundary_big_set : Finset Segment :=
+  @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
+
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
 
@@ -1476,6 +1479,34 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   -- segments contained in the four sides of the squares. Then for each side, use that the purple
   -- sum mod 4 is just 2 times the value of IsPurple of the whole segment.
   unfold purple_sum
+  have h : ∑ S ∈ triangulation_boundary_basic_segments Δ, isPurple v S =
+      ∑ S ∈ filter (fun S ↦ closed_hull S ⊆ (⋃ T ∈ square_boundary_big_set, closed_hull T)) (basic_avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ)), isPurple v S := by
+    rw [sum_congr]
+    · rw [unit_square_boundary_decomposition Δ hCovering]
+      unfold square_boundary_basic square_boundary_big_set triangulation_boundary_basic_segments
+      unfold triangulation_basic_segments
+      simp_all only [top_eq_univ, mem_biUnion, mem_univ, mem_singleton, true_and, Set.iUnion_exists]
+      ext S
+      constructor
+      · intro hS
+        simp_all only [mem_biUnion, mem_univ, mem_filter, true_and, exists_and_left]
+        cases' hS.right with j hj
+        have h_closed : closed_hull S ⊆ closed_hull (square_boundary_big j) := by sorry
+
+        sorry
+      · intro hS
+        simp_all only [mem_filter, mem_biUnion, mem_univ, true_and, exists_and_left]
+
+        sorry
+    · intro _ _
+      rfl
+  rw [h]
+  have h1 : square_boundary_big_set ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
+    sorry
+  have h2 : ∀ S L, S ∈ (square_boundary_big_set) → L ∈ (square_boundary_big_set) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
+    sorry
+  rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
+
 
   sorry
 
@@ -1801,9 +1832,7 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
   unfold triangle_boundary
   simp [Set.biUnion_univ]
   rw [Finset.sum_biUnion _, Fin.sum_univ_three]
-  · simp
-    simp [isPurple, Tside]
-    simp [isRainbow, Function.Surjective]
+  · simp only [Fin.isValue, sum_singleton, isPurple, Tside, isRainbow, Function.Surjective]
     rcases color_trichotomy (coloring v (T 0)) with (hc0 | hc0 | hc0) <;>
     rcases color_trichotomy (coloring v (T 1)) with (hc1 | hc1 | hc1) <;>
     rcases color_trichotomy (coloring v (T 2)) with (hc2 | hc2 | hc2) <;>
