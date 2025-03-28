@@ -1080,6 +1080,9 @@ def square_boundary_big : Fin 4 → Segment := fun
 noncomputable def square_boundary_big_set : Finset Segment :=
   @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
 
+lemma square_boundary_inclusion (i : Fin 4) : closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+  sorry
+
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
 
@@ -1472,6 +1475,37 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     rw [mem_filter] at hi
     apply hi.1
 
+lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
+    open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
+
+  sorry
+
+lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
+    closed_hull S ⊆ closed_hull L := by
+  by_contra h_contra
+  have hx : ∃ x : ℝ², x ∈ closed_hull S ∧ x ∉ closed_hull L := by
+    by_contra h2
+    simp_all only [not_exists, not_and, Decidable.not_not]
+    tauto_set
+  cases' hx with x hx
+  have h_boundary : x = S 0 ∨ x = S 1 := by
+    suffices h_bdry : x ∈ boundary S
+    · -- rw [boundary_seg_set]
+      sorry
+    · unfold boundary
+      constructor
+      · exact hx.left
+      · by_contra h2
+        have h_incl : open_hull L ⊆ closed_hull L := open_sub_closed L
+        tauto_set -- Would be nice to extend tauto_set so that this line and the last could
+                  -- be written as:  tauto_set [open_sub_closed L]
+  sorry
+
+lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_big i) = 0 := by
+  sorry
+
+lemma purple_computation1 : isPurple v (square_boundary_big 0) = 2 := by
+  sorry
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum v Δ % 4 = 2 := by
@@ -1491,21 +1525,51 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
       · intro hS
         simp_all only [mem_biUnion, mem_univ, mem_filter, true_and, exists_and_left]
         cases' hS.right with j hj
-        have h_closed : closed_hull S ⊆ closed_hull (square_boundary_big j) := by sorry
-
-        sorry
+        have h_closed : closed_hull S ⊆ closed_hull (square_boundary_big j) := by
+          exact open_sub_closed_sub _ _ hj
+        suffices h2 : closed_hull (square_boundary_big j) ⊆
+          ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
+        · tauto_set
+        · intro x hx
+          simp only [Set.mem_iUnion, exists_prop]
+          use square_boundary_big j
+          use j
       · intro hS
         simp_all only [mem_filter, mem_biUnion, mem_univ, true_and, exists_and_left]
-
-        sorry
+        constructor
+        · sorry
+        · sorry
     · intro _ _
       rfl
   rw [h]
   have h1 : square_boundary_big_set ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
-    sorry
+    unfold avoiding_segment_set
+    have h_triangle_avoiding_set : (triangulation_avoiding_set Δ) ⊆ open_hull unit_square := by
+      sorry
+    have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
+      sorry
+    intro S hS
+    rw [mem_filter]
+    constructor
+    · sorry
+    · suffices h_disj : Disjoint (boundary unit_square) (open_hull unit_square)
+      · tauto_set
+      · unfold boundary
+        tauto_set
   have h2 : ∀ S L, S ∈ (square_boundary_big_set) → L ∈ (square_boundary_big_set) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
-    sorry
+    unfold square_boundary_big_set
+    intro S L hS hL hSL
+    simp_all only [top_eq_univ, mem_biUnion, mem_univ, mem_singleton, true_and]
+    cases' hS with i hi
+    cases' hL with j hj
+    rw [hi, hj]
+    have hij : i ≠ j := by
+      by_contra h_contra
+      rw [hi, hj, h_contra] at hSL
+      tauto
+    exact unit_square_boundary_intersections i j hij
   rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
+  unfold square_boundary_big_set
 
 
   sorry
