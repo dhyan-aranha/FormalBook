@@ -192,10 +192,6 @@ lemma segment_set_vertex {X : Finset ℝ²} {S : Segment}
   rw [←h₂]
   intro i; fin_cases i <;> (simp [to_segment]; assumption)
 
-lemma segment_set_boundary {X : Finset ℝ²} {x : ℝ²} {S : Segment} (hS : S ∈ segment_set X)
-    (hx : x ∈ boundary S) : x ∈ X := by
-
-  sorry
 
 lemma avoiding_segment_set_sub {X : Finset ℝ²} {A : Set ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) : S ∈ segment_set X :=
@@ -212,6 +208,13 @@ lemma segment_set_vertex_distinct {X : Finset ℝ²} {S : Segment}
   have ⟨_, _, ⟨⟨_,_⟩ ,h₂⟩⟩ := hS
   rw [←h₂]
   simpa [to_segment]
+
+lemma segment_set_boundary {X : Finset ℝ²} {x : ℝ²} {S : Segment} (hS : S ∈ segment_set X)
+    (hx : x ∈ boundary S) : x ∈ X := by
+  rw [boundary_seg (segment_set_vertex_distinct hS), mem_coe, mem_image] at hx
+  have ⟨i, _, hi⟩ := hx
+  rw [←hi]
+  exact segment_set_vertex hS i
 
 lemma segment_set_reverse {X : Finset ℝ²} {S : Segment} (hS : S ∈ segment_set X ) :
     reverse_segment S ∈ segment_set X := by
