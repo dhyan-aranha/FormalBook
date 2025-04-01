@@ -429,6 +429,42 @@ lemma seg_open_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
     exact h ((seg_vec_zero_iff L).mp this)
 
 
+lemma seg_closed_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
+    Set.Infinite (closed_hull L) :=
+  Set.Infinite.mono (open_sub_closed L) (seg_open_hull_infinite h )
+
+
+lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
+    (hL : L 0 ≠ L 1)
+    (hSub : closed_hull L ⊆ ⋃ S ∈ A, closed_hull S)
+    (hA : ∀ S ∈ A, Disjoint (open_hull L) (boundary S))
+    : ∃ S ∈ A, closed_hull L ⊆ closed_hull S := by
+  have hMap : ∀ (x : closed_hull L), ∃ (S : A), x.val ∈ closed_hull S.val := by
+    intro x
+    have ⟨S,hS,hxS⟩ := Set.mem_iUnion₂.1 (hSub x.2)
+    use ⟨S,hS⟩
+  choose fL fLh using hMap
+  have hInf := Set.infinite_coe_iff.mpr (seg_closed_hull_infinite hL)
+  have ⟨x₁, x₂, hxS, hneq⟩ := Function.not_injective_iff.1 (not_injective_infinite_finite fL)
+  refine ⟨fL x₁,by simp only [coe_mem],?_⟩
+  refine seg_sub_seg (L₁ := to_segment x₁.val x₂.val) ?_ ?_ ?_ ?_
+  · simp_all only [ne_eq, Subtype.forall, to_segment, Subtype.coe_ne_coe.mpr hneq,
+    not_false_eq_true]
+  · apply closed_hull_convex
+    intro i
+    fin_cases i <;> simp [to_segment]
+  · apply closed_hull_convex
+    intro i
+    fin_cases i
+    · simp [to_segment, fLh x₁]
+    · simp [hxS, to_segment, fLh x₂]
+  · exact hA _ (coe_mem (fL x₁))
+
+
+
+
+
+
 /- Triangles -/
 
 /-
