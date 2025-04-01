@@ -259,6 +259,12 @@ lemma seg_vec_zero_iff (L : Segment) : seg_vec L = 0 ↔ L 0 = L 1 := by
   rw [seg_vec, sub_eq_zero]
   exact eq_comm
 
+example {p q : Prop} (hp : p ↔ q) : ¬p ↔ ¬q := by
+  exact not_congr hp
+
+lemma seg_vec_nonzero_iff (L : Segment) : seg_vec L ≠ 0 ↔ L 0 ≠ L 1 :=
+    not_congr (seg_vec_zero_iff L)
+
 lemma closed_segment_interval_im {L : Segment} :
     closed_hull L = (fun a ↦ L 0 + a • seg_vec L) '' (Set.Icc 0 1 : Set ℝ)  := by
   ext x
@@ -410,11 +416,96 @@ lemma segment_triv' {L : Segment} : L 0 = L 1 ↔ closed_hull L = {L 0} := by
   · exact fun h ↦ ⟨L 0, h⟩
 
 
+lemma seg_nontriv_sub {L₁ L₂ : Segment} (h : closed_hull L₁ ⊆ closed_hull L₂) (hneq : L₁ 0 ≠ L₁ 1)
+    : L₂ 0 ≠ L₂ 1 := by
+  intro hContra
+  rw [segment_triv'.1 hContra, Set.subset_singleton_iff] at h
+  apply hneq
+  rw [h (L₁ 0) corner_in_closed_hull, h (L₁ 1) corner_in_closed_hull]
+
+noncomputable def line_par (v₁ v₂ : ℝ²) : ℝ → ℝ² := fun t ↦ v₁ + t • v₂
+
+lemma seg_par_injective {v₁ v₂ : ℝ²} (h : v₂ ≠ 0) : (line_par v₁ v₂).Injective := by
+
+  sorry
+
+--closed_segment_interval_im
+
+lemma seg_par₀ {v₁ v₂ : ℝ²} : line_par v₁ v₂ 0 = v₁ := by
+  simp only [line_par, zero_smul, add_zero]
+
+lemma seg_par_closed_self {L : Segment} :
+  closed_hull L = line_par (L 0) (seg_vec L) '' (Set.Icc 0 1 : Set ℝ) := closed_segment_interval_im
+
+lemma seg_par {L₁ L₂ : Segment} (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂) :
+    ∃ a b, closed_hull L₂ = line_par (L₁ 0) (seg_vec L₁) '' (Set.Icc a b : Set ℝ) := by
+
+  sorry
+
+lemma seg_par_open_hull {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a < b) (hv₂ : v₂ ≠ 0)
+    (hc : closed_hull L = line_par v₁ v₂ '' (Set.Icc a b : Set ℝ)) :
+    open_hull L = line_par v₁ v₂ '' (Set.Ioo a b : Set ℝ) := by
+
+  sorry
+
+lemma seg_par_boundary {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a < b) (hv₂ : v₂ ≠ 0)
+    (hc : closed_hull L = line_par v₁ v₂ '' (Set.Icc a b : Set ℝ)) :
+    boundary L = line_par v₁ v₂ '' {a,b} := by
+
+  sorry
+
+lemma seg_par_nontrivial {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hL : L 0 ≠ L 1)
+    (hc : closed_hull L = line_par v₁ v₂ '' (Set.Icc a b : Set ℝ)) :
+  a < b := by
+  by_contra hab
+  have hS : Set.Subsingleton (closed_hull L) := by
+    rw [hc]
+    exact Set.Subsingleton.image (by rw [Set.subsingleton_Icc_iff]; linarith) _
+  exact hL (hS corner_in_closed_hull corner_in_closed_hull)
+
+
+lemma interval_intersection {a₁ a₂ b₁ b₂ x : ℝ} (hx₁ : Set.Icc 0 1 ⊆ Set.Icc a₁ b₁)
+  (hx₂ : Set.Icc 0 1 ⊆ Set.Icc a₂ b₂)
+  (ha : a₂ ∉ Set.Ioo a₁ b₁) (hb : b₂ ∉ Set.Ioo a₁ b₁) : Set.Icc a₁ b₁ ⊆ Set.Icc a₂ b₂ := by
+  intro y ⟨hyl, hyu⟩
+  have ha₁0 : a₁ ≤ 0 := (hx₁ ⟨by linarith, by linarith⟩).1
+  have ha₂0 : a₂ ≤ 0 := (hx₂ ⟨by linarith, by linarith⟩).1
+  have hb₁1 : 1 ≤ b₁ := (hx₁ ⟨by linarith, by linarith⟩).2
+  have hb₂1 : 1 ≤ b₂ := (hx₂ ⟨by linarith, by linarith⟩).2
+  refine ⟨?_,?_⟩
+  · by_contra hy
+    exact ha ⟨by linarith, by linarith⟩
+  · by_contra hy
+    exact hb ⟨by linarith, by linarith⟩
+
+
+
+
 lemma seg_sub_seg {L₁ L₂ L₃ : Segment}  (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂)
     (h₃ : closed_hull L₁ ⊆ closed_hull L₃) (h₂₃ : Disjoint (open_hull L₂) (boundary L₃))
   : closed_hull L₂ ⊆ closed_hull L₃ := by
-
-  sorry
+  have ⟨a₂,b₂, hab₂⟩ := seg_par h₁ h₂
+  have ⟨a₃,b₃, hab₃⟩ := seg_par h₁ h₃
+  rw [hab₂, hab₃]
+  have segNeqZero := ((seg_vec_nonzero_iff _).2 h₁)
+  have fInj := seg_par_injective (v₁ := L₁ 0) segNeqZero
+  have ha₂leqb₂ : a₂ < b₂ := seg_par_nontrivial (seg_nontriv_sub h₂ h₁) hab₂
+  have ha₃leqb₃ : a₃ < b₃ := seg_par_nontrivial (seg_nontriv_sub h₃ h₁) hab₃
+  refine Set.image_mono (interval_intersection (x := 0) ?_ ?_ ?_ ?_)
+  · rw [seg_par_closed_self (L := L₁), hab₂] at h₂
+    exact (Set.image_subset_image_iff fInj).mp h₂
+  · rw [seg_par_closed_self (L := L₁), hab₃] at h₃
+    exact (Set.image_subset_image_iff fInj).mp h₃
+  · intro ha
+    rw [←Function.Injective.mem_set_image fInj, ←seg_par_open_hull ha₂leqb₂ segNeqZero hab₂] at ha
+    apply Set.disjoint_left.1 h₂₃ ha
+    rw [seg_par_boundary ha₃leqb₃ segNeqZero hab₃]
+    simp
+  · intro hb
+    rw [←Function.Injective.mem_set_image fInj, ←seg_par_open_hull ha₂leqb₂ segNeqZero hab₂] at hb
+    apply Set.disjoint_left.1 h₂₃ hb
+    rw [seg_par_boundary ha₃leqb₃ segNeqZero hab₃]
+    simp
 
 
 lemma seg_open_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
@@ -431,7 +522,7 @@ lemma seg_open_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
 
 lemma seg_closed_hull_infinite {L: Segment}  (h : L 0 ≠ L 1) :
     Set.Infinite (closed_hull L) :=
-  Set.Infinite.mono (open_sub_closed L) (seg_open_hull_infinite h )
+  Set.Infinite.mono (open_sub_closed L) (seg_open_hull_infinite h)
 
 
 lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
