@@ -1563,11 +1563,6 @@ lemma seg_par_closed_self {L : Segment} :
 lemma seg_par_open_self {L : Segment} :
   closed_hull L = line_par (L 0) (seg_vec L) '' (Set.Icc 0 1 : Set ℝ) := closed_segment_interval_im
 
-
-example {a b c : ℝ} {hc : c ≠ 0} (h1 : 0 < a) (h : a < b) : a - b < 0 := by
-  exact sub_neg.mpr h
-  sorry
-
 lemma line_par_closed {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a ≤ b) :
     line_par v₁ v₂ '' (Set.Icc a b) = closed_hull (to_segment (v₁ + a • v₂) (v₁ + b • v₂)) := by
   by_cases hab' : a = b
@@ -1669,8 +1664,7 @@ lemma seg_par_boundary {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a < 
     boundary L = line_par v₁ v₂ '' {a,b} := by
   rw [boundary, hc, seg_par_open_hull hab hc, ←Set.image_diff (seg_par_injective h) _ _]
   apply (Set.image_eq_image (seg_par_injective h)).mpr
-
-  sorry
+  exact Set.Icc_diff_Ioo_same (le_of_lt hab)
 
 lemma seg_par_nontrivial {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hL : L 0 ≠ L 1)
     (hc : closed_hull L = line_par v₁ v₂ '' (Set.Icc a b : Set ℝ)) :
