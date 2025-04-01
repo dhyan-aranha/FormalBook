@@ -74,6 +74,32 @@ lemma aux_det₂ {L : ℝ²} (hL : L ≠ 0) (hi : ∃ i, L i = 0) : det₂ L (v 
     fin_cases j <;> (simp_all [v])
   )
 
+-- Maybe useful but not used
+-- lemma det₂_scalar {x y : ℝ²} (hy : y ≠ 0) (hdet : det₂ x y = 0) :
+--     ∃ t : ℝ, x = t • y := by
+--   rw [det₂, sub_eq_zero] at hdet
+--   by_cases hy0 : y 0 = 0
+--   · by_cases hy1 : y 1 = 0
+--     · exfalso
+--       apply hy (PiLp.ext ?_)
+--       intro i
+--       fin_cases i <;> assumption
+--     · use x 1 / y 1
+--       refine (PiLp.ext ?_)
+--       intro i
+--       fin_cases i
+--       · field_simp
+--         assumption
+--       · field_simp
+--   · use x 0 / y 0
+--     refine (PiLp.ext ?_)
+--     intro i
+--     fin_cases i
+--     · field_simp
+--     · field_simp
+--       exact hdet.symm
+
+
 
 
 
@@ -1563,6 +1589,59 @@ lemma seg_par_closed_self {L : Segment} :
 lemma seg_par_open_self {L : Segment} :
   closed_hull L = line_par (L 0) (seg_vec L) '' (Set.Icc 0 1 : Set ℝ) := closed_segment_interval_im
 
+
+lemma line_par_scalar_Icc {a b t : ℝ} {v₁ v₂ : ℝ²} (ht : 0 < t):
+    line_par v₁ (t • v₂) '' (Set.Icc a b) = line_par v₁ (v₂) '' (Set.Icc (t * a) (t * b)) := by
+  ext x
+  rw [Set.mem_image, Set.mem_image]
+  constructor
+  · intro ⟨k, habk, hx⟩
+    refine ⟨t * k, ⟨?_, ?_⟩, ?_⟩
+    · exact (mul_le_mul_iff_of_pos_left ht).mpr habk.1
+    · exact (mul_le_mul_iff_of_pos_left ht).mpr habk.2
+    · rw [←hx, line_par, line_par]
+      module
+  · intro ⟨k, habk, hx⟩
+    refine ⟨k / t, ⟨?_, ?_⟩, ?_⟩
+    · exact (le_div_iff₀' ht).mpr habk.1
+    · exact (div_le_iff₀' ht).mpr habk.2
+    · rw [←hx, line_par, line_par]
+      match_scalars
+      · rfl
+      · field_simp
+
+lemma line_par_neg {a b : ℝ} {v₁ v₂ : ℝ²} :
+    line_par v₁ (v₂) '' (Set.Icc a b) = line_par v₁ (- v₂) '' (Set.Icc (-b) (-a)) := by
+  ext x
+  rw [Set.mem_image, Set.mem_image]
+  constructor <;> (
+  intro ⟨k, habk, hx⟩
+  refine ⟨-k, ⟨?_, ?_⟩, ?_⟩
+  · linarith [habk.2]
+  · linarith [habk.1]
+  · rw [←hx, line_par, line_par]
+    module)
+
+
+lemma line_par_scalar_Icc' {a b t : ℝ} {v₁ v₂ : ℝ²} (ht : t < 0):
+    line_par v₁ (t • v₂) '' (Set.Icc a b) = line_par v₁ (v₂) '' (Set.Icc (t * b) (t * a)) := by
+  have ht : 0 < - t := by linarith
+  rw [line_par_neg, ←neg_smul, line_par_scalar_Icc ht, neg_mul_neg, neg_mul_neg]
+
+lemma line_par_trans_Icc {a b t : ℝ} {v₁ v₂ : ℝ²} :
+    line_par (v₁ + t • v₂) (v₂) '' (Set.Icc a b) = line_par v₁ (v₂) '' (Set.Icc (a + t) (b + t)) := by
+  ext x
+  rw [Set.mem_image, Set.mem_image]
+  constructor
+  · intro ⟨k, habk, hx⟩
+    refine ⟨k + t, ⟨by linarith [habk.1],by linarith [habk.2]⟩, ?_⟩
+    rw [←hx, line_par, line_par]
+    module
+  · intro ⟨k, habk, hx⟩
+    refine ⟨k - t, ⟨by linarith [habk.1],by linarith [habk.2]⟩, ?_⟩
+    rw [←hx, line_par, line_par]
+    module
+
 lemma line_par_closed {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a ≤ b) :
     line_par v₁ v₂ '' (Set.Icc a b) = closed_hull (to_segment (v₁ + a • v₂) (v₁ + b • v₂)) := by
   by_cases hab' : a = b
@@ -1646,11 +1725,46 @@ lemma line_par_open {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a < b) :
       module
 
 
+lemma seg_vec_mul {L₁ L₂ : Segment} (h : closed_hull L₁ ⊆ closed_hull L₂) :
+    ∃ t : ℝ, seg_vec L₁ = t • (seg_vec L₂) := by
+  have ⟨α0, hα0, h0⟩ := h (corner_in_closed_hull (P := L₁) (i := 0))
+  have ⟨α1, hα1, h1⟩ := h (corner_in_closed_hull (P := L₁) (i := 1))
+  use α1 1 - α0 1
+  have hα00 := simplex_closed_sub_fin2 hα0 0
+  have hα10 := simplex_closed_sub_fin2 hα1 0
+  simp [seg_vec, ←h0, ←h1,hα00, hα10]
+  module
+
+
 
 lemma seg_par {L₁ L₂ : Segment} (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂) :
     ∃ a b, closed_hull L₂ = line_par (L₁ 0) (seg_vec L₁) '' (Set.Icc a b : Set ℝ) := by
-
-  sorry
+  have ⟨t, ht⟩ := seg_vec_mul h₂
+  have htn : t ≠ 0 := by
+    intro hcontra
+    rw [hcontra, zero_smul] at ht
+    exact h₁ ((seg_vec_zero_iff L₁).mp ht)
+  have ⟨k, hk⟩ := seg_vec_co (x := L₂ 0) (y := L₁ 0) corner_in_closed_hull (h₂ corner_in_closed_hull)
+  by_cases htnonneg : 0 ≤ t
+  · have htpos : 0 < t := lt_of_le_of_ne htnonneg htn.symm
+    simp_rw [ht, line_par_scalar_Icc htpos, hk, line_par_trans_Icc, closed_segment_interval_im]
+    use (-k)/t, (1-k)/t
+    unfold line_par
+    have h0 : (t * (-k / t) + k) = 0 := by
+      field_simp
+      ring
+    have h1 : (t * ((1 - k) / t) + k) = 1 := by
+      field_simp
+    rw [h0, h1]
+  · simp_rw [ht, line_par_scalar_Icc' (by linarith), hk, line_par_trans_Icc, closed_segment_interval_im]
+    use (1-k)/t, (-k)/t
+    unfold line_par
+    have h0 : (t * (-k / t) + k) = 0 := by
+      field_simp
+      ring
+    have h1 : (t * ((1 - k) / t) + k) = 1 := by
+      field_simp
+    rw [h0, h1]
 
 lemma seg_par_open_hull {L : Segment} {a b : ℝ} {v₁ v₂ : ℝ²} (hab : a < b)
     (hc : closed_hull L = line_par v₁ v₂ '' (Set.Icc a b : Set ℝ)) :
