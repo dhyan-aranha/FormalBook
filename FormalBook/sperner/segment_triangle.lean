@@ -1246,19 +1246,8 @@ by_cases hzw : z = w
   tauto_set
 
 
-/- This lemma is ridiculous. See proof below.-/
-lemma corrollary_closed_in_clopen_right {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
-(hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
-by_contra hcontra
-have hv : v ∈ closed_hull (to_segment v w) \ {v} := by
-  tauto_set
-have hv' :  v ∉ closed_hull (to_segment v w) \ {v} := by
-  simp_all only [ne_eq, Set.mem_diff, Set.mem_singleton_iff, not_true_eq_false, and_false]
-contradiction
-
-
-lemma corrollary_closed_in_clopen_right₂ {v z w : ℝ²} (hvw : v ≠ w) (hz: z ∈ closed_hull (to_segment v w) \ {v})
-(hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
+lemma corrollary_closed_in_clopen_right {v z w : ℝ²}
+  (hclop: closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} ): v ∉ closed_hull (to_segment z w) := by
   by_contra h
   have this := hclop h
   simp at this
@@ -1266,7 +1255,6 @@ lemma corrollary_closed_in_clopen_right₂ {v z w : ℝ²} (hvw : v ≠ w) (hz: 
 
 lemma middle_intersection_empty {u v w : ℝ²} {h : colin u v w} :
  closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v}) = ∅ := by
-
 by_contra hcontra
 have hmid : Set.Nonempty (closed_hull (to_segment u v) ∩ (closed_hull (to_segment v w) \ {v})) := by
   exact Set.nonempty_iff_ne_empty.mpr hcontra
@@ -1296,7 +1284,7 @@ have hg : closed_hull (to_segment z w) ⊆ closed_hull (to_segment v w) \ {v} :=
   exact (middle_not_boundary_colin h).2
   apply hzvwv
 have hg' : v ∉ closed_hull (to_segment z w) := by
-  exact corrollary_closed_in_clopen_right (middle_not_boundary_colin h).2 hzvwv hg
+  exact corrollary_closed_in_clopen_right hg
 contradiction
 
 
