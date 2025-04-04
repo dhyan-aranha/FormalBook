@@ -393,6 +393,9 @@ lemma green01 : coloring v ![0,1] = Color.Green := by
 lemma blue10 : coloring v ![1,0] = Color.Blue := by
   simp [coloring, Fin.isValue, map_one, ge_iff_le]
 
+lemma blue11 : coloring v ![1,1] = Color.Blue := by
+  simp [coloring]
+
 --TODO: Show that the area of a Color triangle cannot be zero or 1/n for n odd (here we will
 -- need the fact that v(1/2) > 1).
 

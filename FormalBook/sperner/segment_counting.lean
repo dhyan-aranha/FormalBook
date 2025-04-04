@@ -1066,10 +1066,10 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
 -- Shorthand for defining an element of ℝ²
 def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
-def bottom : Segment := fun | 0 => (p 0 0) | 1 => (p 1 0)
-def top : Segment := fun | 0 => (p 0 1) | 1 => (p 1 1)
-def left : Segment := fun | 0 => (p 0 0) | 1 => (p 0 1)
-def right : Segment := fun | 0 => (p 1 0) | 1 => (p 1 1)
+def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
+def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
+def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
+def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
 
 def square_boundary_big : Fin 4 → Segment := fun
   | 0 => bottom
@@ -1502,10 +1502,43 @@ lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
   sorry
 
 lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_big i) = 0 := by
-  sorry
+  have hR : coloring v (p 0 0) = Color.Red := by
+    rw [← red00 v]
+    rfl
+  have hB1 : coloring v (p 1 0) = Color.Blue := by
+    rw [← blue10 v]
+    rfl
+  have hB2 : coloring v (p 1 1) = Color.Blue := by
+    rw [← blue11 v]
+    rfl
+  have hG : coloring v (p 0 1) = Color.Green := by
+    rw [← green01 v]
+    rfl
+  unfold isPurple square_boundary_big top left right bottom
+  intro hi
+  fin_cases i
+  tauto
+  all_goals (
+    simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
+  )
+  · simp_all only [Fin.mk_one, Fin.isValue, ne_eq, one_ne_zero, not_false_eq_true, reduceCtorEq, imp_self, implies_true,
+    and_self]
+  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
+    not_true_eq_false, implies_true, and_self]
+  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
+    not_true_eq_false, implies_true, imp_self, and_self]
 
-lemma purple_computation1 : isPurple v (square_boundary_big 0) = 2 := by
-  sorry
+lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
+  unfold isPurple square_boundary_big bottom
+  simp only [ite_eq_left_iff, not_or, not_and, zero_ne_one, imp_false, Classical.not_imp,
+    Decidable.not_not]
+  have hR : coloring v (p 0 0) = Color.Red := by
+    rw [← red00 v]
+    rfl
+  have hB : coloring v (p 1 0) = Color.Blue := by
+    rw [← blue10 v]
+    rfl
+  tauto
 
 theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
     purple_sum v Δ % 4 = 2 := by
@@ -1570,9 +1603,20 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
     exact unit_square_boundary_intersections i j hij
   rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold square_boundary_big_set
-
-
-  sorry
+  have hTop : (⊤ : Finset (Fin 4)) = {0, 1, 2, 3} := by rfl
+  --have hDisj : (⊤ : Set (Fin 4)).PairwiseDisjoint fun i ↦ {square_boundary_big i} := by
+  --  sorry
+  have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
+      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) sorry := by
+    sorry
+  rw [hDisjSum, sum_disjiUnion]
+  simp only [top_eq_univ, sum_singleton]
+  simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,
+    mem_insert, zero_ne_one, Fin.reduceEq, mem_singleton, or_self, not_false_eq_true, sum_insert, sum_singleton]
+  rw [purple_computation1]
+  repeat rw [purple_computation0]
+  ring
+  all_goals decide
 
 
 theorem segment_sum_rainbow_triangle (Δ : Finset Triangle):
