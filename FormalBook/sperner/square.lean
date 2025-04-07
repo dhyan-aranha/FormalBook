@@ -380,9 +380,19 @@ noncomputable def top_face: Segment := fun | 0 => v 0 1 | 1 => v 1 1
 
 noncomputable def bottom_face: Segment := fun | 0 => v 0 0 | 1 => v 1 0
 
-noncomputable def left_face: Segment := fun | 0 => v 0 0 | 1 => v 0 1
+noncomputable def left_face: Segment := fun | 0 => v 0 1 | 1 => v 0 0
 
 noncomputable def right_face: Segment := fun | 0 => v 1 0 | 1 => v 1 1
+
+def square_boundary_big : Fin 4 → Segment := fun
+  | 0 => (fun | 0 => v 0 0 | 1 => v 1 0)
+  | 1 => (fun | 0 => v 1 0 | 1 => v 1 1)
+  | 2 => (fun | 0 => v 1 1 | 1 => v 0 1)
+  | 3 => (fun | 0 => v 0 1 | 1 => v 0 0)
+
+noncomputable def square_boundary_big_set : Finset Segment :=
+   @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
+
 
 lemma top_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
  (hx: x ∈ closed_hull unit_square)
@@ -436,6 +446,7 @@ constructor
     ext i
     fin_cases i
     · simp [top_face, v]
+
     · simp [top_face, v]
       apply hx1.symm
   unfold closed_hull
@@ -583,3 +594,7 @@ simp_all only [Set.mem_inter_iff, Set.mem_union, not_or, or_self, and_false]
 
 lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
 unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
+
+lemma square_boundary_segments_in_boundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆
+    boundary unit_square := by
+  sorry
