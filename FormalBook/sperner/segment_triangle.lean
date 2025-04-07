@@ -1315,11 +1315,6 @@ tauto_set
 
 
 
-
-
-
-
-
 lemma clopen_left {u v w : ℝ²}{h: colin u v w} : closed_hull (to_segment u w) \ closed_hull (to_segment u v)
 = closed_hull (to_segment v w) \ {v} := by
   ext z
