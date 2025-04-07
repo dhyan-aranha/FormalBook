@@ -1082,6 +1082,10 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
 -- Shorthand for defining an element of ℝ²
 def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
+-- def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
+-- def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
+-- def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
+-- def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
 
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
@@ -1492,6 +1496,18 @@ lemma unit_square_boundary_injective {i j : Fin 4}
       simp_all [p]
     )
 
+lemma unit_square_cover_segment_set
+    {S : Finset Triangle}
+    (hCover : is_cover (closed_hull unit_square) S.toSet) :
+    ∀ {i}, square_boundary_big i ∈ segment_set (triangulation_points S) := by
+  intro i
+  rw [segment_set]
+  simp only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists]
+  use square_boundary_big i 0, square_boundary_big i 1
+  simp only [Fin.isValue, segment_rfl, and_true]
+
+  sorry
+
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
   ext x
@@ -1508,6 +1524,7 @@ lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
   have h3i0 :=  congrFun h3i 0; have h3i1 := congrFun h3i 1
   clear h4i h3i h3j hh2help
   fin_cases i <;> fin_cases j <;> simp[p] at * <;> linarith
+
 
 lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
     closed_hull S ⊆ closed_hull L := by
@@ -1634,15 +1651,17 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
 
       sorry
     have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
-
-      sorry -- use square_boundary_segments_in_boundary
+      sorry
     intro S hS
     rw [mem_filter]
     constructor
     · -- I think this needs that the triangulation points of a covering must include
       -- the corners of the square.
-
-      sorry
+      rw [square_boundary_big_set, mem_biUnion] at hS
+      have ⟨_, _, hST⟩ := hS
+      rw [mem_singleton] at hST
+      rw [hST]
+      exact unit_square_cover_segment_set hCovering
     · suffices h_disj : Disjoint (boundary unit_square) (open_hull unit_square)
       · tauto_set
       · unfold boundary
@@ -1662,8 +1681,6 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold square_boundary_big_set
   have hTop : (⊤ : Finset (Fin 4)) = {0, 1, 2, 3} := by rfl
-  --have hDisj : (⊤ : Set (Fin 4)).PairwiseDisjoint fun i ↦ {square_boundary_big i} := by
-  --  sorry
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
       Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
     refine Eq.symm (disjiUnion_eq_biUnion ⊤ (fun i ↦ {square_boundary_big i}) ?_)

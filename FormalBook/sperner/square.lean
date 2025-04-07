@@ -365,11 +365,16 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
 
 
 lemma cover_imples_corner_in_triangle
-    (S : Finset Triangle)
+    {S : Finset Triangle}
     (hCover : is_cover (closed_hull unit_square) S.toSet) :
     ∀ i, ∃ T ∈ S, ∃ j, unit_square i = T j := by
   by_contra h_contra
   push_neg at h_contra
+  have ⟨c, hc⟩ := h_contra
+  have hcIn : unit_square c ∈ closed_hull unit_square := corner_in_closed_hull
+  have ⟨T, hTsub, hT⟩  := is_cover_includes hCover hcIn
+  specialize hc T hTsub
+  have ⟨L, hLnTtriv, hOpen, hCsub⟩ := triangle_direction_sub hT hc
 
   sorry
 
