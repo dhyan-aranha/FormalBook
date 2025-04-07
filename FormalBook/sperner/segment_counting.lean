@@ -1600,7 +1600,9 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
               exact hBoundary i
             calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
                              _ ⊆ boundary unit_square := by exact hUnion
-        · sorry
+        · apply unit_square_is_convex_open
+          sorry
+          sorry
     · intro _ _
       rfl
   rw [h]
@@ -1613,7 +1615,8 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
 
       sorry
     have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
-      sorry
+
+      sorry -- use square_boundary_segments_in_boundary
     intro S hS
     rw [mem_filter]
     constructor

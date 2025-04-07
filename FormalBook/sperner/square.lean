@@ -599,6 +599,15 @@ simp_all only [Set.mem_inter_iff, Set.mem_union, not_or, or_self, and_false]
 lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
 unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
 
+lemma unit_square_is_convex' {S : Segment} (hS : closed_hull S ⊆ boundary unit_square) :
+    ∃ i : Fin 4, closed_hull S ⊆ closed_hull (square_boundary_big i) := by
+  sorry
+
+lemma unit_square_is_convex_open {S : Segment} (hS : closed_hull S ⊆ boundary unit_square)
+    (hNondegen : S 0 ≠ S 1) :
+    ∃ i : Fin 4, open_hull S ⊆ open_hull (square_boundary_big i) := by
+  sorry
+
 lemma square_boundary_segments_in_boundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆
     boundary unit_square := by
-  sorry
+  sorry -- This follows from boundary_union_of_faces
