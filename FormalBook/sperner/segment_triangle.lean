@@ -1872,3 +1872,8 @@ lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull 
     ∃ L : Segment, L 0 ≠ L 1 ∧ x ∈ open_hull L ∧ closed_hull L ⊆ closed_hull T := by
 
   sorry
+
+
+lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²} (hx : x ∈ open_hull T) :
+    ∃ ε > 0, x + ε • y ∈ open_hull T := by
+  sorry

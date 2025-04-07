@@ -142,8 +142,6 @@ lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_hull un
   simp_rw [open_unit_square_eq]
   sorry
 
-
-
 lemma el_boundary_square_triangle_dir {x : ℝ²} (hx : x ∈ boundary unit_square):
     ∃ σ ∈ ({-1,1} : Finset ℝ), ∀ (Δ : Triangle), (det Δ ≠ 0) →
     (closed_hull Δ ⊆ closed_hull unit_square) → (∃ i, x ∈ open_hull (Tside Δ i))
@@ -207,7 +205,9 @@ lemma el_boundary_square_triangle_dir {x : ℝ²} (hx : x ∈ boundary unit_squa
       intro Δ hArea hΔP ⟨i,hSide⟩
       exact False.elim (hΔ Δ hArea hΔP i hSide)
 
-
+lemma boundary_leave_dir {x : ℝ²} (hx : x ∈ boundary unit_square) :
+    ∃ σ ∈ ({1, -1} : Finset ℝ), ∀ ε > 0, x + (σ * ε) • (v 1 1) ∉ closed_hull unit_square := by
+  sorry
 
 lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_disjoint_cover (closed_hull unit_square) (S : Set Triangle))
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment)
