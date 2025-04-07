@@ -1510,8 +1510,21 @@ lemma unit_square_cover_segment_set
 
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
+  ext x
+  have hh2help : 1 < 2 := by norm_num
+  simp only [Set.mem_inter_iff, Set.mem_empty_iff_false, iff_false, not_and]
+  intro h1
+  unfold square_boundary_big at *
+  rintro  ⟨ aj,h2j , h3j⟩
+  rcases h1 with ⟨ ai,h2i , h3i⟩
+  rcases h2j with ⟨h4j, h5j⟩
+  rcases h2i with ⟨h4i, h5i⟩
+  have h4i1:= h4i 1; have h4i2 := h4i 2
+  have h3j0 := congrFun h3j 0; have h3j1 := congrFun h3j 1
+  have h3i0 :=  congrFun h3i 0; have h3i1 := congrFun h3i 1
+  clear h4i h3i h3j hh2help
+  fin_cases i <;> fin_cases j <;> simp[p] at * <;> linarith
 
-  sorry
 
 lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
     closed_hull S ⊆ closed_hull L := by
