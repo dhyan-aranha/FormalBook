@@ -40,6 +40,13 @@ lemma is_cover_sub {n : ℕ} {S : Set (Fin n → ℝ²)} {X : Set ℝ²} (hCover
   rw [hCover]
   exact Set.subset_biUnion_of_mem hΔ
 
+lemma is_cover_includes {n : ℕ} {S : Set (Fin n → ℝ²)} {X : Set ℝ²} {x : ℝ²}
+    (hCover : is_cover X S) (hx : x ∈ X) : ∃ P ∈ S, x ∈ closed_hull P := by
+  unfold is_cover at hCover
+  rw [hCover] at hx
+  simp_all only [Set.mem_iUnion, exists_prop]
+
+
 lemma is_cover_open_el_imp_eq {n : ℕ} {S : Set (Fin n → ℝ²)} (hDisj : is_disjoint_polygon_set S)
   {Δ₁ Δ₂ : Fin n → ℝ²} (hΔ₁ : Δ₁ ∈ S) (hΔ₂ : Δ₂ ∈ S) {x : ℝ²} (hx₁ : x ∈ open_hull Δ₁)
   (hx₂ : x ∈ open_hull Δ₂) : Δ₁ = Δ₂ := by
