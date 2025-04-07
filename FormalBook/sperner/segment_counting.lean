@@ -1676,7 +1676,12 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
 
       sorry
     have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
-      sorry
+      intro L hL
+      unfold square_boundary_big_set at hL
+      simp only [top_eq_univ, mem_biUnion, mem_univ, mem_singleton, true_and] at hL
+      cases' hL with i hi
+      rw [hi]
+      exact square_boundary_segments_in_boundary i
     intro S hS
     rw [mem_filter]
     constructor
