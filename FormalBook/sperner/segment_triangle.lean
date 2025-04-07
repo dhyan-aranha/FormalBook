@@ -1875,5 +1875,5 @@ lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull 
 
 
 lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²} (hx : x ∈ open_hull T) :
-    ∃ ε > 0, x + ε • y ∈ open_hull T := by
+    ∃ (ε : ℝ), ε > 0 ∧ x + ε • y ∈ open_hull T := by
   sorry
