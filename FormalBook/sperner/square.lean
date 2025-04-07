@@ -402,6 +402,19 @@ def square_boundary_big : Fin 4 → Segment := fun
 noncomputable def square_boundary_big_set : Finset Segment :=
    @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
 
+lemma square_boundary_big_corners : ∀ i, ∀ j, ∃ k,
+    square_boundary_big i j = unit_square k := by
+  intro i j
+  fin_cases i <;> fin_cases j <;> simp
+  · exact ⟨0,rfl⟩
+  · exact ⟨1,rfl⟩
+  · exact ⟨1,rfl⟩
+  · exact ⟨2,rfl⟩
+  · exact ⟨2,rfl⟩
+  · exact ⟨3,rfl⟩
+  · exact ⟨3,rfl⟩
+  · exact ⟨0,rfl⟩
+
 
 lemma top_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
  (hx: x ∈ closed_hull unit_square)
