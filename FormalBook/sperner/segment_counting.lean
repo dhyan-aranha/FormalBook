@@ -1103,8 +1103,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
-  sorry
-/-    ext S
+    ext S
     constructor
     · intro hS
       simp only [top_eq_univ, mem_biUnion, mem_univ, true_and]
@@ -1287,8 +1286,9 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-
-        apply openSinTop
+        unfold top_face at openSinTop
+        -- apply openSinTop
+        sorry
 
       use 0
       unfold square_boundary_basic
@@ -1352,6 +1352,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
             tauto_set
           · apply S01
 
+        unfold bottom_face at openSinBot
         apply openSinBot
 
       use 1
@@ -1415,7 +1416,9 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-        apply openSinLeft
+        unfold left_face at openSinLeft
+        --apply openSinLeft
+        sorry
 
 
 
@@ -1480,14 +1483,16 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-        apply openSinRight
+        unfold right_face at openSinRight
+        -- apply openSinRight
+        sorry
 
     intro hS
     simp at hS
     cases' hS with i hi
     unfold square_boundary_basic at hi
     rw [mem_filter] at hi
-    apply hi.1-/
+    apply hi.1
 
 
 lemma unit_square_boundary_injective {i j : Fin 4}
@@ -1539,16 +1544,16 @@ lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
   sorry
 
 lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_big i) = 0 := by
-  have hR : coloring v (p 0 0) = Color.Red := by
+  have hR : coloring v (_root_.v 0 0) = Color.Red := by
     rw [← red00 v]
     rfl
-  have hB1 : coloring v (p 1 0) = Color.Blue := by
+  have hB1 : coloring v (_root_.v 1 0) = Color.Blue := by
     rw [← blue10 v]
     rfl
-  have hB2 : coloring v (p 1 1) = Color.Blue := by
+  have hB2 : coloring v (_root_.v 1 1) = Color.Blue := by
     rw [← blue11 v]
     rfl
-  have hG : coloring v (p 0 1) = Color.Green := by
+  have hG : coloring v (_root_.v 0 1) = Color.Green := by
     rw [← green01 v]
     rfl
   unfold isPurple square_boundary_big top left right bottom
@@ -1607,7 +1612,18 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
       · intro hS
         simp_all only [mem_filter, mem_biUnion, mem_univ, true_and, exists_and_left]
         constructor
-        · sorry
+        · have hInc : open_hull S ⊆ closed_hull S := open_sub_closed S
+          suffices h : closed_hull S ⊆ boundary unit_square
+          · tauto_set
+          · have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+              exact square_boundary_segments_in_boundary
+            have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
+                ⊆ boundary unit_square := by
+              simp only [Set.iUnion_subset_iff]
+              intro T i hT
+              exact hBoundary i
+            calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
+                             _ ⊆ boundary unit_square := by exact hUnion
         · sorry
     · intro _ _
       rfl
@@ -1615,13 +1631,20 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   have h1 : square_boundary_big_set ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
     unfold avoiding_segment_set
     have h_triangle_avoiding_set : (triangulation_avoiding_set Δ) ⊆ open_hull unit_square := by
+      unfold triangulation_avoiding_set
+      simp only [Set.iUnion_subset_iff]
+      intro T hT
+
       sorry
     have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
       sorry
     intro S hS
     rw [mem_filter]
     constructor
-    · sorry
+    · -- I think this needs that the triangulation points of a covering must include
+      -- the corners of the square.
+
+      sorry
     · suffices h_disj : Disjoint (boundary unit_square) (open_hull unit_square)
       · tauto_set
       · unfold boundary
@@ -1644,8 +1667,16 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   --have hDisj : (⊤ : Set (Fin 4)).PairwiseDisjoint fun i ↦ {square_boundary_big i} := by
   --  sorry
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
-      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) sorry := by
-    sorry
+      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
+    refine Eq.symm (disjiUnion_eq_biUnion ⊤ (fun i ↦ {square_boundary_big i}) ?_)
+    intro i _ j _ hij
+    simp only [disjoint_singleton_right, mem_singleton]
+    intro heq
+    exact hij.symm (unit_square_boundary_injective heq)
+  · intro i _ j _ hij
+    simp only [disjoint_singleton_right, mem_singleton]
+    intro heq
+    exact hij.symm (unit_square_boundary_injective heq)
   rw [hDisjSum, sum_disjiUnion]
   simp only [top_eq_univ, sum_singleton]
   simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,
