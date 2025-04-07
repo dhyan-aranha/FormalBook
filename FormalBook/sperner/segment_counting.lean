@@ -1612,20 +1612,33 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
           use j
       · intro hS
         simp_all only [mem_filter, mem_biUnion, mem_univ, true_and, exists_and_left]
-        constructor
-        · have hInc : open_hull S ⊆ closed_hull S := open_sub_closed S
+        have hClosedSinBoundary : closed_hull S ⊆ boundary unit_square := by
+          have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+              exact square_boundary_segments_in_boundary
+          have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
+              ⊆ boundary unit_square := by
+            simp only [Set.iUnion_subset_iff]
+            intro T i hT
+            exact hBoundary i
+          calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
+                           _ ⊆ boundary unit_square := by exact hUnion
+        have hopenSinBoundary : open_hull S ⊆ boundary unit_square := by
+          have hInc : open_hull S ⊆ closed_hull S := open_sub_closed S
           suffices h : closed_hull S ⊆ boundary unit_square
           · tauto_set
-          · have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
-              exact square_boundary_segments_in_boundary
-            have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
-                ⊆ boundary unit_square := by
-              simp only [Set.iUnion_subset_iff]
-              intro T i hT
-              exact hBoundary i
-            calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
-                             _ ⊆ boundary unit_square := by exact hUnion
-        · sorry
+          · exact hClosedSinBoundary
+        refine ⟨hopenSinBoundary, ?_⟩
+        apply unit_square_is_convex_open
+        · exact hClosedSinBoundary
+        · unfold basic_avoiding_segment_set avoiding_segment_set segment_set at hS
+          simp_all only [ne_eq, product_eq_sprod, mem_filter, mem_image, mem_product, Prod.exists, Fin.isValue]
+          obtain ⟨w, h⟩ := hS.1.1.1
+          obtain ⟨w_1, h⟩ := h
+          obtain ⟨left, right_3⟩ := h
+          obtain ⟨left, right_4⟩ := left
+          obtain ⟨left, right_5⟩ := left
+          subst right_3
+          exact right_4
     · intro _ _
       rfl
   rw [h]
