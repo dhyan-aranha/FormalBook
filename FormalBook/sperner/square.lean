@@ -207,7 +207,26 @@ lemma el_boundary_square_triangle_dir {x : ℝ²} (hx : x ∈ boundary unit_squa
 
 lemma boundary_leave_dir {x : ℝ²} (hx : x ∈ boundary unit_square) :
     ∃ σ ∈ ({1, -1} : Finset ℝ), ∀ ε > 0, x + (σ * ε) • (v 1 1) ∉ closed_hull unit_square := by
-  sorry
+  by_contra h_contra
+  push_neg at h_contra
+  have ⟨ε₁, hε₁pos, hx₁⟩ := h_contra 1 (by simp)
+  have ⟨ε₂, hε₂pos, hx₂⟩ := h_contra (-1) (by simp)
+  have ⟨i, hi⟩ := segment_in_boundary_square hx
+  specialize hi (to_segment (x + (1 * ε₁) • v 1 1) (x + (-1 * ε₂) • v 1 1)) ?_ ?_
+  · have hs   : ε₁ + ε₂ > 0 := by linarith
+    use fun | 0 => ε₂ / (ε₁ + ε₂) | 1 => ε₁ / (ε₁ + ε₂)
+    refine ⟨⟨?_,?_⟩ ,?_⟩
+    · intro i
+      fin_cases i <;> simp_all [div_pos]
+    · field_simp [add_comm]
+    · ext i
+      field_simp [to_segment, v]
+      fin_cases i <;> ring
+  · apply closed_hull_convex
+    intro i
+    fin_cases i <;> simpa only [to_segment]
+  · simp [seg_vec, to_segment, v] at hi
+    fin_cases i <;> (simp_all; linarith)
 
 lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_disjoint_cover (closed_hull unit_square) (S : Set Triangle))
     (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment)
