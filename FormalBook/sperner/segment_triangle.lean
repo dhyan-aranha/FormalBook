@@ -880,6 +880,9 @@ lemma closed_triangle_is_closed_dir {T : Triangle} (hdet : det T ≠ 0) {x y : �
   assumption
 
 
+
+
+
 -- Basic lemmas about collinearity
 
 
@@ -1857,3 +1860,15 @@ lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
     · simp [to_segment, fLh x₁]
     · simp [hxS, to_segment, fLh x₂]
   · exact hA _ (coe_mem (fL x₁))
+
+
+
+
+
+-- More lemmas about the triangle
+
+lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull T)
+    (hn : ∀ i, x ≠ T i) :
+    ∃ L : Segment, L 0 ≠ L 1 ∧ x ∈ open_hull L ∧ closed_hull L ⊆ closed_hull T := by
+
+  sorry

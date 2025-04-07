@@ -1606,7 +1606,10 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
     intro S hS
     rw [mem_filter]
     constructor
-    · sorry
+    · -- I think this needs that the triangulation points of a covering must include
+      -- the corners of the square.
+
+      sorry
     · suffices h_disj : Disjoint (boundary unit_square) (open_hull unit_square)
       · tauto_set
       · unfold boundary
@@ -1628,7 +1631,11 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   have hTop : (⊤ : Finset (Fin 4)) = {0, 1, 2, 3} := by rfl
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
       Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
-    sorry
+    refine Eq.symm (disjiUnion_eq_biUnion ⊤ (fun i ↦ {square_boundary_big i}) ?_)
+    intro i _ j _ hij
+    simp only [disjoint_singleton_right, mem_singleton]
+    intro heq
+    exact hij.symm (unit_square_boundary_injective heq)
   · intro i _ j _ hij
     simp only [disjoint_singleton_right, mem_singleton]
     intro heq

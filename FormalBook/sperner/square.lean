@@ -364,6 +364,13 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
     exact is_cover_open_el_imp_eq hCover.2 hΔ' hΔ hεΔ' hεΔ
 
 
+lemma cover_imples_corner_in_triangle
+    (S : Finset Triangle)
+    (hCover : is_cover (closed_hull unit_square) S.toSet) :
+    ∀ i, ∃ T, T ∈ S ∧ unit_square i
+
+
+
 -- In this part we show that the the faces of the unit square are faces in the sense of convex
 -- geometry. (see: https://en.wikipedia.org/wiki/Convex_set#Face_of_a_convex_set)
 -- there are many sorries introduced here but nearly all of them are repeated arguments of what has
