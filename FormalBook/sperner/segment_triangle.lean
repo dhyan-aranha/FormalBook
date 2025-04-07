@@ -1867,13 +1867,112 @@ lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
 
 -- More lemmas about the triangle
 
+lemma real_number_bound_aux {n : ℕ} {f g : Fin n → ℝ}
+    (h₁ : ∀ i, 0 < f i) (h₂ : ∀ ε > 0, ∃ i, ε * g i ≤ - f i) : False := by
+  revert h₂
+  simp only [gt_iff_lt, imp_false, not_forall, Classical.not_imp, not_exists, not_le]
+  by_cases hn : n = 0
+  · use 1, by linarith
+    intro contra
+    rw [hn] at contra
+    exact Fin.elim0 contra
+  · have hN : (image (fun i ↦ |g i|) univ).Nonempty := by
+      simp only [image_nonempty, univ_nonempty, univ_nonempty_iff, ←Fin.pos_iff_nonempty]
+      exact Nat.zero_lt_of_ne_zero hn
+    have hN₂ : (image (fun i ↦ f i) univ).Nonempty := by
+      simp only [image_nonempty, univ_nonempty, univ_nonempty_iff, ←Fin.pos_iff_nonempty]
+      exact Nat.zero_lt_of_ne_zero hn
+    let M := Finset.max' (Finset.image (fun i ↦ |g i|)  (univ : Finset (Fin n))) hN
+    let M₂ := Finset.min' (Finset.image (fun i ↦ f i)  (univ : Finset (Fin n))) hN₂
+    have Mrw : M =  Finset.max' (Finset.image (fun i ↦ |g i|)  (univ : Finset (Fin n))) hN := rfl
+    have Mrw₂ : M₂ = Finset.min' (Finset.image (fun i ↦ f i)  (univ : Finset (Fin n))) hN₂ := rfl
+    have hMg : ∀ i, |g i| ≤ M := by
+      rw [Mrw]
+      by_contra hc
+      push_neg at hc
+      have ⟨i, hci⟩ := hc
+      simp_rw [Finset.max'_lt_iff _ hN] at hc
+      have ⟨j,hj⟩:= hc
+      specialize hj (|g j|)
+      simp_all
+    have hMnonNeg : 0 ≤ M := le_trans (abs_nonneg _) (hMg ⟨0, Nat.zero_lt_of_ne_zero hn⟩)
+    have hM₂pos : 0 < M₂ := by
+      rw [Mrw₂, Finset.lt_min'_iff ]
+      intro fi h
+      rw [@mem_image] at h
+      have ⟨i, _,hi⟩ := h
+      rw [←hi]
+      exact h₁ i
+    by_cases hM₀ : M = 0
+    · use 1, by norm_num
+      intro i
+      specialize h₁ i
+      specialize hMg i
+      rw [hM₀] at hMg
+      have ht : g i = 0 := abs_nonpos_iff.mp hMg
+      rw [ht]
+      linarith
+    · have hMpos : 0 < M := lt_of_le_of_ne hMnonNeg fun a ↦ hM₀ (id (Eq.symm a))
+      use M₂ / (2 * M), (div_pos_iff_of_pos_left hM₂pos).mpr (by linarith)
+      intro i
+      rw [←mul_div_right_comm, lt_div_iff₀' (by linarith)]
+      by_cases hgi : 0 ≤ g i
+      · refine gt_of_ge_of_gt (b := 0) ?_ ?_
+        · exact (mul_nonneg_iff_of_pos_left hM₂pos).mpr hgi
+        · simp only [mul_neg, gt_iff_lt, Left.neg_neg_iff]
+          refine mul_pos (by linarith) (h₁ i)
+      · refine gt_of_ge_of_gt (b := - f i * M) ?_ ?_
+        · simp_rw [←neg_le_neg_iff (a := M₂ * g i)]
+          rw [mul_comm, neg_mul_eq_neg_mul, neg_mul_eq_neg_mul, InvolutiveNeg.neg_neg, mul_comm]
+          refine mul_le_mul_of_nonneg ?_ ?_ ?_ hMnonNeg
+          · rw [Mrw₂]
+            apply Finset.min'_le
+            rw [@mem_image]
+            use i
+            simp only [mem_univ, and_self]
+          · convert hMg i using 1
+            refine Eq.symm (abs_of_neg (by linarith))
+          · exact le_of_lt hM₂pos
+        · simp_rw [←neg_lt_neg_iff (a := -f i * M)]
+          simp only [neg_mul, neg_neg, mul_neg]
+          rw [mul_comm (a := 2 * M)]
+          gcongr
+          · exact h₁ i
+          · linarith
+
+
+example {a b c : ℝ} (ha : a < b) (hb : a ≤ b) : - - a = a  := by
+  exact InvolutiveNeg.neg_neg a
+
+
+lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²}
+    (hx : x ∈ open_hull T) : ∃ (ε : ℝ), ε > 0 ∧ x + ε • y ∈ open_hull T := by
+  by_contra hcontra
+  push_neg at hcontra
+  have habsurd : ∀ (ε : ℝ), ε > 0 → ∃ i, Tco T (x + ε • y) i ≤ 0 := by
+    by_contra hc
+    push_neg at hc
+    have ⟨ε, hε, hi⟩ := hc
+    apply hcontra ε hε
+    rwa [open_triangle_iff hnonDeg]
+  have habsurd₂ : ∀ ε > 0, ∃ i, ε * det₂ (Oside T i) y / det T ≤ -Tco T x i := by
+    intro ε hε
+    have ⟨l, hl⟩ := habsurd ε hε
+    use l
+    rw [Tco_line] at hl
+    linarith
+  rw [open_triangle_iff hnonDeg] at hx
+  apply real_number_bound_aux hx (g := fun i ↦ det₂ (Oside T i) y / det T)
+  intro ε hε
+  have ⟨l, hl⟩ := habsurd ε hε
+  use l
+  rw [Tco_line] at hl
+  rw [mul_div]
+  linarith
+
+
 lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull T)
     (hn : ∀ i, x ≠ T i) :
     ∃ L : Segment, L 0 ≠ L 1 ∧ x ∈ open_hull L ∧ closed_hull L ⊆ closed_hull T := by
 
-  sorry
-
-
-lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²} (hx : x ∈ open_hull T) :
-    ∃ (ε : ℝ), ε > 0 ∧ x + ε • y ∈ open_hull T := by
   sorry
