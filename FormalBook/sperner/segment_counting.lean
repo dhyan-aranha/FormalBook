@@ -1523,16 +1523,16 @@ lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
   sorry
 
 lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_big i) = 0 := by
-  have hR : coloring v (p 0 0) = Color.Red := by
+  have hR : coloring v (_root_.v 0 0) = Color.Red := by
     rw [← red00 v]
     rfl
-  have hB1 : coloring v (p 1 0) = Color.Blue := by
+  have hB1 : coloring v (_root_.v 1 0) = Color.Blue := by
     rw [← blue10 v]
     rfl
-  have hB2 : coloring v (p 1 1) = Color.Blue := by
+  have hB2 : coloring v (_root_.v 1 1) = Color.Blue := by
     rw [← blue11 v]
     rfl
-  have hG : coloring v (p 0 1) = Color.Green := by
+  have hG : coloring v (_root_.v 0 1) = Color.Green := by
     rw [← green01 v]
     rfl
   unfold isPurple square_boundary_big
@@ -1542,9 +1542,9 @@ lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_
   all_goals (
     simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
   )
-  · sorry-- simp_all
-  · sorry--simp_all
-  · sorry--simp_all
+  · simp_all
+  · simp_all
+  · simp_all
 
 lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
   unfold isPurple square_boundary_big
