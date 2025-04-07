@@ -1082,16 +1082,16 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
 -- Shorthand for defining an element of ℝ²
 def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
-def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
-def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
-def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
-def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
+-- def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
+-- def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
+-- def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
+-- def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
 
 def square_boundary_big : Fin 4 → Segment := fun
-  | 0 => bottom
-  | 1 => left
-  | 2 => top
-  | 3 => right
+  | 0 => (fun | 0 => p 0 0 | 1 => p 1 0)
+  | 1 => (fun | 0 => p 1 0 | 1 => p 1 1)
+  | 2 => (fun | 0 => p 1 1 | 1 => p 0 1)
+  | 3 => (fun | 0 => p 0 1 | 1 => p 0 0)
 
 noncomputable def square_boundary_big_set : Finset Segment :=
    @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
@@ -1286,7 +1286,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-
+        unfold top_face at openSinTop
         apply openSinTop
 
       use 0
@@ -1488,6 +1488,17 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     rw [mem_filter] at hi
     apply hi.1
 
+
+lemma unit_square_boundary_injective {i j : Fin 4}
+    (h : square_boundary_big i = square_boundary_big j) : i = j := by
+  have h₀ := congrFun h 0
+  fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, p] <;>
+    (
+      have g₀ := congrFun h₀ 0
+      have g₁ := congrFun h₀ 1
+      simp_all [p]
+    )
+
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
 
@@ -1527,22 +1538,19 @@ lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_
   have hG : coloring v (p 0 1) = Color.Green := by
     rw [← green01 v]
     rfl
-  unfold isPurple square_boundary_big top left right bottom
+  unfold isPurple square_boundary_big
   intro hi
   fin_cases i
   tauto
   all_goals (
     simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
   )
-  · simp_all only [Fin.mk_one, Fin.isValue, ne_eq, one_ne_zero, not_false_eq_true, reduceCtorEq, imp_self, implies_true,
-    and_self]
-  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
-    not_true_eq_false, implies_true, and_self]
-  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
-    not_true_eq_false, implies_true, imp_self, and_self]
+  · simp_all
+  · simp_all
+  · simp_all
 
 lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
-  unfold isPurple square_boundary_big bottom
+  unfold isPurple square_boundary_big
   simp only [ite_eq_left_iff, not_or, not_and, zero_ne_one, imp_false, Classical.not_imp,
     Decidable.not_not]
   have hR : coloring v (p 0 0) = Color.Red := by
@@ -1637,7 +1645,10 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
       Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
     sorry
-  sorry
+  · intro i _ j _ hij
+    simp only [disjoint_singleton_right, mem_singleton]
+    intro heq
+    exact hij.symm (unit_square_boundary_injective heq)
   rw [hDisjSum, sum_disjiUnion]
   simp only [top_eq_univ, sum_singleton]
   simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,
