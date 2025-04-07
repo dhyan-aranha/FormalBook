@@ -1103,8 +1103,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
-  sorry
-/-    ext S
+    ext S
     constructor
     · intro hS
       simp only [top_eq_univ, mem_biUnion, mem_univ, true_and]
@@ -1487,7 +1486,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     cases' hS with i hi
     unfold square_boundary_basic at hi
     rw [mem_filter] at hi
-    apply hi.1-/
+    apply hi.1
 
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
@@ -1584,7 +1583,20 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
       · intro hS
         simp_all only [mem_filter, mem_biUnion, mem_univ, true_and, exists_and_left]
         constructor
-        · sorry
+        · have hInc : open_hull S ⊆ closed_hull S := open_sub_closed S
+          suffices h : closed_hull S ⊆ boundary unit_square
+          · tauto_set
+          · have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+              intro i
+
+              sorry
+            have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
+                ⊆ boundary unit_square := by
+              simp only [Set.iUnion_subset_iff]
+              intro T i hT
+              exact hBoundary i
+            calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
+                             _ ⊆ boundary unit_square := by exact hUnion
         · sorry
     · intro _ _
       rfl
@@ -1592,6 +1604,10 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   have h1 : square_boundary_big_set ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
     unfold avoiding_segment_set
     have h_triangle_avoiding_set : (triangulation_avoiding_set Δ) ⊆ open_hull unit_square := by
+      unfold triangulation_avoiding_set
+      simp only [Set.iUnion_subset_iff]
+      intro T hT
+
       sorry
     have h_square_boundary : ∀ L ∈ square_boundary_big_set, closed_hull L ⊆ boundary unit_square := by
       sorry
@@ -1618,11 +1634,10 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold square_boundary_big_set
   have hTop : (⊤ : Finset (Fin 4)) = {0, 1, 2, 3} := by rfl
-  --have hDisj : (⊤ : Set (Fin 4)).PairwiseDisjoint fun i ↦ {square_boundary_big i} := by
-  --  sorry
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
-      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) sorry := by
+      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
     sorry
+  sorry
   rw [hDisjSum, sum_disjiUnion]
   simp only [top_eq_univ, sum_singleton]
   simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,

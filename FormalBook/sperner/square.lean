@@ -21,6 +21,23 @@ open Finset
 
 def unit_square : Fin 4 → ℝ² := (fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1)
 
+def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
+
+def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
+def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
+def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
+def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
+
+def square_boundary_big : Fin 4 → Segment := fun
+  | 0 => bottom
+  | 1 => left
+  | 2 => top
+  | 3 => right
+
+noncomputable def square_boundary_big_set : Finset Segment :=
+   @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
+
+
 lemma closed_unit_square_eq : closed_hull unit_square = {x | ∀ i, 0 ≤ x i ∧ x i ≤ 1} := by
   ext x
   constructor
@@ -576,3 +593,6 @@ simp_all only [Set.mem_inter_iff, Set.mem_union, not_or, or_self, and_false]
 
 lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
 unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
+
+lemma square_boundary_segments_in_boundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+  sorry
