@@ -1082,16 +1082,16 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
 -- Shorthand for defining an element of ℝ²
 def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
--- def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
--- def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
--- def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
--- def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
+def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
+def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
+def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
+def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
 
 def square_boundary_big : Fin 4 → Segment := fun
-  | 0 => (fun | 0 => p 0 0 | 1 => p 1 0)
-  | 1 => (fun | 0 => p 1 0 | 1 => p 1 1)
-  | 2 => (fun | 0 => p 1 1 | 1 => p 0 1)
-  | 3 => (fun | 0 => p 0 1 | 1 => p 0 0)
+  | 0 => bottom
+  | 1 => left
+  | 2 => top
+  | 3 => right
 
 noncomputable def square_boundary_big_set : Finset Segment :=
    @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
@@ -1502,8 +1502,20 @@ lemma unit_square_boundary_injective {i j : Fin 4}
 
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
-
-  sorry
+  ext x
+  have hh2help : 1 < 2 := by norm_num
+  simp only [Set.mem_inter_iff, Set.mem_empty_iff_false, iff_false, not_and]
+  intro h1
+  unfold square_boundary_big bottom left top right at *
+  rintro  ⟨ aj,h2j , h3j⟩
+  rcases h1 with ⟨ ai,h2i , h3i⟩
+  rcases h2j with ⟨h4j, h5j⟩
+  rcases h2i with ⟨h4i, h5i⟩
+  have h4i1:= h4i 1; have h4i2 := h4i 2
+  have h3j0 := congrFun h3j 0; have h3j1 := congrFun h3j 1
+  have h3i0 :=  congrFun h3i 0; have h3i1 := congrFun h3i 1
+  clear h4i h3i h3j hh2help
+  fin_cases i <;> fin_cases j <;> simp[p] at * <;> linarith
 
 lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
     closed_hull S ⊆ closed_hull L := by
@@ -1539,19 +1551,22 @@ lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_
   have hG : coloring v (p 0 1) = Color.Green := by
     rw [← green01 v]
     rfl
-  unfold isPurple square_boundary_big
+  unfold isPurple square_boundary_big top left right bottom
   intro hi
   fin_cases i
   tauto
   all_goals (
     simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
   )
-  · simp_all
-  · simp_all
-  · simp_all
+  · simp_all only [Fin.mk_one, Fin.isValue, ne_eq, one_ne_zero, not_false_eq_true, reduceCtorEq, imp_self, implies_true,
+    and_self]
+  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
+    not_true_eq_false, implies_true, and_self]
+  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
+    not_true_eq_false, implies_true, imp_self, and_self]
 
 lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
-  unfold isPurple square_boundary_big
+  unfold isPurple square_boundary_big bottom
   simp only [ite_eq_left_iff, not_or, not_and, zero_ne_one, imp_false, Classical.not_imp,
     Decidable.not_not]
   have hR : coloring v (p 0 0) = Color.Red := by
@@ -1626,13 +1641,11 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
   rw [segment_sum_splitting square_boundary_big_set (triangulation_avoiding_set Δ) (triangulation_points Δ) h1 h2 (isPurple v) (isPurple_two_mod_function v) (isPurple_symm_function v)]
   unfold square_boundary_big_set
   have hTop : (⊤ : Finset (Fin 4)) = {0, 1, 2, 3} := by rfl
+  --have hDisj : (⊤ : Set (Fin 4)).PairwiseDisjoint fun i ↦ {square_boundary_big i} := by
+  --  sorry
   have hDisjSum : (⊤ : Finset (Fin 4)).biUnion (fun i ↦ {square_boundary_big i}) =
-      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) ?_ := by
+      Finset.disjiUnion (⊤ : Finset (Fin 4)) (fun i ↦ {square_boundary_big i}) sorry := by
     sorry
-  · intro i _ j _ hij
-    simp only [disjoint_singleton_right, mem_singleton]
-    intro heq
-    exact hij.symm (unit_square_boundary_injective heq)
   rw [hDisjSum, sum_disjiUnion]
   simp only [top_eq_univ, sum_singleton]
   simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,
