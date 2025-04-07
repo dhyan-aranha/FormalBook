@@ -1082,19 +1082,6 @@ lemma segment_sum_splitting (A : Finset Segment) (AVOID : Set ℝ²) (X : Finset
 -- Shorthand for defining an element of ℝ²
 def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
-def bottom : Segment := fun | 0 => p 0 0 | 1 => p 1 0
-def top : Segment := fun | 0 => p 0 1 | 1 => p 1 1
-def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
-def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
-
-def square_boundary_big : Fin 4 → Segment := fun
-  | 0 => bottom
-  | 1 => left
-  | 2 => top
-  | 3 => right
-
-noncomputable def square_boundary_big_set : Finset Segment :=
-   @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
 
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
@@ -1511,7 +1498,7 @@ lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
   have hh2help : 1 < 2 := by norm_num
   simp only [Set.mem_inter_iff, Set.mem_empty_iff_false, iff_false, not_and]
   intro h1
-  unfold square_boundary_big bottom left top right at *
+  unfold square_boundary_big at *
   rintro  ⟨ aj,h2j , h3j⟩
   rcases h1 with ⟨ ai,h2i , h3i⟩
   rcases h2j with ⟨h4j, h5j⟩
@@ -1556,22 +1543,19 @@ lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_
   have hG : coloring v (_root_.v 0 1) = Color.Green := by
     rw [← green01 v]
     rfl
-  unfold isPurple square_boundary_big top left right bottom
+  unfold isPurple square_boundary_big
   intro hi
   fin_cases i
   tauto
   all_goals (
     simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
   )
-  · simp_all only [Fin.mk_one, Fin.isValue, ne_eq, one_ne_zero, not_false_eq_true, reduceCtorEq, imp_self, implies_true,
-    and_self]
-  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
-    not_true_eq_false, implies_true, and_self]
-  · simp_all only [Fin.reduceFinMk, Fin.isValue, ne_eq, Fin.reduceEq, not_false_eq_true, reduceCtorEq,
-    not_true_eq_false, implies_true, imp_self, and_self]
+  · simp_all
+  · simp_all
+  · simp_all
 
 lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
-  unfold isPurple square_boundary_big bottom
+  unfold isPurple square_boundary_big
   simp only [ite_eq_left_iff, not_or, not_and, zero_ne_one, imp_false, Classical.not_imp,
     Decidable.not_not]
   have hR : coloring v (p 0 0) = Color.Red := by
