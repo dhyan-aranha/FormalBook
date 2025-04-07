@@ -601,8 +601,20 @@ lemma isPurple_symm_function : symm_fun (isPurple v) := by
 noncomputable def triangulation_points (Δ : Finset Triangle) : Finset ℝ² :=
   Finset.biUnion Δ (fun T ↦ {T 0, T 1, T 2})
 
+
+-- This definition might be better so
+-- TODO: Change to this
 noncomputable def triangulation_points₂ (Δ : Finset Triangle) : Finset ℝ² :=
   Finset.biUnion Δ (fun T ↦ (Finset.image (fun i ↦ T i) Finset.univ))
+
+
+lemma triangulation_points_mem {Δ : Finset Triangle} {T : Triangle} (hT : T ∈ Δ)
+    : ∀ i, T i ∈ triangulation_points Δ := by
+  intro i
+  simp only [triangulation_points, Fin.isValue, mem_biUnion, mem_insert, mem_singleton]
+  use T, hT
+  fin_cases i <;> simp
+
 
 -- The union of the interiors of the triangles of a triangulation
 noncomputable def triangulation_avoiding_set (Δ : Finset Triangle) : Set ℝ² :=
@@ -1496,6 +1508,8 @@ lemma unit_square_boundary_injective {i j : Fin 4}
       simp_all [p]
     )
 
+
+
 lemma unit_square_cover_segment_set
     {S : Finset Triangle}
     (hCover : is_cover (closed_hull unit_square) S.toSet) :
@@ -1505,8 +1519,19 @@ lemma unit_square_cover_segment_set
   simp only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists]
   use square_boundary_big i 0, square_boundary_big i 1
   simp only [Fin.isValue, segment_rfl, and_true]
-
-  sorry
+  refine ⟨⟨?_,?_⟩,?_⟩
+  · have ⟨k,hk⟩ := square_boundary_big_corners i 0
+    rw [hk]
+    have ⟨T,hT,⟨j,Tj⟩ ⟩  := cover_imples_corner_in_triangle hCover k
+    rw [Tj]
+    exact triangulation_points_mem hT _
+  · have ⟨k,hk⟩ := square_boundary_big_corners i 1
+    rw [hk]
+    have ⟨T,hT,⟨j,Tj⟩ ⟩  := cover_imples_corner_in_triangle hCover k
+    rw [Tj]
+    exact triangulation_points_mem hT _
+  ·
+    sorry
 
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
@@ -1615,13 +1640,13 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
         have hClosedSinBoundary : closed_hull S ⊆ boundary unit_square := by
           have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
               exact square_boundary_segments_in_boundary
-          have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
-              ⊆ boundary unit_square := by
-            simp only [Set.iUnion_subset_iff]
-            intro T i hT
-            exact hBoundary i
-          calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
-                           _ ⊆ boundary unit_square := by exact hUnion
+            have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
+                ⊆ boundary unit_square := by
+              simp only [Set.iUnion_subset_iff]
+              intro T i hT
+              exact hBoundary i
+            calc closed_hull S ⊆ ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i) := by exact hS.2
+                             _ ⊆ boundary unit_square := by exact hUnion
         have hopenSinBoundary : open_hull S ⊆ boundary unit_square := by
           have hInc : open_hull S ⊆ closed_hull S := open_sub_closed S
           suffices h : closed_hull S ⊆ boundary unit_square
