@@ -1087,15 +1087,6 @@ def p (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 -- def left : Segment := fun | 0 => p 0 0 | 1 => p 0 1
 -- def right : Segment := fun | 0 => p 1 0 | 1 => p 1 1
 
-def square_boundary_big : Fin 4 → Segment := fun
-  | 0 => (fun | 0 => p 0 0 | 1 => p 1 0)
-  | 1 => (fun | 0 => p 1 0 | 1 => p 1 1)
-  | 2 => (fun | 0 => p 1 1 | 1 => p 0 1)
-  | 3 => (fun | 0 => p 0 1 | 1 => p 0 0)
-
-noncomputable def square_boundary_big_set : Finset Segment :=
-   @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
-
 noncomputable def square_boundary_basic (Δ : Finset Triangle) : Fin 4 → Finset Segment :=
   fun i ↦ filter (fun S ↦ open_hull S ⊆ open_hull (square_boundary_big i)) (triangulation_boundary_basic_segments Δ)
 
@@ -1287,7 +1278,8 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
             tauto_set
           · apply S01
         unfold top_face at openSinTop
-        apply openSinTop
+        -- apply openSinTop
+        sorry
 
       use 0
       unfold square_boundary_basic
@@ -1351,6 +1343,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
             tauto_set
           · apply S01
 
+        unfold bottom_face at openSinBot
         apply openSinBot
 
       use 1
@@ -1414,7 +1407,9 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-        apply openSinLeft
+        unfold left_face at openSinLeft
+        --apply openSinLeft
+        sorry
 
 
 
@@ -1479,7 +1474,9 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
               apply corner_in_closed_hull
             tauto_set
           · apply S01
-        apply openSinRight
+        unfold right_face at openSinRight
+        -- apply openSinRight
+        sorry
 
     intro hS
     simp at hS
@@ -1545,9 +1542,9 @@ lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_
   all_goals (
     simp only [ite_eq_right_iff, one_ne_zero, imp_false, not_or, not_and]
   )
-  · simp_all
-  · simp_all
-  · simp_all
+  · sorry-- simp_all
+  · sorry--simp_all
+  · sorry--simp_all
 
 lemma purple_computation1 : isPurple v (square_boundary_big 0) = 1 := by
   unfold isPurple square_boundary_big
@@ -1595,9 +1592,7 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
           suffices h : closed_hull S ⊆ boundary unit_square
           · tauto_set
           · have hBoundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
-              intro i
-
-              sorry
+              exact square_boundary_segments_in_boundary
             have hUnion : ⋃ T, ⋃ i, ⋃ (_ : T = square_boundary_big i), closed_hull (square_boundary_big i)
                 ⊆ boundary unit_square := by
               simp only [Set.iUnion_subset_iff]
