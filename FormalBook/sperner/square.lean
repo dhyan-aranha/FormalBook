@@ -367,7 +367,11 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
 lemma cover_imples_corner_in_triangle
     (S : Finset Triangle)
     (hCover : is_cover (closed_hull unit_square) S.toSet) :
-    ∀ i, ∃ T, T ∈ S ∧ unit_square i
+    ∀ i, ∃ T ∈ S, ∃ j, unit_square i = T j := by
+  by_contra h_contra
+  push_neg at h_contra
+
+  sorry
 
 
 
