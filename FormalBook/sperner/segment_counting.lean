@@ -1291,8 +1291,10 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
           · apply S01
         unfold top_face at openSinTop
         -- apply openSinTop
-        sorry
-
+        convert openSinTop using 1
+        convert reverse_segment_open_hull
+        ext i
+        fin_cases i <;> rfl
       use 0
       unfold square_boundary_basic
       rw [mem_filter]
@@ -1358,7 +1360,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
         unfold bottom_face at openSinBot
         apply openSinBot
 
-      use 1
+      use 3
       unfold square_boundary_basic
       rw [mem_filter]
       constructor
@@ -1421,11 +1423,8 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
           · apply S01
         unfold left_face at openSinLeft
         --apply openSinLeft
-        sorry
-
-
-
-      use 3
+        exact openSinLeft
+      use 1
       unfold square_boundary_basic
       rw [mem_filter]
       constructor
@@ -1488,8 +1487,7 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
           · apply S01
         unfold right_face at openSinRight
         -- apply openSinRight
-        sorry
-
+        exact openSinRight
     intro hS
     simp at hS
     cases' hS with i hi
@@ -1498,15 +1496,6 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     apply hi.1
 
 
-lemma unit_square_boundary_injective {i j : Fin 4}
-    (h : square_boundary_big i = square_boundary_big j) : i = j := by
-  have h₀ := congrFun h 0
-  fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, p] <;>
-    (
-      have g₀ := congrFun h₀ 0
-      have g₁ := congrFun h₀ 1
-      simp_all [p]
-    )
 
 
 
@@ -1530,7 +1519,7 @@ lemma unit_square_cover_segment_set
     have ⟨T,hT,⟨j,Tj⟩ ⟩  := cover_imples_corner_in_triangle hCover k
     rw [Tj]
     exact triangulation_points_mem hT _
-  · sorry
+  · exact square_boundary_sides_nonDegen i
 
 lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
     open_hull (square_boundary_big i) ∩ open_hull (square_boundary_big j) = ∅ := by
@@ -1549,27 +1538,6 @@ lemma unit_square_boundary_intersections (i j : Fin 4) (h_neq : i ≠ j) :
   clear h4i h3i h3j hh2help
   fin_cases i <;> fin_cases j <;> simp[p] at * <;> linarith
 
-
-lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
-    closed_hull S ⊆ closed_hull L := by
-  by_contra h_contra
-  have hx : ∃ x : ℝ², x ∈ closed_hull S ∧ x ∉ closed_hull L := by
-    by_contra h2
-    simp_all only [not_exists, not_and, Decidable.not_not]
-    tauto_set
-  cases' hx with x hx
-  have h_boundary : x = S 0 ∨ x = S 1 := by
-    suffices h_bdry : x ∈ boundary S
-    · -- rw [boundary_seg_set]
-      sorry
-    · unfold boundary
-      constructor
-      · exact hx.left
-      · by_contra h2
-        have h_incl : open_hull L ⊆ closed_hull L := open_sub_closed L
-        tauto_set -- Would be nice to extend tauto_set so that this line and the last could
-                  -- be written as:  tauto_set [open_sub_closed L]
-  sorry
 
 lemma purple_computation0 (i : Fin 4) : i ≠ 0 → isPurple v (square_boundary_big i) = 0 := by
   have hR : coloring v (_root_.v 0 0) = Color.Red := by
@@ -1741,11 +1709,11 @@ theorem segment_sum_odd (Δ : Finset Triangle) (hCovering : is_triangulation Δ)
     intro i _ j _ hij
     simp only [disjoint_singleton_right, mem_singleton]
     intro heq
-    exact hij.symm (unit_square_boundary_injective heq)
+    exact hij.symm (square_boundary_big_injective heq)
   · intro i _ j _ hij
     simp only [disjoint_singleton_right, mem_singleton]
     intro heq
-    exact hij.symm (unit_square_boundary_injective heq)
+    exact hij.symm (square_boundary_big_injective heq)
   rw [hDisjSum, sum_disjiUnion]
   simp only [top_eq_univ, sum_singleton]
   simp_all only [ne_eq, top_eq_univ, Fin.isValue, biUnion_insert, singleton_biUnion, disjiUnion_eq_biUnion,

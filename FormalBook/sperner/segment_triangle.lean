@@ -1722,7 +1722,6 @@ lemma seg_vec_mul {L₁ L₂ : Segment} (h : closed_hull L₁ ⊆ closed_hull L�
   module
 
 
-
 lemma seg_par {L₁ L₂ : Segment} (h₁ : L₁ 0 ≠ L₁ 1) (h₂ : closed_hull L₁ ⊆ closed_hull L₂) :
     ∃ a b, closed_hull L₂ = line_par (L₁ 0) (seg_vec L₁) '' (Set.Icc a b : Set ℝ) := by
   have ⟨t, ht⟩ := seg_vec_mul h₂
@@ -1862,6 +1861,31 @@ lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
   · exact hA _ (coe_mem (fL x₁))
 
 
+example {α β: Type} (f : α → β) (S₁ S₂ : Set α) (h: S₁ ⊆ S₂) : f '' S₁ ⊆ f '' S₂ := by
+  exact Set.image_mono h
+
+lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
+    closed_hull S ⊆ closed_hull L := by
+  by_contra h_contra
+  have hx : ∃ x : ℝ², x ∈ closed_hull S ∧ x ∉ closed_hull L := by
+    by_contra h2
+    simp_all only [not_exists, not_and, Decidable.not_not]
+    tauto_set
+  cases' hx with x hx
+  have h_boundary : x = S 0 ∨ x = S 1 := by
+    suffices h_bdry : x ∈ boundary S
+    · -- rw [boundary_seg_set]
+
+      sorry
+    · unfold boundary
+      constructor
+      · exact hx.left
+      · by_contra h2
+        have h_incl : open_hull L ⊆ closed_hull L := open_sub_closed L
+        tauto_set -- Would be nice to extend tauto_set so that this line and the last could
+                  -- be written as:  tauto_set [open_sub_closed L]
+
+  sorry
 
 
 
@@ -1940,9 +1964,6 @@ lemma real_number_bound_aux {n : ℕ} {f g : Fin n → ℝ}
           · exact h₁ i
           · linarith
 
-
-example {a b c : ℝ} (ha : a < b) (hb : a ≤ b) : - - a = a  := by
-  exact InvolutiveNeg.neg_neg a
 
 
 lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²}
