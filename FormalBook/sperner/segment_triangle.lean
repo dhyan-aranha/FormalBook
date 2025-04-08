@@ -2121,3 +2121,59 @@ lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull 
       · rw [segment_around_x, ←hαx]
         simp [Fin.sum_univ_three, to_segment, seg_vec]
         fin_cases i <;> fin_cases j <;> (simp_all) <;> module
+
+
+lemma inward_pointing_vector_exists  {T : Triangle} {x : ℝ²}
+    (hx : x ∈ closed_hull T) (hT : ¬(∀ i j, T i = T j))
+    : ∃ y, x ≠ y ∧ open_hull (to_segment x y) ⊆ open_hull T := by
+  have hy : ∃ y, y ∈ open_hull T ∧ x ≠ y := by
+    sorry
+  have ⟨y, hy, hxy⟩ := hy
+  use y, hxy
+  intro z hz
+  have ⟨αx, hα, hαx⟩ := hx
+  have ⟨βy, hβ, hβy⟩ := hy
+  have ⟨γz, hγ, hγz⟩ := hz
+  use (fun i ↦ γz 0 * αx i + γz 1 * βy i)
+  refine ⟨⟨?_,?_⟩,?_ ⟩
+  · intro i
+    simp only [Fin.isValue]
+    refine gt_of_ge_of_gt (b := 0 + γz 1 * βy i) ?_ ?_
+    · gcongr
+      rw [mul_comm]
+      exact Left.mul_nonneg (hα.1 i) (le_of_lt (hγ.1 0))
+    · rw [zero_add]
+      exact mul_pos (hγ.1 1) (hβ.1 i)
+  · simp only [Fin.isValue, sum_add_distrib,
+      ←(mul_sum univ _ (γz 0)), ←(mul_sum univ _ (γz 1)), hα.2, hβ.2, mul_one,
+      ←Fin.sum_univ_two, hγ.2]
+  · simp only [Fin.isValue, add_smul, sum_add_distrib, mul_smul, ←smul_sum,
+        hαx, hβy, ←hγz, to_segment, Fin.sum_univ_two]
+
+lemma seg_inter_open_triangle {T : Triangle} {S : Segment} (hDet : det T ≠ 0)
+    (hST : closed_hull S ∩ open_hull T ≠ ∅) : open_hull S ∩ open_hull T ≠ ∅ := by
+
+  sorry
+
+
+lemma disjoint_opens_implies_disjoint_open_closed {T₁ T₂ : Triangle}
+  (hT : Disjoint (open_hull T₁) (open_hull T₂)) (hDet : det T₂ ≠ 0) :
+    Disjoint (closed_hull T₁) (open_hull T₂) := by
+  by_cases htriv : ∀ i j, T₁ i = T₁ j
+  · convert hT using 1
+    have hTc : T₁ = fun i ↦ T₁ 0 := by
+      ext i
+      rw [htriv i 0]
+    rw [hTc, closed_hull_constant (by norm_num), open_hull_constant (by norm_num)]
+  · rw [@Set.disjoint_right]
+    intro x hxT₂ hxT₁
+    have ⟨y, hxy, hS⟩ := inward_pointing_vector_exists hxT₁ htriv
+    have hContra := (seg_inter_open_triangle (T := T₂) (S := to_segment x y) hDet ?_)
+    · rw [@Set.disjoint_iff_inter_eq_empty] at hT
+      apply hContra
+      refine Set.subset_eq_empty (s := ∅) ?_ rfl
+      rw [←hT]
+      exact Set.inter_subset_inter hS fun ⦃a⦄ a ↦ a
+    · rw [@Mathlib.Tactic.PushNeg.ne_empty_eq_nonempty]
+      use x
+      exact ⟨by exact corner_in_closed_hull (i := 0) (P := to_segment x y), hxT₂⟩
