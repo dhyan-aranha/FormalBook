@@ -1609,6 +1609,7 @@ lemma line_par_neg {a b : ℝ} {v₁ v₂ : ℝ²} :
     module)
 
 
+
 lemma line_par_scalar_Icc' {a b t : ℝ} {v₁ v₂ : ℝ²} (ht : t < 0):
     line_par v₁ (t • v₂) '' (Set.Icc a b) = line_par v₁ (v₂) '' (Set.Icc (t * b) (t * a)) := by
   have ht : 0 < - t := by linarith
@@ -1860,10 +1861,6 @@ lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
     · simp [hxS, to_segment, fLh x₂]
   · exact hA _ (coe_mem (fL x₁))
 
-
-example {α β: Type} (f : α → β) (S₁ S₂ : Set α) (h: S₁ ⊆ S₂) : f '' S₁ ⊆ f '' S₂ := by
-  exact Set.image_mono h
-
 lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
     closed_hull S ⊆ closed_hull L := by
   by_contra h_contra
@@ -1886,6 +1883,33 @@ lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
                   -- be written as:  tauto_set [open_sub_closed L]
 
   sorry
+
+
+
+noncomputable def segment_around_x (x y : ℝ²) (ε₁ ε₂ : ℝ)
+    : Segment := to_segment (x + (1 * ε₁) • y) (x + (-1 * ε₂) • y)
+
+lemma open_hull_segment_around {x y : ℝ²} {ε₁ ε₂ : ℝ} (h₁ : 0 < ε₁)
+    (h₂ : 0 < ε₂) : x ∈ open_hull (segment_around_x x y ε₁ ε₂) := by
+  have hs   : ε₁ + ε₂ > 0 := by linarith
+  use fun | 0 => ε₂ / (ε₁ + ε₂) | 1 => ε₁ / (ε₁ + ε₂)
+  refine ⟨⟨?_,?_⟩ ,?_⟩
+  · intro i
+    fin_cases i <;> simp_all [div_pos]
+  · field_simp [add_comm]
+  · ext i
+    field_simp [segment_around_x, to_segment]
+    fin_cases i <;> ring
+
+lemma open_hull_segment_around_non_trivial {x y : ℝ²} {ε₁ ε₂ : ℝ}
+    (hy : y ≠ 0) (hε : ε₁ + ε₂ ≠ 0) : seg_vec (segment_around_x x y ε₁ ε₂) ≠ 0 := by
+  simp only [seg_vec, segment_around_x, to_segment, neg_mul, one_mul, add_sub_add_left_eq_sub,
+    ←sub_smul, ne_eq, smul_eq_zero, hy, or_false]
+  intro hy
+  apply hε
+  rw [←neg_add', add_comm] at hy
+  exact neg_eq_zero.mp hy
+
 
 
 
@@ -1995,5 +2019,59 @@ lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ�
 lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull T)
     (hn : ∀ i, x ≠ T i) :
     ∃ L : Segment, L 0 ≠ L 1 ∧ x ∈ open_hull L ∧ closed_hull L ⊆ closed_hull T := by
-
-  sorry
+  have ⟨α, hα, hαx⟩ := hx
+  have hij : ∃ i j, α i ≠ 0 ∧ α j ≠ 0 ∧ T i ≠ T j:= by
+    by_contra h
+    push_neg at h
+    have ⟨i, hi⟩ := simplex_exists_co_pos hα
+    have ha : ∀ j, α j • T j = α j • T i := by
+      intro j
+      by_cases hj : α j = 0
+      · simp [hj, zero_smul]
+      · rw [h i j (by linarith) hj]
+    apply hn i
+    simp_rw [←hαx, Fin.sum_univ_three, ha 0, ha 1, ha 2, ←add_smul]
+    rw [←Fin.sum_univ_three, hα.2, one_smul]
+  have ⟨i,j,⟨h1,h2,h3⟩⟩ := hij
+  have hijneq : i ≠ j := by intro this; apply h3; rw [this]
+  use segment_around_x x (seg_vec (to_segment (T i) (T j))) (α i) (α j)
+  have hαi := lt_of_le_of_ne (hα.1 i) h1.symm
+  have hαj := lt_of_le_of_ne (hα.1 j) h2.symm
+  refine ⟨?_,?_,?_⟩
+  · rw [←seg_vec_nonzero_iff]
+    apply open_hull_segment_around_non_trivial
+    · rw [seg_vec_nonzero_iff]
+      exact h3
+    · linarith
+  · exact open_hull_segment_around hαi hαj
+  · apply closed_hull_convex
+    intro k
+    fin_cases k
+    · use (fun l ↦ if l = i then 0 else (if l = j then (α i + α j) else α l))
+      refine ⟨⟨?_,?_⟩ ,?_⟩
+      · intro k
+        simp only
+        split
+        · exact le_refl _
+        · split
+          · linarith
+          · exact hα.1 k
+      · rw [←hα.2, Fin.sum_univ_three, Fin.sum_univ_three]
+        fin_cases i <;> fin_cases j <;> (simp_all) <;> ring
+      · rw [segment_around_x, ←hαx]
+        simp [Fin.sum_univ_three, to_segment, seg_vec]
+        fin_cases i <;> fin_cases j <;> (simp_all) <;> module
+    · use (fun l ↦ if l = j then 0 else (if l = i then (α i + α j) else α l))
+      refine ⟨⟨?_,?_⟩ ,?_⟩
+      · intro k
+        simp only
+        split
+        · exact le_refl _
+        · split
+          · linarith
+          · exact hα.1 k
+      · rw [←hα.2, Fin.sum_univ_three, Fin.sum_univ_three]
+        fin_cases i <;> fin_cases j <;> (simp_all) <;> ring
+      · rw [segment_around_x, ←hαx]
+        simp [Fin.sum_univ_three, to_segment, seg_vec]
+        fin_cases i <;> fin_cases j <;> (simp_all) <;> module
