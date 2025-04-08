@@ -1945,6 +1945,7 @@ lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq 
     linarith
   contradiction
 
+
 set_option maxHeartbeats 10000000 in
 
 lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
@@ -2034,9 +2035,11 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
     · unfold triangulation_avoiding_set
       simp only [Set.disjoint_iUnion_right]
       intro T' hT'
-
-      sorry
-
+      have this := disjoint_opens_implies_disjoint_open_closed (T₁ := T) (T₂ := T') ?_ (non_degen T' hT')
+      · exact Set.disjoint_of_subset closed_side_sub' (fun ⦃a⦄ a ↦ a) this
+      · -- Here you need the covering stuff.
+        -- I don't see it in the assumptions yet, but I think it is necessary.
+        sorry
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
     intro S L hS hL hSL
     unfold triangle_boundary at hS hL
