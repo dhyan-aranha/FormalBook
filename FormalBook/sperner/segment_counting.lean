@@ -2007,7 +2007,35 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
         exact right_3
 
   have h1 : (triangle_boundary T) ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
-    sorry
+    unfold triangle_boundary avoiding_segment_set
+    simp only [top_eq_univ, biUnion_subset_iff_forall_subset, mem_univ, singleton_subset_iff,
+      mem_filter, forall_const]
+    intro i
+    constructor
+    · unfold segment_set
+      simp only [product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists]
+      use (Tside T i) 0, (Tside T i 1)
+      simp only [Fin.isValue, segment_rfl, and_true]
+      unfold triangulation_points
+      constructor
+      · simp only [Fin.isValue, mem_biUnion, mem_insert, mem_singleton]
+        constructor
+        · use T
+          refine ⟨hT, ?_⟩
+          unfold Tside
+          fin_cases i
+          all_goals try (simp only [Fin.isValue, true_or, or_true])
+        · use T
+          refine ⟨hT, ?_⟩
+          unfold Tside
+          fin_cases i
+          all_goals try (simp only [Fin.isValue, true_or, or_true])
+      · exact (nondegen_triangle_imp_nondegen_side i (non_degen T hT))
+    · unfold triangulation_avoiding_set
+      simp only [Set.disjoint_iUnion_right]
+      intro T' hT'
+
+      sorry
 
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
     intro S L hS hL hSL
