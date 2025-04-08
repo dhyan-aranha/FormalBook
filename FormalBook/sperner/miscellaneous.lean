@@ -170,3 +170,8 @@ lemma finset_infinite_pigeonhole {α β : Type} [Infinite α] {f : α → β} {B
 lemma infinite_distinct_el {α : Type} {S : Set α} (hS : Set.Infinite S) (k : α) : ∃ a ∈ S, a ≠ k := by
   have ⟨a, haS, ha⟩ :=  Set.Infinite.exists_not_mem_finset hS ({k} : Finset α)
   exact ⟨a, haS, List.ne_of_not_mem_cons ha⟩
+
+lemma infinite_imp_two_distinct_el  {α : Type} {S : Set α} (hS : S.Infinite) : ∃ a ∈ S, ∃ b ∈ S, a ≠ b := by
+  have ⟨a, ha⟩ := Set.Infinite.nonempty hS
+  have ⟨b, hb⟩ := infinite_distinct_el hS a
+  use a, ha, b, hb.1, hb.2.symm

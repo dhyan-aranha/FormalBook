@@ -205,9 +205,6 @@ lemma el_boundary_square_triangle_dir {x : ℝ²} (hx : x ∈ boundary unit_squa
       intro Δ hArea hΔP ⟨i,hSide⟩
       exact False.elim (hΔ Δ hArea hΔP i hSide)
 
-example {a : ℝ} : (¬ (a = 0)) ↔ (a ≠ 0) := by
-  exact Eq.to_iff rfl
-
 lemma boundary_leave_dir {x : ℝ²} (hx : x ∈ boundary unit_square) :
     ∃ σ ∈ ({1, -1} : Finset ℝ), ∀ ε > 0, x + (σ * ε) • (v 1 1) ∉ closed_hull unit_square := by
   by_contra h_contra

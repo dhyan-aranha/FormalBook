@@ -164,6 +164,7 @@ lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : F
     exact hβp
 
 
+
 /-
   We define the boundary of a polygon as the elements in the closed hull but not
   in the open hull.

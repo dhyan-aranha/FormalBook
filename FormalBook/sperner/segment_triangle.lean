@@ -322,6 +322,17 @@ lemma open_segment_interval_im {L : Segment} :
     module
 
 
+lemma seg_vec_zero_closed_hull {L : Segment} (hL : seg_vec L = 0) :
+    closed_hull L = {L 0} := by
+  rw [closed_segment_interval_im, hL]
+  simp
+
+lemma seg_vec_zero_open_hull {L : Segment} (hL : seg_vec L = 0) :
+    open_hull L = {L 0} := by
+  rw [open_segment_interval_im, hL]
+  simp
+
+
 lemma seg_dir_sub {L : Segment} {x : ℝ²} (hxL : x ∈ open_hull L) :
     ∃ δ > 0, ∀ (a : ℝ), |a| ≤ δ → x + a • seg_vec L ∈ open_hull L := by
   rw [open_segment_interval_im] at *
@@ -1861,29 +1872,64 @@ lemma closed_segment_sub_union_segment {A : Finset Segment} {L : Segment}
     · simp [hxS, to_segment, fLh x₂]
   · exact hA _ (coe_mem (fL x₁))
 
+
+
+
+/- Convex in the sense that it contains line segments. -/
+lemma open_hull_convex {n : ℕ} {P : Fin n → ℝ²} {x y : ℝ²}
+    (hx : x ∈ open_hull P) (hy : y ∈ open_hull P)
+    : closed_hull (to_segment x y) ⊆ open_hull P := by
+  intro z hz
+  have ⟨αx, hα, hαx⟩ := hx
+  have ⟨βy, hβ, hβy⟩ := hy
+  have ⟨γz, hγ, hγz⟩ := hz
+  use (fun i ↦ γz 0 * αx i + γz 1 * βy i)
+  refine ⟨⟨?_,?_⟩,?_ ⟩
+  · intro i
+    simp only [Fin.isValue]
+    have ⟨k, hk⟩ := simplex_exists_co_pos hγ
+    fin_cases k
+    · refine gt_of_ge_of_gt (b := γz 0 * αx i + 0) ?_ ?_
+      · gcongr
+        exact Left.mul_nonneg (hγ.1 1) (le_of_lt (hβ.1 i))
+      · rw [add_zero]
+        exact mul_pos hk (hα.1 i)
+    · refine gt_of_ge_of_gt (b := 0 + γz 1 * βy i) ?_ ?_
+      · gcongr
+        exact Left.mul_nonneg (hγ.1 0) (le_of_lt (hα.1 i))
+      · rw [zero_add]
+        exact mul_pos hk (hβ.1 i)
+  · simp only [Fin.isValue, sum_add_distrib,
+      ←(mul_sum univ _ (γz 0)), ←(mul_sum univ _ (γz 1)), hα.2, hβ.2, mul_one,
+      ←Fin.sum_univ_two, hγ.2]
+  · simp only [Fin.isValue, add_smul, sum_add_distrib, mul_smul, ←smul_sum,
+        hαx, hβy, ←hγz, to_segment, Fin.sum_univ_two]
+
+
+
 lemma open_sub_closed_sub (S L : Segment) (h : open_hull S ⊆ open_hull L) :
     closed_hull S ⊆ closed_hull L := by
-  by_contra h_contra
-  have hx : ∃ x : ℝ², x ∈ closed_hull S ∧ x ∉ closed_hull L := by
-    by_contra h2
-    simp_all only [not_exists, not_and, Decidable.not_not]
-    tauto_set
-  cases' hx with x hx
-  have h_boundary : x = S 0 ∨ x = S 1 := by
-    suffices h_bdry : x ∈ boundary S
-    · -- rw [boundary_seg_set]
-
-      sorry
-    · unfold boundary
-      constructor
-      · exact hx.left
-      · by_contra h2
-        have h_incl : open_hull L ⊆ closed_hull L := open_sub_closed L
-        tauto_set -- Would be nice to extend tauto_set so that this line and the last could
-                  -- be written as:  tauto_set [open_sub_closed L]
-
-  sorry
-
+  by_cases hS : seg_vec S = 0
+  · rw [seg_vec_zero_open_hull hS] at h
+    rw [seg_vec_zero_closed_hull hS]
+    trans (open_hull L)
+    · exact h
+    · exact open_sub_closed _
+  · have ⟨x, hx, y, hy, hxy⟩
+      := infinite_imp_two_distinct_el (seg_open_hull_infinite (L := S) (by rwa [←seg_vec_nonzero_iff]))
+    have hxyS : closed_hull (to_segment x y) ⊆ open_hull S := open_hull_convex hx hy
+    refine seg_sub_seg (L₁ := to_segment x y) hxy ?_ ?_ ?_
+    · trans (open_hull S)
+      · exact hxyS
+      · exact open_sub_closed _
+    · trans (open_hull L)
+      · trans open_hull S
+        · exact hxyS
+        · exact h
+      · exact open_sub_closed _
+    · apply Set.disjoint_of_subset h (fun ⦃a⦄ a ↦ a)
+      rw [@Set.disjoint_iff_inter_eq_empty, Set.inter_comm]
+      exact boundary_int_open_empty
 
 
 noncomputable def segment_around_x (x y : ℝ²) (ε₁ ε₂ : ℝ)
