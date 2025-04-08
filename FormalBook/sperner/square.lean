@@ -434,20 +434,9 @@ lemma square_boundary_big_corners : ∀ i, ∀ j, ∃ k,
   · exact ⟨3,rfl⟩
   · exact ⟨0,rfl⟩
 
-
 lemma square_boundary_big_injective : square_boundary_big.Injective := by
   intro i j hij
   have h₀ := congrFun hij 0
-  fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, v] <;>
-    (
-      have g₀ := congrFun h₀ 0
-      have g₁ := congrFun h₀ 1
-      simp_all [v]
-    )
-
-lemma unit_square_boundary_injective {i j : Fin 4}
-    (h : square_boundary_big i = square_boundary_big j) : i = j := by
-  have h₀ := congrFun h 0
   fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, v] <;>
     (
       have g₀ := congrFun h₀ 0
