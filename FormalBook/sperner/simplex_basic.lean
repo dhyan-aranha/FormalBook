@@ -184,6 +184,9 @@ lemma boundary_in_closed {n : ℕ} {P : Fin n → ℝ²} {x : ℝ²} (hx : x ∈
 lemma boundary_int_open_empty {n : ℕ} {P : Fin n → ℝ²} : boundary P ∩ open_hull P = ∅ :=
   Set.diff_inter_self
 
+lemma boundary_open_disjoint {n : ℕ} {P : Fin n → ℝ²} : Disjoint (boundary P) (open_hull P) :=
+  Set.disjoint_iff_inter_eq_empty.mpr boundary_int_open_empty
+
 lemma boundary_union_open_closed {n : ℕ} {P : Fin n → ℝ²} :
     boundary P ∪ open_hull P = closed_hull P := Set.diff_union_of_subset (open_sub_closed P)
 
