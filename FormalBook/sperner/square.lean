@@ -983,10 +983,79 @@ closed_hull left_face ∪ closed_hull right_face = boundary unit_square := by
       dsimp at h1
       simp only [real_to_fin_2, Fin.isValue, Fin.sum_univ_two] ; ext i ; fin_cases i<;> simp[h1]
 
-
+lemma boundary_union_of_faces' : ⋃ i : Fin 4, closed_hull (square_boundary_big i) = boundary unit_square
+:= by sorry
 
 lemma line_in_boundary {x : ℝ²} {L : Segment} (hL: closed_hull L ⊆ closed_hull unit_square)
-(hboundary: x ∈ open_hull L ∩ boundary unit_square) : closed_hull L ⊆ boundary unit_square := by sorry
+(hboundary: x ∈ open_hull L ∩ boundary unit_square) : closed_hull L ⊆ boundary unit_square := by
+
+rw [← boundary_union_of_faces'] at hboundary
+by_cases hbound : x ∈ closed_hull (square_boundary_big 0) ∨ x ∈ closed_hull (square_boundary_big 1) ∨
+  x ∈ closed_hull (square_boundary_big 2) ∨ x ∈ closed_hull (square_boundary_big 3)
+
+rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
+
+· have hL0 : closed_hull L ⊆ closed_hull (square_boundary_big 0) := by
+    apply convex_faces' 0 hbound0 hboundary.1
+    apply hL
+    apply corner_in_closed_hull
+    apply hL
+    apply corner_in_closed_hull
+  have hbound' : closed_hull (square_boundary_big 0) ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces']
+    intro x hx
+    simp only [Set.mem_iUnion]
+    use 0
+  exact subset_trans hL0 hbound'
+
+· have hL1 : closed_hull L ⊆ closed_hull (square_boundary_big 1) := by
+    apply convex_faces' 1 hbound1 hboundary.1
+    apply hL
+    apply corner_in_closed_hull
+    apply hL
+    apply corner_in_closed_hull
+  have hbound' : closed_hull (square_boundary_big 1) ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces']
+    intro x hx
+    simp only [Set.mem_iUnion]
+    use 1
+  exact subset_trans hL1 hbound'
+
+· have hL2 : closed_hull L ⊆ closed_hull (square_boundary_big 2) := by
+    apply convex_faces' 2 hbound2 hboundary.1
+    apply hL
+    apply corner_in_closed_hull
+    apply hL
+    apply corner_in_closed_hull
+  have hbound' : closed_hull (square_boundary_big 2) ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces']
+    intro x hx
+    simp only [Set.mem_iUnion]
+    use 2
+  exact subset_trans hL2 hbound'
+
+· have hL3 : closed_hull L ⊆ closed_hull (square_boundary_big 3) := by
+    apply convex_faces' 3 hbound3 hboundary.1
+    apply hL
+    apply corner_in_closed_hull
+    apply hL
+    apply corner_in_closed_hull
+  have hbound' : closed_hull (square_boundary_big 3) ⊆ boundary unit_square := by
+    rw [← boundary_union_of_faces']
+    intro x hx
+    simp only [Set.mem_iUnion]
+    use 3
+  exact subset_trans hL3 hbound'
+
+simp_all only [Set.mem_inter_iff, Set.mem_iUnion, not_or]
+rcases hboundary with ⟨hx, hy⟩
+rcases hy with ⟨i, h1⟩
+fin_cases i
+· simp_all only [Fin.zero_eta]
+· simp_all only [Fin.mk_one]
+· simp_all
+· simp_all
+
 
 lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
 unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
