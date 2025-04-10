@@ -73,6 +73,14 @@ lemma open_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
 
 
 
+noncomputable def linear_combination {n : ℕ} (α : Fin n → ℝ) (f : Fin n → ℝ²)
+    : ℝ² := ∑ i, α i • f i
+
+lemma linear_co_closed {n : ℕ} {α : Fin n → ℝ} (f : Fin n → ℝ²) (h : α ∈ closed_simplex n) :
+    linear_combination α f ∈ closed_hull f := by
+  sorry
+
+
 
 
 /- Implications of the requirements that (∀ i, 0 ≤ α i),  ∑ i, α i = 1. -/

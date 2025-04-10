@@ -102,6 +102,15 @@ lemma element_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square) :
   · exact lt_of_le_of_ne (hx₂ i).1 (hxn i).1.symm
   · exact lt_of_le_of_ne (hx₂ i).2 (hxn i).2
 
+lemma boundary_unit_square_eq : boundary unit_square = { x | (∀ i, 0 ≤ x i ∧ x i ≤ 1) ∧ (∃ i, x i = 0 ∨ x i = 1)} := by
+  rw [Set.setOf_and, ←closed_unit_square_eq]
+  ext
+  refine ⟨fun hx ↦ ⟨boundary_sub_closed _ hx, element_in_boundary_square hx⟩,
+          fun ⟨hc, ⟨i, hno⟩⟩ ↦ (Set.mem_diff _).mpr ⟨hc, ?_⟩⟩
+  rw [open_unit_square_eq]
+  exact fun hco ↦ by rcases hno <;> linarith [hco i]
+
+
 
 lemma segment_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square)
     : ∃ i, ∀ L, x ∈ open_hull L → closed_hull L ⊆ closed_hull unit_square → (seg_vec L) i = 0 := by
@@ -416,7 +425,7 @@ noncomputable def square_boundary_big_set : Finset Segment :=
 lemma square_boundary_big_corners : ∀ i, ∀ j, ∃ k,
     square_boundary_big i j = unit_square k := by
   intro i j
-  fin_cases i <;> fin_cases j <;> simp
+  fin_cases i <;> fin_cases j
   · exact ⟨0,rfl⟩
   · exact ⟨1,rfl⟩
   · exact ⟨1,rfl⟩
@@ -441,6 +450,73 @@ lemma square_boundary_sides_nonDegen (i : Fin 4) : square_boundary_big i 0 ≠ s
   have h₀ := congrFun h_contra 0
   have h₁ := congrFun h_contra 1
   fin_cases i <;> (simp_all [square_boundary_big])
+
+
+lemma square_boundary_in_boundary₀ :
+    closed_hull (square_boundary_big 0) = {x | 0 ≤ x 0 ∧ x 0 ≤ 1 ∧ x 1 = 0} := by
+  ext x
+  constructor
+  · intro ⟨_, hα, hαx⟩
+    simp_rw [Fin.sum_univ_two, simplex_closed_sub_fin2 hα 1] at hαx
+    simp [←hαx, square_boundary_big, simplex_co_leq_1 hα, hα.1]
+  · sorry
+
+
+lemma square_boundary_in_boundary (i : Fin 4) :
+    closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
+  rw [boundary_unit_square_eq]
+  intro x ⟨α, hα, hαx⟩
+  simp_rw [Fin.sum_univ_two, simplex_closed_sub_fin2 hα 1] at hαx
+  rw [←hαx]
+  refine ⟨fun j ↦ by fin_cases i <;> fin_cases j <;> simp [square_boundary_big, simplex_co_leq_1 hα, hα.1],?_⟩
+  fin_cases i
+  use 1; left;  rotate_left
+  use 0; right; rotate_left
+  use 1; right; rotate_left
+  use 0; left;  rotate_left
+  all_goals simp [square_boundary_big, simplex_co_leq_1 hα, hα.1]
+
+lemma boundary_in_square_boundary {x : ℝ²} (hx : x ∈ boundary unit_square) :
+    ∃ i, x ∈ closed_hull (square_boundary_big i) := by
+  rw [boundary_unit_square_eq] at hx
+  have ⟨j, hj⟩ := hx.2
+  fin_cases j <;> cases' hj with hj hj
+  use 3;
+  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 1).1 (hx.1 1).2)
+  rotate_left
+  use 1
+  rw [←reverse_segment_closed_hull]
+  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 1).1 (hx.1 1).2)
+  rotate_left
+  use 0
+  rw [←reverse_segment_closed_hull];
+  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 0).1 (hx.1 0).2)
+  rotate_left
+  use 2
+  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 0).1 (hx.1 0).2)
+  rotate_left
+  all_goals (ext k; fin_cases k)
+  all_goals simp_all [linear_combination,real_to_fin_2,reverse_segment,square_boundary_big,to_segment,v]
+
+
+lemma square_boundary_is_union_sides
+    : boundary unit_square = ⋃ i, closed_hull (square_boundary_big i) := by
+  ext x
+  refine ⟨fun hx ↦ Set.mem_iUnion.mpr (boundary_in_square_boundary hx), ?_⟩
+  intro ⟨S, ⟨i, hi⟩ , hxS⟩
+  rw [←hi] at hxS
+  exact square_boundary_in_boundary _ hxS
+
+
+lemma square_boundary_big_inter_seg {S : Segment} {x : ℝ²} {i : Fin 4} (hx : x ∈ open_hull S)
+    (hxi : x ∈ closed_hull (square_boundary_big i)) (hS : closed_hull S ⊆ closed_hull unit_square) :
+    closed_hull S ⊆ closed_hull (square_boundary_big i) := by
+  sorry
+
+
+
+
+
 
 lemma top_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
  (hx: x ∈ closed_hull unit_square)
@@ -567,21 +643,22 @@ lemma right_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull right_fa
   (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
   closed_hull (to_segment x y) ⊆ closed_hull right_face := by sorry
 
-lemma boundary_description : boundary unit_square = { x | (∀ i, 0 ≤ x i ∧ x i ≤ 1) ∧ (∃ i, x i = 0 ∨ x i = 1)} := by
-  unfold boundary
-  rw[closed_unit_square_eq, open_unit_square_eq]
-  ext x
-  simp only [Set.mem_diff, Set.mem_setOf_eq, not_forall, not_and, not_lt, and_congr_right_iff]
-  intro h
-  constructor
-  · rintro ⟨ i, h1⟩
-    use i
-    by_cases h2: x i = 0
-    · left; exact h2
-    · right; exact le_antisymm (h i).2 (h1 (lt_of_le_of_ne (h i).1 fun a ↦ h2 (id (Eq.symm a))))
-  · rintro ⟨ i, (h1|h1)⟩
-    · use i; intro h2; exfalso; exact (ne_of_lt h2 h1.symm)
-    · use i; intro _; exact le_of_eq h1.symm
+
+-- lemma boundary_description : boundary unit_square = { x | (∀ i, 0 ≤ x i ∧ x i ≤ 1) ∧ (∃ i, x i = 0 ∨ x i = 1)} := by
+--   unfold boundary
+--   rw[closed_unit_square_eq, open_unit_square_eq]
+--   ext x
+--   simp only [Set.mem_diff, Set.mem_setOf_eq, not_forall, not_and, not_lt, and_congr_right_iff]
+--   intro h
+--   constructor
+--   · rintro ⟨ i, h1⟩
+--     use i
+--     by_cases h2: x i = 0
+--     · left; exact h2
+--     · right; exact le_antisymm (h i).2 (h1 (lt_of_le_of_ne (h i).1 fun a ↦ h2 (id (Eq.symm a))))
+--   · rintro ⟨ i, (h1|h1)⟩
+--     · use i; intro h2; exfalso; exact (ne_of_lt h2 h1.symm)
+--     · use i; intro _; exact le_of_eq h1.symm
 
 lemma closed_unit_square_eq_weak (x : ℝ²): x ∈ closed_hull unit_square → (∀ i, 0 ≤ x i ∧ x i ≤ 1):= by
   rw[closed_unit_square_eq]
@@ -590,7 +667,7 @@ lemma closed_unit_square_eq_weak (x : ℝ²): x ∈ closed_hull unit_square → 
 lemma boundary_union_of_faces : closed_hull top_face ∪ closed_hull bottom_face ∪
 closed_hull left_face ∪ closed_hull right_face = boundary unit_square := by
   unfold top_face bottom_face left_face right_face
-  rw[boundary_description]
+  rw[boundary_unit_square_eq]
   ext x
   constructor
   --Because of the definition of these faces, I think it is difficult not to do a lot of case distinctions
