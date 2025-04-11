@@ -511,11 +511,9 @@ lemma square_boundary_big_inter_seg {S : Segment} {x : ℝ²} {i : Fin 4} (hx : 
 
 
 
-
-lemma top_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
- (hx: x ∈ closed_hull unit_square)
-(hy : y ∈ closed_hull unit_square) : x ∈ closed_hull top_face ∧
-y ∈ closed_hull top_face := by
+lemma convex_faces {x y p : ℝ²} (i : Fin 4) (hpiface : p ∈ closed_hull (square_boundary_big i))
+(hp : p ∈ open_hull (to_segment x y)) (hx: x ∈ closed_hull unit_square) (hy: y ∈  closed_hull unit_square) :
+x ∈ closed_hull (square_boundary_big i) ∧ y ∈ closed_hull (square_boundary_big i) := by
 
 have hr : ∃ (r : ℝ ), 0 < r ∧ r < 1 ∧ p = (1 - r) • x + r • y := by
   rw [open_segment_interval_im, seg_vec] at hp
@@ -682,22 +680,301 @@ fin_cases i
     rw [le_iff_lt_or_eq] at hy'2
     cases' hy'2 with p q
     · linarith
-  · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
-  · rw [hytopface]
+    · linarith
+  have hy1 : y 0 = 1 := by
+    rw [hx1, hp0'] at hp0
+    simp only [mul_one, Fin.isValue] at hp0
+    have hy1' : 0 = - r + r * y 0 := by
+      linarith
+    have hy1'' : 0 = r * (-1 + y 0) := by
+      linarith
+    rw [eq_comm, mul_eq_zero] at hy1''
+    rcases hy1'' with h | h
+    · linarith
+    · linarith
+  constructor
+  · unfold square_boundary_big
+    have hx' : 0 ≤ x 1 ∧ x 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hx
+      exact hx 1
+    simp
+    have hxface : (1- x 1) • v 1 0 + x 1 • v 1 1 = x := by
+      ext i
+      fin_cases i
+      · simp only [Fin.isValue, Fin.zero_eta, PiLp.add_apply, PiLp.smul_apply, v₀_val, smul_eq_mul,
+        mul_one, sub_add_cancel]
+        apply hx1.symm
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_zero, mul_one, zero_add]
+    unfold closed_hull
+    simp
+    use fun | 0 => 1 - x 1 | 1 => x 1
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · simp [hx'.2]
+    · simp [hx'.1]
+    · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
+    simp only [Fin.isValue]
+    apply hxface
+  · unfold square_boundary_big
+    have hy' : 0 ≤ y 1 ∧ y 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hy
+      exact hy 1
+    simp
+    have hxface : (1- y 1) • v 1 0 + y 1 • v 1 1 = y := by
+      ext i
+      fin_cases i
+      · simp only [Fin.isValue, Fin.zero_eta, PiLp.add_apply, PiLp.smul_apply, v₀_val, smul_eq_mul,
+        mul_one, sub_add_cancel]
+        apply hy1.symm
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_zero, mul_one, zero_add]
+    unfold closed_hull
+    simp
+    use fun | 0 => 1 - y 1 | 1 => y 1
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · simp [hy'.2]
+    · simp [hy'.1]
+    · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
+    simp only [Fin.isValue]
+    apply hxface
 
-lemma top_face_convex₂ {x y p : ℝ²} (hpface : p ∈  closed_hull top_face) (hp : p ∈ open_hull (to_segment x y))
-  (hx: x ∈ closed_hull unit_square) (hy : y ∈ closed_hull unit_square) :
-  closed_hull (to_segment x y) ⊆ closed_hull top_face := by
+· simp at *
+  have hp1' : p 1 = 1 := by
+    unfold square_boundary_big at hpiface
+    simp at hpiface
+    unfold closed_hull at hpiface
+    simp at hpiface
+    rcases hpiface with ⟨α, hα, hpα⟩
+    rcases hα with ⟨hα, hpα'⟩
+    simp at hpα'
+    rw [←hpα]
+    simp only [Fin.isValue, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul, mul_one]
+    apply hpα'
+  have hx0 : x 1 = 1 := by
+    have hx' : 0 ≤ x 1 ∧ x 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hx
+      exact hx 1
+    have hy' : 0 ≤ y 1 ∧ y 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hy
+      exact hy 1
+    by_contra hcontra
+    rw [hp1'] at hp1
+    have hx0' : (1-r) * x 1 < (1-r) * 1 := by
+      have h2 : (1-r) > 0 := by linarith [hp1r]
+      have hx01 : x 1 < 1 := by
+        rcases hx' with ⟨hx'1, hx'2⟩
+        rw [le_iff_lt_or_eq] at hx'2
+        by_contra hcontra'
+        cases' hx'2 with p q
+        contradiction
+        contradiction
+      exact mul_lt_mul_of_pos_left hx01 h2
+    have hx0'' : 1 < (1-r) * 1 + r * y 1 := by
+      linarith
+    simp only [mul_one, Fin.isValue] at hx0''
+    have hx0''' : 0 < -r + r * y 1 := by
+      linarith
+    have hx0'''' : 0 < r * (-1 + y 1) := by
+      linarith
+    rw [mul_pos_iff_of_pos_left hr1] at hx0''''
+    rw [le_iff_lt_or_eq] at hy'
+    cases' hy' with p q
+    linarith
+  have hy0 : y 1 = 1 := by
+    rw [hx0, hp1'] at hp1
+    simp only [mul_one, Fin.isValue] at hp1
+    have hy0' : 0 = - r + r * y 1 := by
+      linarith
+    have hy0'' : 0 = r * (-1 + y 1) := by
+      linarith
+    rw [eq_comm, mul_eq_zero] at hy0''
+    rcases hy0'' with h | h
+    · linarith
+    · linarith
+  constructor
+  · unfold square_boundary_big
+    have hx' : 0 ≤ x 0 ∧ x 0 ≤ 1 := by
+      rw [closed_unit_square_eq] at hx
+      exact hx 0
+    simp
+    have hxface : (1- x 0) • v 0 1 + x 0 • v 1 1 = x := by
+      ext i
+      fin_cases i
+      · simp
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_one, sub_add_cancel]
+        apply hx0.symm
+    unfold closed_hull
+    simp
+    use fun | 0 => x 0 | 1 => 1 - x 0
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · linarith
+    · simp
+      apply hx'.2
+    · simp
+    simp only [Fin.isValue]
+    have hxface' :  (1 - x 0) • v 0 1 + x 0 • v 1 1 =   x 0 • v 1 1 + (1 - x 0) • v 0 1  := by
+      module
+    rw [hxface'] at hxface
+    apply hxface
+  · unfold square_boundary_big
+    have hy' : 0 ≤ y 0 ∧ y 0 ≤ 1 := by
+      rw [closed_unit_square_eq] at hy
+      exact hy 0
+    simp
+    have hxface : (1- y 0) • v 0 1 + y 0 • v 1 1 = y := by
+      ext i
+      fin_cases i
+      · simp
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_one, sub_add_cancel]
+        apply hy0.symm
+    unfold closed_hull
+    simp
+    use fun | 0 => y 0 | 1 => 1 - y 0
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · linarith
+    · simp
+      apply hy'.2
+    · simp only [Fin.isValue, Fin.sum_univ_two, add_sub_cancel]
+    simp only [Fin.isValue]
+    have hxface' :  (1 - y 0) • v 0 1 + y 0 • v 1 1 =   y 0 • v 1 1 + (1 - y 0) • v 0 1  := by
+      module
+    rw [hxface'] at hxface
+    apply hxface
 
-  have hxtop : x ∈ closed_hull top_face := by
-    exact (top_face_convex hpface hp hx hy).1
-  have hytop : y ∈ closed_hull top_face := by
-    exact (top_face_convex hpface hp hx hy).2
+· simp at *
+  have hp0' : p 0 = 0 := by
+    unfold square_boundary_big at hpiface
+    simp at hpiface
+    unfold closed_hull at hpiface
+    simp at hpiface
+    rcases hpiface with ⟨α, hα, hpα⟩
+    rcases hα with ⟨hα, hpα'⟩
+    rw [←hpα]
+    simp
+  have hx0 : x 0 = 0 := by
+    rw [hp0'] at hp0
+    have hx' : 0 ≤ x 0 ∧ x 0 ≤ 1 := by
+      rw [closed_unit_square_eq] at hx
+      exact hx 0
+    have hy' : 0 ≤ y 0 ∧ y 0 ≤ 1 := by
+      rw [closed_unit_square_eq] at hy
+      exact hy 0
+    by_contra hcontra
+    have hp0'' : -(1-r) * x 0 = r  * y 0 := by
+      linarith
+    by_cases hx1 : x 0 = 0
+    · contradiction
+    · have hxpos : 0 < x 0 := by
+        rcases hx' with ⟨hx'1, hx'2⟩
+        by_contra hcontra
+        rw [le_iff_lt_or_eq] at hx'1
+        cases' hx'1 with p q
+        linarith
+        rw [q] at hx1
+        contradiction
+      have hypos : y 0 ≥ 0 := by
+        apply hy'.1
+      have hneg : -(1-r) * x 0 < 0 := by
+        have h2 : -(1-r) < 0 := by linarith [hp1r]
+        exact mul_neg_of_neg_of_pos h2 hxpos
+      have hpos : r * y 0 ≥  0 := by
+        exact mul_nonneg (by linarith) hypos
+      have hneg' : -(1 - r) * x 0 ≥ 0 := by
+        rw [hp0'']; apply hpos
+      linarith
+
+  have hy0 : y 0 = 0 := by
+    rw [hp0', hx0] at hp0
+    simp at hp0
+    by_contra hcontra
+    by_cases hrcontra : r = 0
+    · linarith
+    · subst hr3
+      simp_all only [gt_iff_lt, sub_pos, Fin.isValue, or_self]
+  constructor
+  · unfold square_boundary_big
+    have hx' : 0 ≤ x 1 ∧ x 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hx
+      exact hx 1
+    simp
+    have hxface : (1- x 1) • v 0 0 + x 1 • v 0 1 = x := by
+      ext i
+      fin_cases i
+      · simp
+        apply hx0.symm
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_zero, mul_one, zero_add]
+    unfold closed_hull
+    simp
+    use fun | 0 => x 1 | 1 => 1 - x 1
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · linarith
+    · simp only [Fin.isValue, sub_nonneg]
+      apply hx'.2
+    · simp only [Fin.isValue, Fin.sum_univ_two, add_sub_cancel]
+    simp only [Fin.isValue]
+    have hxface' :  (1 - x 1) • v 0 0 + x 1 • v 0 1 =   x 1 • v 0 1 + (1 - x 1) • v 0 0  := by
+      module
+    rw [hxface'] at hxface
+    apply hxface
+
+  · unfold square_boundary_big
+    have hy' : 0 ≤ y 1 ∧ y 1 ≤ 1 := by
+      rw [closed_unit_square_eq] at hy
+      exact hy 1
+    simp
+    have hxface : (1- y 1) • v 0 0 + y 1 • v 0 1 = y := by
+      ext i
+      fin_cases i
+      · simp
+        apply hy0.symm
+      · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
+        mul_zero, mul_one, zero_add]
+    unfold closed_hull
+    simp
+    use fun | 0 => y 1 | 1 => 1 - y 1
+    refine ⟨⟨?_,?_⟩,?_⟩
+    intro i
+    fin_cases i
+    · linarith
+    · simp only [Fin.isValue, sub_nonneg]
+      apply hy'.2
+    · simp only [Fin.isValue, Fin.sum_univ_two, add_sub_cancel]
+    simp only [Fin.isValue]
+    have hxface' :  (1 - y 1) • v 0 0 + y 1 • v 0 1 =   y 1 • v 0 1 + (1 - y 1) • v 0 0 := by
+      module
+    rw [hxface'] at hxface
+    apply hxface
+
+lemma convex_faces' {x y p : ℝ²} (i : Fin 4) (hpiface : p ∈ closed_hull (square_boundary_big i))
+(hp : p ∈ open_hull (to_segment x y)) (hx: x ∈ closed_hull unit_square) (hy: y ∈  closed_hull unit_square) :
+closed_hull (to_segment x y) ⊆ closed_hull (square_boundary_big i) := by
   apply closed_hull_convex
-  intro i
-  fin_cases i
-  · exact hxtop
-  · exact hytop
+  intro j
+  fin_cases j
+  · exact (convex_faces i hpiface hp hx hy).1
+  · exact (convex_faces i hpiface hp hx hy).2
+
+lemma convex_faces'' {p : ℝ²} { L : Segment} (i : Fin 4) (hpiface : p ∈ closed_hull (square_boundary_big i))
+(hp : p ∈ open_hull L) (hx: L 0 ∈ closed_hull unit_square) (hy: L 1 ∈  closed_hull unit_square) :
+closed_hull L ⊆ closed_hull (square_boundary_big i) := by
+  apply closed_hull_convex
+  intro j
+  fin_cases j
+  · exact (convex_faces i hpiface hp hx hy).1
+  · exact (convex_faces i hpiface hp hx hy).2
 
 
 lemma bottom_face_convex {x y p : ℝ²} (hpface : p ∈  closed_hull bottom_face) (hp : p ∈ open_hull (to_segment x y))
