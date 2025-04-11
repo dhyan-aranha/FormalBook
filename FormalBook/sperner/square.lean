@@ -229,10 +229,14 @@ lemma boundary_leave_dir {x : ℝ²} (hx : x ∈ boundary unit_square) :
   · simp [segment_around_x, seg_vec, to_segment, v] at hi
     fin_cases i <;> (simp_all; linarith)
 
-lemma segment_triangle_pairing_int (S : Finset Triangle) (hCover : is_disjoint_cover (closed_hull unit_square) (S : Set Triangle))
-    (hArea : ∀ Δ ∈ S, det Δ ≠ 0) (L : Segment)
+lemma segment_triangle_pairing_int
+    (S : Finset Triangle)
+    (hCover : is_disjoint_cover (closed_hull unit_square) (S : Set Triangle))
+    (hArea : ∀ Δ ∈ S, det Δ ≠ 0)
+    (L : Segment)
     (hInt: ∀ Δ ∈ S, (open_hull Δ) ∩ (closed_hull L) = ∅)
-    (hLunit : open_hull L ⊆ open_hull unit_square) (hv : ∀ Δ ∈ S, ∀ i, Δ i ∉ open_hull L)
+    (hLunit : open_hull L ⊆ open_hull unit_square)
+    (hv : ∀ Δ ∈ S, ∀ i, Δ i ∉ open_hull L)
   : (S.filter (fun Δ ↦ closed_hull L ⊆ boundary Δ)).card = 2 := by
   -- We first take an element from open_hull L
   have ⟨x, hLx⟩ := open_seg_nonempty L
