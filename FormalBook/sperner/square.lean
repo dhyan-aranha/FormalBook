@@ -617,7 +617,7 @@ fin_cases i
     simp
   have hx1 : x 1 = 0 := by
     by_contra hcontra
-rw [hp1'] at hp1
+    rw [hp1'] at hp1
     have hx' : 0 ≤ x 1 ∧ x 1 ≤ 1 := by
       rw [closed_unit_square_eq] at hx
       exact hx 1
@@ -1153,7 +1153,7 @@ closed_hull left_face ∪ closed_hull right_face = boundary unit_square := by
       simp only [real_to_fin_2, Fin.isValue, Fin.sum_univ_two] ; ext i ; fin_cases i<;> simp[h1]
 
 lemma boundary_union_of_faces' : ⋃ i : Fin 4, closed_hull (square_boundary_big i) = boundary unit_square
-:= by sorry
+:= by exact square_boundary_is_union_sides.symm
 
 lemma line_in_boundary {x : ℝ²} {L : Segment} (hL: closed_hull L ⊆ closed_hull unit_square)
 (hboundary: x ∈ open_hull L ∩ boundary unit_square) : closed_hull L ⊆ boundary unit_square := by
@@ -1167,9 +1167,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL0 : closed_hull L ⊆ closed_hull (square_boundary_big 0) := by
     apply convex_faces' 0 hbound0 hboundary.1
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 0) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -1180,9 +1180,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL1 : closed_hull L ⊆ closed_hull (square_boundary_big 1) := by
     apply convex_faces' 1 hbound1 hboundary.1
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 1) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -1193,9 +1193,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL2 : closed_hull L ⊆ closed_hull (square_boundary_big 2) := by
     apply convex_faces' 2 hbound2 hboundary.1
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 2) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -1206,9 +1206,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL3 : closed_hull L ⊆ closed_hull (square_boundary_big 3) := by
     apply convex_faces' 3 hbound3 hboundary.1
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
     apply hL
-      apply corner_in_closed_hull
+    apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 3) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -1227,16 +1227,27 @@ fin_cases i
 
 
 lemma unit_square_is_convex {x y : ℝ²} (hx : x ∈ closed_hull unit_square) (hy : y ∈ closed_hull
-unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by sorry
+unit_square) : closed_hull (to_segment x y) ⊆ closed_hull unit_square := by
+  have h: ∀ i, to_segment x y i ∈ closed_hull unit_square
+  · intro i; fin_cases i
+    exact hx; exact hy
+  apply closed_hull_convex h
 
 lemma unit_square_is_convex' {S : Segment} (hS : closed_hull S ⊆ boundary unit_square) :
     ∃ i : Fin 4, closed_hull S ⊆ closed_hull (square_boundary_big i) := by
-  sorry
+  have hSi : ∀ i, S i ∈ closed_hull unit_square := (fun i↦ boundary_in_closed (hS corner_in_closed_hull))
+  rw[← boundary_union_of_faces'] at hS
+  rcases open_seg_nonempty S with ⟨ x, h⟩
+  rcases hS (open_sub_closed S h) with ⟨ y, ⟨⟨i,h1 ⟩ , h2  ⟩⟩
+  rw[← h1] at h2
+  exact ⟨ i, convex_faces'' i h2 h (hSi 0) (hSi 1)⟩
 
 lemma unit_square_is_convex_open {S : Segment} (hS : closed_hull S ⊆ boundary unit_square)
     (hNondegen : S 0 ≠ S 1) :
     ∃ i : Fin 4, open_hull S ⊆ open_hull (square_boundary_big i) := by
-  sorry
+  apply unit_square_is_convex' at hS
+  rcases hS with ⟨ i, hS⟩
+  exact ⟨ i, open_segment_sub' hS hNondegen⟩
 
 lemma square_boundary_segments_in_boundary : ∀ i : Fin 4, closed_hull (square_boundary_big i) ⊆
     boundary unit_square := by
