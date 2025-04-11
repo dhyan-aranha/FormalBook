@@ -145,11 +145,75 @@ lemma segment_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square)
 
 
 /- A version that states that the open_unit_square is open. -/
-
+--The proof below is not as difficult as it seems, but I just needed a lot of explicit bounds because simp was not cooperating
 lemma open_unit_square_open_dir {x : ℝ²} (y : ℝ²) (hx : x ∈ open_hull unit_square) :
     ∃ (ε : ℝ), ε > 0 ∧ ∀ (n : ℕ), x + (1 / (n : ℝ)) • (ε • y) ∈ open_hull unit_square := by
-  simp_rw [open_unit_square_eq]
-  sorry
+  simp_rw [open_unit_square_eq] at *
+  -- The constant we will choose is of order 1/ y, so we have to make an exception for y =0
+  by_cases h : ∀ i, (y  i= 0) -- this formulation was slightly easier for me
+  · use 1
+    have h1: y = 0
+    . ext i; exact h i
+    rw[h1]
+    simp[hx]
+  -- I would prefer to define the epsilon with an infinum over i, rather than doing it explicitly,
+  -- but I could not find the right api to show this infinum is bigger than zero (as it is only a infinum over a finite index)
+  · use ((1/(max |y 0| |y 1|))*(1/2) )* min (min (x 0) (1- x 0)) (min (x 1) (1 - x 1))
+    have h2 : (max |y 0| |y 1|) > 0
+    · push_neg at h
+      rcases h with ⟨ i, h2⟩; fin_cases i
+      · exact lt_sup_of_lt_left (abs_pos.mpr (h2))
+      · exact lt_sup_of_lt_right (abs_pos.mpr h2)
+    have h1: ∀ (i: Fin 2), 0 < (1- x i) := (fun i ↦  by linarith [hx i] )
+    have h8: 0 <  (2* (|y 0| ⊔ |y 1|)) :=  (mul_pos (by norm_num) h2)
+    have hxbound :  0 < x 0 ⊓ (1 - x 0) ⊓ (x 1 ⊓ (1 - x 1))
+    · apply lt_min <;> apply lt_min
+      · exact (hx 0).1
+      · exact h1 0
+      · exact (hx 1).1
+      · exact h1 1
+    constructor
+    · exact mul_pos (by simp[h2]) hxbound
+    · have h3: ∀ i, |-y i| <  (2*(max |y 0| |y 1|))
+      · intro i
+        refine lt_mul_of_one_lt_of_le_of_pos (by norm_num) ?_ h2
+        fin_cases i <;> simp
+      have h4: ∀ i, x i ≥  (x 0 ⊓ (1 - x 0)) ⊓ (x 1 ⊓ (1 - x 1))
+      · intro i; fin_cases i
+        apply inf_le_of_left_le; apply inf_le_of_left_le; rfl
+        apply inf_le_of_right_le; apply inf_le_of_left_le; rfl
+      have h5 : ∀ i, 1 - x i ≥  (x 0 ⊓ (1 - x 0)) ⊓ (x 1 ⊓ (1 - x 1))
+      · intro i; fin_cases i
+        apply inf_le_of_left_le; apply inf_le_of_right_le; rfl
+        apply inf_le_of_right_le; apply inf_le_of_right_le; rfl
+
+      intro n i; simp only [one_div, Fin.isValue, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
+
+      by_cases hn : ( n= 0) --mathematically, n should be at least 1, but because 1/ 0 = 0, the statement still holds for n = 0, but just requires a different proof
+      · rw[hn]; simp[hx i]
+      --for n≥ 1, the proof is as follows
+      have hn4 : (n : ℝ ) ≥ 1 :=  Nat.one_le_cast.mpr ( Nat.one_le_iff_ne_zero.mpr hn)
+      have h7: (1/(n: ℝ )) ≤  1 := by exact (div_le_one₀ (gt_of_ge_of_gt hn4 (by norm_num))).mpr hn4
+      constructor
+      · apply neg_lt_iff_pos_add.mp
+        have h6: -((↑n)⁻¹ * ((|y 0| ⊔ |y 1|)⁻¹ * 2⁻¹ * (x 0 ⊓ (1 - x 0) ⊓ (x 1 ⊓ (1 - x 1))) * y i)) =    ((-y i) / (2*(|y 0| ⊔ |y 1|))) * (1/n)* (x 0 ⊓ (1 - x 0) ⊓ (x 1 ⊓ (1 - x 1))) := by ring
+        rw[h6]
+        refine  mul_lt_of_lt_one_of_le_of_pos ?_ (h4 i) hxbound
+        refine  mul_lt_of_lt_one_of_le_of_pos ?_ (h7) (one_div_pos.mpr (gt_of_ge_of_gt hn4 (by norm_num)))
+        apply Bound.div_lt_one_of_pos_of_lt h8 (lt_of_abs_lt (h3 i))
+
+      · apply lt_tsub_iff_left.mp
+        have h6: ((↑n)⁻¹ * ((|y 0| ⊔ |y 1|)⁻¹ * 2⁻¹ * (x 0 ⊓ (1 - x 0) ⊓ (x 1 ⊓ (1 - x 1))) * y i)) =    ((y i) / (2*(|y 0| ⊔ |y 1|))) * (1/n)* (x 0 ⊓ (1 - x 0) ⊓ (x 1 ⊓ (1 - x 1))) := by ring
+        rw[h6]
+        refine  mul_lt_of_lt_one_of_le_of_pos ?_ (h5 i) hxbound
+        refine  mul_lt_of_lt_one_of_le_of_pos ?_ (h7) (one_div_pos.mpr (gt_of_ge_of_gt hn4 (by norm_num)))
+        simp_rw[abs_neg] at h3
+        apply Bound.div_lt_one_of_pos_of_lt h8 (lt_of_abs_lt (h3 i))
+
+
+
+
+
 
 lemma el_boundary_square_triangle_dir {x : ℝ²} (hx : x ∈ boundary unit_square):
     ∃ σ ∈ ({-1,1} : Finset ℝ), ∀ (Δ : Triangle), (det Δ ≠ 0) →
@@ -399,6 +463,12 @@ lemma cover_imples_corner_in_triangle
   sorry
 
 
+
+-- In this part we show that the the faces of the unit square are faces in the sense of convex
+-- geometry. (see: https://en.wikipedia.org/wiki/Convex_set#Face_of_a_convex_set)
+-- there are many sorries introduced here but nearly all of them are repeated arguments of what has
+-- already been written.
+
 noncomputable def top_face: Segment := fun | 0 => v 0 1 | 1 => v 1 1
 
 noncomputable def bottom_face: Segment := fun | 0 => v 0 0 | 1 => v 1 0
@@ -549,7 +619,7 @@ fin_cases i
     simp
   have hx1 : x 1 = 0 := by
     by_contra hcontra
-    rw [hp1'] at hp1
+rw [hp1'] at hp1
     have hx' : 0 ≤ x 1 ∧ x 1 ≤ 1 := by
       rw [closed_unit_square_eq] at hx
       exact hx 1
@@ -586,28 +656,28 @@ fin_cases i
     · linarith
     · subst hr3
       simp_all only [gt_iff_lt, sub_pos, Fin.isValue, or_self]
-  constructor
+constructor
   · unfold square_boundary_big
     have hx' : 0 ≤ x 0 ∧ x 0 ≤ 1 := by
         rw [closed_unit_square_eq] at hx
         apply hx 0
     simp
     have hxface : (1- x 0) • v 0 0 + x 0 • v 1 0 = x := by
-      ext i
-      fin_cases i
+    ext i
+    fin_cases i
       · simp
       · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
         mul_zero, add_zero]
-        apply hx1.symm
-    unfold closed_hull
+      apply hx1.symm
+  unfold closed_hull
     simp
-    use fun | 0 => 1 - x 0 | 1 => x 0
-    refine ⟨⟨?_,?_⟩,?_⟩
+  use fun | 0 => 1 - x 0 | 1 => x 0
+  refine ⟨⟨?_,?_⟩,?_⟩
     intro i
     fin_cases i
     · simp [hx'.2]
     · simp [hx'.1]
-    · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
+  · simp only [Fin.isValue, Fin.sum_univ_two, sub_add_cancel]
     simp only [Fin.isValue]
     apply hxface
   · unfold square_boundary_big
@@ -616,16 +686,16 @@ fin_cases i
       apply hy 0
     simp
     have hxface : (1- y 0) • v 0 0 + y 0 • v 1 0 = y := by
-      ext i
-      fin_cases i
+    ext i
+    fin_cases i
       · simp
       · simp only [Fin.isValue, Fin.mk_one, PiLp.add_apply, PiLp.smul_apply, v₁_val, smul_eq_mul,
         mul_zero, add_zero]
-        apply hy1.symm
-    unfold closed_hull
+      apply hy1.symm
+  unfold closed_hull
     simp
-    use fun | 0 => 1 - y 0 | 1 => y 0
-    refine ⟨⟨?_,?_⟩,?_⟩
+  use fun | 0 => 1 - y 0 | 1 => y 0
+  refine ⟨⟨?_,?_⟩,?_⟩
     intro i
     fin_cases i
     · simp [hy'.2]
@@ -820,9 +890,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL0 : closed_hull L ⊆ closed_hull (square_boundary_big 0) := by
     apply convex_faces' 0 hbound0 hboundary.1
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 0) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -833,9 +903,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL1 : closed_hull L ⊆ closed_hull (square_boundary_big 1) := by
     apply convex_faces' 1 hbound1 hboundary.1
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 1) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -846,9 +916,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL2 : closed_hull L ⊆ closed_hull (square_boundary_big 2) := by
     apply convex_faces' 2 hbound2 hboundary.1
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 2) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
@@ -859,9 +929,9 @@ rcases hbound with hbound0 | hbound1 | hbound2 | hbound3
 · have hL3 : closed_hull L ⊆ closed_hull (square_boundary_big 3) := by
     apply convex_faces' 3 hbound3 hboundary.1
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
     apply hL
-    apply corner_in_closed_hull
+      apply corner_in_closed_hull
   have hbound' : closed_hull (square_boundary_big 3) ⊆ boundary unit_square := by
     rw [← boundary_union_of_faces']
     intro x hx
