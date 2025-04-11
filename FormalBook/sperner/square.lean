@@ -452,20 +452,6 @@ lemma segment_triangle_pairing_boundary (S : Finset Triangle) (hCover : is_disjo
     exact is_cover_open_el_imp_eq hCover.2 hΔ' hΔ hεΔ' hεΔ
 
 
-lemma cover_imples_corner_in_triangle
-    {S : Finset Triangle}
-    (hCover : is_cover (closed_hull unit_square) S.toSet) :
-    ∀ i, ∃ T ∈ S, ∃ j, unit_square i = T j := by
-  by_contra h_contra
-  push_neg at h_contra
-  have ⟨c, hc⟩ := h_contra
-  have hcIn : unit_square c ∈ closed_hull unit_square := corner_in_closed_hull
-  have ⟨T, hTsub, hT⟩  := is_cover_includes hCover hcIn
-  specialize hc T hTsub
-  have ⟨L, hLnTtriv, hOpen, hCsub⟩ := triangle_direction_sub hT hc
-
-  sorry
-
 
 
 -- In this part we show that the the faces of the unit square are faces in the sense of convex
@@ -577,12 +563,97 @@ lemma square_boundary_is_union_sides
   exact square_boundary_in_boundary _ hxS
 
 
+lemma square_boundary_big_inter_seg_aux₁ {a b c d : ℝ} (ha : 0 < a) (hb : 0 ≤ b) (hc : 0 < c)
+    (hd : 0 ≤ d) (habcd : a*b + c*d = 0) : b = 0 ∧ d = 0 := by
+  rw [add_eq_zero_iff_of_nonneg
+      ((mul_nonneg_iff_of_pos_left ha).mpr hb) ((mul_nonneg_iff_of_pos_left hc).mpr hd)] at habcd
+  exact ⟨
+    (mul_eq_zero_iff_left (ne_of_lt ha).symm).mp habcd.1,
+    (mul_eq_zero_iff_left (ne_of_lt hc).symm).mp habcd.2⟩
+
+
+lemma square_boundary_big_inter_seg_aux₂ {a b c d : ℝ} (hac : a + c = 1) (ha : 0 < a) (hb : b ≤ 1)
+    (hc : 0 < c) (hd : d ≤ 1) (habcd : a*b + c*d = 1) : b = 1 ∧ d = 1 := by
+  rw [←(sub_eq_zero), ←(sub_eq_zero (a := d)), ←neg_eq_zero, ←neg_eq_zero (a := d -1)]
+  refine square_boundary_big_inter_seg_aux₁ (a := a) (c := c) ha ?_ hc ?_ ?_  <;>
+  linarith
+
+
 lemma square_boundary_big_inter_seg {S : Segment} {x : ℝ²} {i : Fin 4} (hx : x ∈ open_hull S)
     (hxi : x ∈ closed_hull (square_boundary_big i)) (hS : closed_hull S ⊆ closed_hull unit_square) :
     closed_hull S ⊆ closed_hull (square_boundary_big i) := by
+  apply closed_hull_convex
+  intro j
+  have hS := fun k ↦ hS (corner_in_closed_hull (P := S) (i := k))
+  have hS₀ := hS 0; have hS₁ := hS 1;
+  rw [square_boundary_big_eq, closed_unit_square_eq] at *
+  have ⟨α, hα, hαx⟩ := hx
+  simp_rw [←hαx, Fin.sum_univ_two] at hxi
+  have hαsum : α 0 + α 1 = 1 := by convert hα.2; exact (Fin.sum_univ_two α).symm
+  clear hαx
+  -- Unfortunately I couldn't get the simp to close it all, so there is a nonterminating simp here.
+  fin_cases i <;> fin_cases j <;> simp_all
+  · exact (square_boundary_big_inter_seg_aux₁ (hα.1 0) (hS 0 1).1 (hα.1 1) (hS 1 1).1 hxi.2.2).1
+  · exact (square_boundary_big_inter_seg_aux₁ (hα.1 0) (hS 0 1).1 (hα.1 1) (hS 1 1).1 hxi.2.2).2
+  · exact (square_boundary_big_inter_seg_aux₂ hαsum (hα.1 0) (hS 0 0).2 (hα.1 1) (hS 1 0).2 hxi.2.2).1
+  · exact (square_boundary_big_inter_seg_aux₂ hαsum (hα.1 0) (hS 0 0).2 (hα.1 1) (hS 1 0).2 hxi.2.2).2
+  · exact (square_boundary_big_inter_seg_aux₂ hαsum (hα.1 0) (hS 0 1).2 (hα.1 1) (hS 1 1).2 hxi.2.2).1
+  · exact (square_boundary_big_inter_seg_aux₂ hαsum (hα.1 0) (hS 0 1).2 (hα.1 1) (hS 1 1).2 hxi.2.2).2
+  · exact (square_boundary_big_inter_seg_aux₁ (hα.1 0) (hS 0 0).1 (hα.1 1) (hS 1 0).1 hxi.2.2).1
+  · exact (square_boundary_big_inter_seg_aux₁ (hα.1 0) (hS 0 0).1 (hα.1 1) (hS 1 0).1 hxi.2.2).2
+
+
+lemma square_boundary_pairwise_inter {i : Fin 4} :
+    closed_hull (square_boundary_big (i - 1)) ∩ closed_hull (square_boundary_big i) = {unit_square i} := by
+  rw [square_boundary_big_eq, square_boundary_big_eq]
+  ext x
+  rw [Set.mem_singleton_iff]
+  constructor
+  · intro h
+    ext j
+    fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, unit_square]
+  · intro h; rw [h]
+    fin_cases i <;> simp [square_boundary_big, unit_square]
+
+
+lemma square_corner_in_boundary {i : Fin 4} :
+    unit_square i ∈ closed_hull (square_boundary_big i):= by
+  rw [←Set.singleton_subset_iff, ←square_boundary_pairwise_inter]
+  exact Set.inter_subset_right
+
+lemma square_corner_in_boundary' {i : Fin 4} :
+    unit_square i ∈ closed_hull (square_boundary_big (i-1)):= by
+  rw [←Set.singleton_subset_iff, ←square_boundary_pairwise_inter]
+  exact Set.inter_subset_left
+
+lemma segment_through_corner {S : Segment} {i : Fin 4} (hx : unit_square i ∈ open_hull S)
+    (hS : closed_hull S ⊆ closed_hull unit_square) : closed_hull S = {unit_square i} := by
+  rw [Set.Subset.antisymm_iff]
+  constructor
+  · rw [←square_boundary_pairwise_inter, Set.subset_inter_iff]
+    exact ⟨ square_boundary_big_inter_seg hx square_corner_in_boundary' hS ,
+            square_boundary_big_inter_seg hx square_corner_in_boundary hS⟩
+  · rw [Set.singleton_subset_iff]
+    exact open_sub_closed _ hx
+
+
+
+
+lemma cover_imples_corner_in_triangle
+    {S : Finset Triangle}
+    (hCover : is_cover (closed_hull unit_square) S.toSet) :
+    ∀ i, ∃ T ∈ S, ∃ j, unit_square i = T j := by
+  by_contra h_contra
+  push_neg at h_contra
+  have ⟨c, hc⟩ := h_contra
+  have hcIn : unit_square c ∈ closed_hull unit_square := corner_in_closed_hull
+  have ⟨T, hTsub, hT⟩  := is_cover_includes hCover hcIn
+  specialize hc T hTsub
+  have ⟨L, hLnTtriv, hOpen, hCsub⟩ := triangle_direction_sub hT hc
+  apply hLnTtriv
+
+  rw [segment_through_corner hT ?_] at hCsub
   sorry
-
-
 
 
 
