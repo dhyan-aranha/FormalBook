@@ -446,51 +446,52 @@ lemma square_boundary_sides_nonDegen (i : Fin 4) : square_boundary_big i 0 ≠ s
   fin_cases i <;> (simp_all [square_boundary_big])
 
 
-lemma square_boundary_in_boundary₀ :
-    closed_hull (square_boundary_big 0) = {x | 0 ≤ x 0 ∧ x 0 ≤ 1 ∧ x 1 = 0} := by
-  ext x
-  constructor
+
+
+def boundary_line : Fin 4 → Fin 2 := fun | 0 => 0 | 1 => 1 | 2 => 0 | 3 => 1
+def boundary_constant : Fin 4 → ℝ := fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0
+
+@[simp]
+lemma boundary_line_rw {i : Fin 4}
+  : boundary_line i = (fun | 0 => 0 | 1 => 1 | 2 => 0 | 3 => 1) i := rfl
+
+@[simp]
+lemma boundary_constant_rw {i : Fin 4}
+  : boundary_constant i = (fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0) i := rfl
+
+
+lemma square_boundary_big_eq (i : Fin 4) :
+    closed_hull (square_boundary_big i)
+    = {x | 0 ≤ x (boundary_line i) ∧ x (boundary_line i) ≤ 1 ∧ x (boundary_line i + 1) = boundary_constant i} := by
+  ext x; constructor
   · intro ⟨_, hα, hαx⟩
     simp_rw [Fin.sum_univ_two, simplex_closed_sub_fin2 hα 1] at hαx
+    fin_cases i <;>
     simp [←hαx, square_boundary_big, simplex_co_leq_1 hα, hα.1]
-  · sorry
+  · intro ⟨hx₀, hx₁, hxr⟩
+    fin_cases i
+    rw [←reverse_segment_closed_hull]
+    rotate_left
+    rw [←reverse_segment_closed_hull]
+    all_goals(
+    convert linear_co_closed _ (real_to_fin_2_closed hx₀ hx₁)
+    ext k; fin_cases k <;>
+    all_goals simp_all [linear_combination,real_to_fin_2,reverse_segment,square_boundary_big,to_segment,v])
 
 
 lemma square_boundary_in_boundary (i : Fin 4) :
     closed_hull (square_boundary_big i) ⊆ boundary unit_square := by
-  rw [boundary_unit_square_eq]
-  intro x ⟨α, hα, hαx⟩
-  simp_rw [Fin.sum_univ_two, simplex_closed_sub_fin2 hα 1] at hαx
-  rw [←hαx]
-  refine ⟨fun j ↦ by fin_cases i <;> fin_cases j <;> simp [square_boundary_big, simplex_co_leq_1 hα, hα.1],?_⟩
-  fin_cases i
-  use 1; left;  rotate_left
-  use 0; right; rotate_left
-  use 1; right; rotate_left
-  use 0; left;  rotate_left
-  all_goals simp [square_boundary_big, simplex_co_leq_1 hα, hα.1]
+  rw [square_boundary_big_eq, boundary_unit_square_eq]
+  exact fun _ ⟨_, _, _⟩ ↦
+    ⟨fun j ↦ by fin_cases i <;> fin_cases j <;> simp_all, ⟨boundary_line i + 1, by fin_cases i <;> simp_all⟩⟩
 
 lemma boundary_in_square_boundary {x : ℝ²} (hx : x ∈ boundary unit_square) :
     ∃ i, x ∈ closed_hull (square_boundary_big i) := by
   rw [boundary_unit_square_eq] at hx
   have ⟨j, hj⟩ := hx.2
   fin_cases j <;> cases' hj with hj hj
-  use 3;
-  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 1).1 (hx.1 1).2)
-  rotate_left
-  use 1
-  rw [←reverse_segment_closed_hull]
-  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 1).1 (hx.1 1).2)
-  rotate_left
-  use 0
-  rw [←reverse_segment_closed_hull];
-  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 0).1 (hx.1 0).2)
-  rotate_left
-  use 2
-  convert linear_co_closed _ (real_to_fin_2_closed (hx.1 0).1 (hx.1 0).2)
-  rotate_left
-  all_goals (ext k; fin_cases k)
-  all_goals simp_all [linear_combination,real_to_fin_2,reverse_segment,square_boundary_big,to_segment,v]
+  use 3; rotate_left; use 1; rotate_left; use 0; rotate_left; use 2
+  all_goals simp_all [square_boundary_big_eq]
 
 
 lemma square_boundary_is_union_sides
