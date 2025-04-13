@@ -21,34 +21,25 @@ open Finset
 
 def unit_square : Fin 4 → ℝ² := (fun | 0 => v 0 0 | 1 => v 1 0 | 2 => v 1 1 | 3 => v 0 1)
 
+
 lemma closed_unit_square_eq : closed_hull unit_square = {x | ∀ i, 0 ≤ x i ∧ x i ≤ 1} := by
   ext x
   constructor
-  · intro ⟨α, hα, hxα⟩
-    intro i
-    rw [←hxα]
-    constructor
-    · fin_cases i <;> simp [unit_square, Fin.sum_univ_four, Left.add_nonneg, v, hα.1]
-    · rw [←hα.2]
-      fin_cases i <;>
-      ( simp [unit_square, Fin.sum_univ_four, v]
-        linarith [hα.1 0, hα.1 1, hα.1 2, hα.1 3])
+  · intro ⟨α, hα, hxα⟩ i
+    rw [←hxα, ←hα.2]
+    have hs : α 1 + α 2 ≤ α 0 + α 1 + α 2 + α 3 := by linarith [hα.1 0, hα.1 3]
+    fin_cases i <;> simp [unit_square, Fin.sum_univ_four, Left.add_nonneg, v, hα.1, hs]
   · intro hx
     use fun
-          | 0 => (1 + min (x 0) (x 1) - (x 0) - (x 1))
-          | 1 => x 0 - min (x 0) (x 1)
-          | 2 => min (x 0) (x 1)
-          | 3 => x 1 - min (x 0) (x 1)
+          | 0 => (1 - x 0 ) * (1 - x 1)
+          | 1 => x 0 * (1 - x 1)
+          | 2 => x 0 * x 1
+          | 3 => (1 - x 0) * x 1
     refine ⟨⟨?_,?_⟩,?_⟩
-    · intro i
-      fin_cases i <;> simp [hx 0, hx 1]
-      cases min_choice (x 0) (x 1) <;> simp_all
-      linarith [hx 0]
-    · rw [Fin.sum_univ_four]
-      ring
-    · apply PiLp.ext
-      intro i
-      fin_cases i <;> simp [Fin.sum_univ_four, unit_square, v]
+    · exact fun i ↦ by fin_cases i <;> simp [hx 0, hx 1,  Left.mul_nonneg]
+    · rw [Fin.sum_univ_four]; ring
+    · ext i; fin_cases i <;> (simp [Fin.sum_univ_four, unit_square, v]; ring)
+
 
 
 -- The open unit square is more or less the same
@@ -65,29 +56,15 @@ lemma open_unit_square_eq : open_hull unit_square = {x | ∀ i, 0 < x i ∧ x i 
       ( simp [unit_square, Fin.sum_univ_four, v]
         linarith [hα.1 0, hα.1 1, hα.1 2, hα.1 3])
   · intro hx
-    -- This part is a little bit annoying. We split it up in some steps.
-    have h₁ : 0 < (1 + min (x 0) (x 1) - (x 0) - (x 1)) := by
-      cases min_choice (x 0) (x 1) <;> simp_all; linarith [hx 0]
-    have h₂ : 0 < min (x 0) (x 1) := by
-      cases min_choice (x 0) (x 1) <;> simp_all;
-    let a : ℝ := min ((1 + min (x 0) (x 1) - (x 0) - (x 1))) (min (x 0) (x 1) )
-    have h₃ : 0 < a := lt_min h₁ h₂
     use fun
-          | 0 => (1 + min (x 0) (x 1) - (x 0) - (x 1)) - a/2
-          | 1 => x 0 - min (x 0) (x 1) + a/2
-          | 2 => min (x 0) (x 1) - a/2
-          | 3 => x 1 - min (x 0) (x 1) + a/2
+          | 0 => (1 - x 0 ) * (1 - x 1)
+          | 1 => x 0 * (1 - x 1)
+          | 2 => x 0 * x 1
+          | 3 => (1 - x 0) * x 1
     refine ⟨⟨?_,?_⟩,?_⟩
-    · intro i; fin_cases i <;> simp only [Fin.isValue, sub_pos]
-      · exact gt_of_ge_of_gt (b := a) (min_le_left _ _) (by linarith)
-      · exact add_pos_of_nonneg_of_pos (by simp) (by linarith)
-      · exact gt_of_ge_of_gt (b := a) (min_le_right _ _) (by linarith)
-      · exact add_pos_of_nonneg_of_pos (by simp) (by linarith)
-    · simp [Fin.sum_univ_four]
-      ring
-    · apply PiLp.ext
-      intro i
-      fin_cases i <;> simp [Fin.sum_univ_four, unit_square, v]
+    · exact fun i ↦ by fin_cases i <;> simp [hx 0, hx 1]
+    · rw [Fin.sum_univ_four]; ring
+    · ext i; fin_cases i <;> (simp [Fin.sum_univ_four, unit_square, v]; ring)
 
 
 lemma element_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square) :
@@ -637,23 +614,18 @@ lemma segment_through_corner {S : Segment} {i : Fin 4} (hx : unit_square i ∈ o
     exact open_sub_closed _ hx
 
 
-
-
 lemma cover_imples_corner_in_triangle
     {S : Finset Triangle}
     (hCover : is_cover (closed_hull unit_square) S.toSet) :
     ∀ i, ∃ T ∈ S, ∃ j, unit_square i = T j := by
-  by_contra h_contra
-  push_neg at h_contra
+  by_contra h_contra; push_neg at h_contra
   have ⟨c, hc⟩ := h_contra
-  have hcIn : unit_square c ∈ closed_hull unit_square := corner_in_closed_hull
-  have ⟨T, hTsub, hT⟩  := is_cover_includes hCover hcIn
+  have ⟨T, hTsub, hT⟩ := is_cover_includes hCover (corner_in_closed_hull (i := c))
   specialize hc T hTsub
   have ⟨L, hLnTtriv, hOpen, hCsub⟩ := triangle_direction_sub hT hc
   apply hLnTtriv
-
-  rw [segment_through_corner hT ?_] at hCsub
-  sorry
+  have hS := segment_through_corner hOpen (fun _ y ↦ (is_cover_sub hCover _ hTsub) (hCsub y))
+  rw [closed_hull_constant_rev hS 0, closed_hull_constant_rev hS 1]
 
 
 
