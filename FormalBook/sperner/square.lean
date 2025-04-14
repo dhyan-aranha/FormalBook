@@ -653,3 +653,13 @@ lemma unit_square_is_convex_open {S : Segment} (hS : closed_hull S ⊆ boundary 
   apply unit_square_is_convex' at hS
   rcases hS with ⟨ i, hS⟩
   exact ⟨ i, open_segment_sub' hS hNondegen⟩
+
+
+lemma open_hull_segment_in_boundary {S : Segment}
+    (hS : open_hull S ⊆ boundary unit_square)
+    (hcS : closed_hull S ⊆ closed_hull unit_square)
+  : ∃ i, closed_hull S ⊆ closed_hull (square_boundary_big i) := by
+have ⟨x, hx⟩ := open_pol_nonempty (by norm_num) S
+have ⟨i, hi⟩ := boundary_in_square_boundary (hS hx)
+use i
+apply square_boundary_big_inter_seg hx hi hcS

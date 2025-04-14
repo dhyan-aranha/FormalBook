@@ -1105,395 +1105,57 @@ lemma unit_square_boundary_decomposition (Δ : Finset Triangle) (hCovering : is_
     triangulation_boundary_basic_segments Δ =
     @Finset.biUnion (Fin 4) Segment _ ⊤ (square_boundary_basic Δ)
     := by
-    ext S
-    constructor
-    · intro hS
-      simp only [top_eq_univ, mem_biUnion, mem_univ, true_and]
-      unfold is_triangulation at hCovering
-      unfold is_cover at hCovering
-      simp at hCovering
-
-      unfold triangulation_boundary_basic_segments at hS
-      simp only [mem_filter] at hS
-      unfold triangulation_basic_segments at hS
-      unfold basic_avoiding_segment_set at hS
-      simp only [mem_filter, mem_image, mem_product, Prod.exists] at hS
-      unfold avoiding_segment_set at hS
-      simp only [mem_filter] at hS
-      rcases hS with ⟨α, hα⟩
-      rcases α with ⟨δ, hδ⟩
-      rcases δ with ⟨η, hη⟩
-
-      have xopoenhullS : ∃ x, x ∈ open_hull S := by
-        apply open_pol_nonempty
-        linarith
-
-      rcases xopoenhullS with ⟨x, hx⟩
-
-      have xinboundary : x ∈ boundary unit_square := by
-        tauto_set
-
-      rw [← boundary_union_of_faces] at xinboundary
-      simp only [Set.mem_union] at xinboundary
-
-      have openSinclosedS : open_hull S ⊆ closed_hull unit_square := by
-        exact subset_trans hα (boundary_sub_closed unit_square)
-
-
-      unfold triangulation_points at η
-      unfold segment_set at η
-      simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_product, Prod.exists] at η
-      simp at η
-      rcases η with ⟨S0, S1, hT'⟩
-      cases' hT' with ν hν
-      cases' ν with τ hτ
-      cases' τ with ρ hρ
-      cases' ρ with σ hσ
-
-      have S01' : ∀ i : Fin 2, to_segment S0 S1 i = S i := by
-          intro i
-          fin_cases i
-          · simp only [Fin.zero_eta, Fin.isValue]
-            rw [hν]
-          · simp only [Fin.mk_one, Fin.isValue]
-            rw [hν]
-      have S0' : S0 = S 0 := by
-        rw [← S01' 0, to_segment]
-      have S1' : S1 = S 1 := by
-        rw [← S01' 1, to_segment]
-
-
-      have S01 : S 0 ≠ S 1 := by
-        rw [S0', S1'] at hτ
-        exact hτ
-
-      rcases hσ with ⟨m, hm⟩
-
-      have sigma : closed_hull σ ⊆ closed_hull unit_square := by
+  ext S
+  constructor
+  · intro hS
+    simp only [triangulation_boundary_basic_segments, mem_filter] at hS
+    have ⟨i, hi⟩ := open_hull_segment_in_boundary (S := S) hS.2 ?_
+    · rw [mem_biUnion]
+      use i, by simp only [top_eq_univ, mem_univ]
+      simp only [square_boundary_basic, mem_filter, triangulation_boundary_basic_segments]
+      refine ⟨hS,?_⟩
+      apply open_segment_sub' hi
+      simp only [triangulation_basic_segments, basic_avoiding_segment_set, avoiding_segment_set,
+        mem_filter] at hS
+      exact segment_set_vertex_distinct hS.1.1.1
+    · apply closed_hull_convex
+      intro i
+      simp only [triangulation_basic_segments, basic_avoiding_segment_set, avoiding_segment_set,
+        mem_filter, segment_set] at hS
+      have this := hS.1.1.1
+      simp only [ne_eq, product_eq_sprod, mem_image, mem_filter, mem_product, Prod.exists] at this
+      have ⟨a, b, ⟨⟨ha, hb⟩, hab⟩, hS⟩ := this
+      simp [is_triangulation, is_cover] at hCovering
+      have hSub : (triangulation_points Δ).toSet ⊆ (closed_hull unit_square) := by
         rw [hCovering]
-        intro z hz
-        simp only [Set.mem_iUnion, exists_prop]
-        use σ
-
-      have S0m : S 0 ∈ closed_hull unit_square := by
-        rw [S0'] at hm
-        cases' hm with hm1 hm2
-        · rw [hm1]
-          have this' : σ 0 ∈ closed_hull σ := by
-            apply corner_in_closed_hull
-          exact sigma this'
-
-        cases' hm2 with hm2' hm2''
-        · rw [hm2']
-          have this' : σ 1 ∈ closed_hull σ := by
-            apply corner_in_closed_hull
-          exact sigma this'
-        · rw [hm2'']
-          have this' : σ 2 ∈ closed_hull σ := by
-            apply corner_in_closed_hull
-          exact sigma this'
-
-
-      rcases hρ with ⟨y, hy⟩
-
-      have : closed_hull y ⊆ closed_hull unit_square := by
-        rw [hCovering]
-        intro z hz
-        simp only [Set.mem_iUnion, exists_prop]
-        use y
-        constructor
-        · apply hy.1
-        · apply hz
-
-      have S1m : S 1 ∈ closed_hull unit_square := by
-        rw [S1'] at hy
-        cases' hy with hy1 hy2
-        cases' hy2 with hy1' hy1''
-        · rw [hy1']
-          have this' : y 0 ∈ closed_hull y := by
-            apply corner_in_closed_hull
-          exact this this'
-        cases' hy1'' with hy2' hy2''
-        · rw [hy2']
-          have this' : y 1 ∈ closed_hull y := by
-            apply corner_in_closed_hull
-          exact this this'
-        · rw [hy2'']
-          have this' : y 2 ∈ closed_hull y := by
-            apply corner_in_closed_hull
-          exact this this'
-
-
-      cases' xinboundary with q hq
-      cases' q with qq hqq
-      cases' qq with m1 hm1
-
-      have SinTop : closed_hull S ⊆ closed_hull top_face := by
-        apply top_face_convex₂
-        apply m1
-        apply hx
-        simp only [Fin.zero_eta, Fin.isValue]
-        apply S0m
-        apply S1m
-      use 2
-      unfold square_boundary_basic
-      rw [mem_filter]
-      constructor
-      · unfold triangulation_boundary_basic_segments
-        rw [mem_filter]
-        constructor
-        · unfold triangulation_basic_segments
-          unfold basic_avoiding_segment_set
-          rw [mem_filter]
-          constructor
-          · unfold avoiding_segment_set
-            rw [mem_filter]
-            constructor
-            · unfold triangulation_points
-              unfold segment_set
-              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
-              use S 0
-              use S 1
-              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
-                mem_singleton, ne_eq, segment_rfl, and_true]
-              constructor
-              constructor
-              · use σ
-                constructor
-                · apply m
-                · rw [S0'] at hm
-                  apply hm
-              · use y
-                constructor
-                · apply hy.1
-                · rw [S1'] at hy
-                  apply hy.2
-              apply S01
-            · apply hη
-          · apply hδ
-        · apply hα
-
-      · unfold square_boundary_big
-        simp only
-        have openSinTop :  open_hull S ⊆ open_hull top_face := by
-          apply open_segment_sub
-          intro i
-          fin_cases i
-          · simp only [Fin.zero_eta, Fin.isValue]
-            have S0: S 0 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · simp only [Fin.mk_one, Fin.isValue]
-            have S1: S 1 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · apply S01
-        unfold top_face at openSinTop
-        -- apply openSinTop
-        convert openSinTop using 1
-        convert reverse_segment_open_hull
-        ext i
-        fin_cases i <;> rfl
-      use 0
-      unfold square_boundary_basic
-      rw [mem_filter]
-      constructor
-      · unfold triangulation_boundary_basic_segments
-        rw [mem_filter]
-        constructor
-        · unfold triangulation_basic_segments
-          unfold basic_avoiding_segment_set
-          rw [mem_filter]
-          constructor
-          · unfold avoiding_segment_set
-            rw [mem_filter]
-            constructor
-            · unfold triangulation_points
-              unfold segment_set
-              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
-              use S 0
-              use S 1
-              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
-                mem_singleton, ne_eq, segment_rfl, and_true]
-              constructor
-              constructor
-              · use σ
-                constructor
-                · apply m
-                · rw [S0'] at hm
-                  apply hm
-              · use y
-                constructor
-                · apply hy.1
-                · rw [S1'] at hy
-                  apply hy.2
-              apply S01
-            · apply hη
-          · apply hδ
-        · apply hα
-
-      have SinBot : closed_hull S ⊆ closed_hull bottom_face := by
-        apply bottom_face_convex₂
-        apply hm1
-        apply hx
-        simp only [Fin.zero_eta, Fin.isValue]
-        apply S0m
-        apply S1m
-
-      · unfold square_boundary_big
-        simp only
-        have openSinBot :  open_hull S ⊆ open_hull bottom_face := by
-          apply open_segment_sub
-          intro i
-          fin_cases i
-          · simp only [Fin.zero_eta, Fin.isValue]
-            have S0: S 0 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · simp only [Fin.mk_one, Fin.isValue]
-            have S1: S 1 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · apply S01
-
-        unfold bottom_face at openSinBot
-        apply openSinBot
-
-      use 3
-      unfold square_boundary_basic
-      rw [mem_filter]
-      constructor
-      · unfold triangulation_boundary_basic_segments
-        rw [mem_filter]
-        constructor
-        · unfold triangulation_basic_segments
-          unfold basic_avoiding_segment_set
-          rw [mem_filter]
-          constructor
-          · unfold avoiding_segment_set
-            rw [mem_filter]
-            constructor
-            · unfold triangulation_points
-              unfold segment_set
-              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
-              use S 0
-              use S 1
-              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
-                mem_singleton, ne_eq, segment_rfl, and_true]
-              constructor
-              constructor
-              · use σ
-                constructor
-                · apply m
-                · rw [S0'] at hm
-                  apply hm
-              · use y
-                constructor
-                · apply hy.1
-                · rw [S1'] at hy
-                  apply hy.2
-              apply S01
-            · apply hη
-          · apply hδ
-        · apply hα
-
-      have SinLeft : closed_hull S ⊆ closed_hull left_face := by
-        apply left_face_convex₂
-        apply hqq
-        apply hx
-        simp only [Fin.zero_eta, Fin.isValue]
-        apply S0m
-        apply S1m
-
-      · unfold square_boundary_big
-        simp only
-        have openSinLeft :  open_hull S ⊆ open_hull left_face := by
-          apply open_segment_sub
-          intro i
-          fin_cases i
-          · simp only [Fin.zero_eta, Fin.isValue]
-            have S0: S 0 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · simp only [Fin.mk_one, Fin.isValue]
-            have S1: S 1 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · apply S01
-        unfold left_face at openSinLeft
-        --apply openSinLeft
-        exact openSinLeft
-      use 1
-      unfold square_boundary_basic
-      rw [mem_filter]
-      constructor
-      · unfold triangulation_boundary_basic_segments
-        rw [mem_filter]
-        constructor
-        · unfold triangulation_basic_segments
-          unfold basic_avoiding_segment_set
-          rw [mem_filter]
-          constructor
-          · unfold avoiding_segment_set
-            rw [mem_filter]
-            constructor
-            · unfold triangulation_points
-              unfold segment_set
-              simp only [Fin.isValue, mem_image, mem_filter, mem_product, Prod.exists]
-              use S 0
-              use S 1
-              simp only [Fin.isValue, product_eq_sprod, mem_product, mem_biUnion, mem_insert,
-                mem_singleton, ne_eq, segment_rfl, and_true]
-              constructor
-              constructor
-              · use σ
-                constructor
-                · apply m
-                · rw [S0'] at hm
-                  apply hm
-              · use y
-                constructor
-                · apply hy.1
-                · rw [S1'] at hy
-                  apply hy.2
-              apply S01
-            · apply hη
-          · apply hδ
-        · apply hα
-
-      · have SinRight : closed_hull S ⊆ closed_hull right_face := by
-          apply right_face_convex₂
-          apply hq
-          apply hx
-          simp only [Fin.zero_eta, Fin.isValue]
-          apply S0m
-          apply S1m
-
-        unfold square_boundary_big
-        simp only
-        have openSinRight :  open_hull S ⊆ open_hull right_face := by
-          apply open_segment_sub
-          intro i
-          fin_cases i
-          · simp only [Fin.zero_eta, Fin.isValue]
-            have S0: S 0 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · simp only [Fin.mk_one, Fin.isValue]
-            have S1: S 1 ∈ closed_hull S := by
-              apply corner_in_closed_hull
-            tauto_set
-          · apply S01
-        unfold right_face at openSinRight
-        -- apply openSinRight
-        exact openSinRight
-    intro hS
-    simp at hS
-    cases' hS with i hi
-    unfold square_boundary_basic at hi
-    rw [mem_filter] at hi
-    apply hi.1
-
+        intro x hx
+        simp only [triangulation_points, Fin.isValue, coe_biUnion, mem_coe, coe_insert,
+          coe_singleton, Set.mem_iUnion, Set.mem_insert_iff, Set.mem_singleton_iff,
+          exists_prop] at hx
+        have ⟨T,hT, hp⟩ := hx
+        rw [Set.mem_iUnion₂]
+        use T, hT
+        cases' hp with hp hp
+        · rw [hp]
+          exact corner_in_closed_hull
+        · cases' hp with hp hp <;> (rw [hp]; exact corner_in_closed_hull)
+      rw [←hS]
+      fin_cases i <;> (simp only [Fin.zero_eta, Fin.isValue, to_segment])
+      · exact hSub ha
+      · exact hSub hb
+  · intro hS
+    simp only [top_eq_univ, mem_biUnion, mem_univ, square_boundary_basic, mem_filter, true_and,
+      exists_and_left] at hS
+    have ⟨h, ⟨i, hi⟩⟩ := hS
+    simp only [triangulation_boundary_basic_segments, mem_filter]
+    refine ⟨?_,?_⟩
+    · simp only [triangulation_boundary_basic_segments, mem_filter] at h
+      exact h.1
+    · trans open_hull (square_boundary_big i)
+      · exact hi
+      · trans closed_hull (square_boundary_big i)
+        · exact open_sub_closed _
+        · exact square_boundary_segments_in_boundary i
 
 
 
