@@ -225,3 +225,8 @@ lemma boundary_union_open_closed {n : ℕ} {P : Fin n → ℝ²} :
 lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
     closed_hull P \ boundary P = open_hull P := by
   simp [boundary, open_sub_closed]
+
+lemma boundary_constant {n : ℕ} {P : ℝ²} :
+    boundary (fun (_ : Fin n) ↦ P) = ∅ := by
+
+  sorry

@@ -275,6 +275,18 @@ lemma boundary_seg_set {L :Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1}
     use (1 : Fin 2)
     tauto
 
+lemma boundary_seg_nonempty {L :Segment} {x : ℝ²} (hx : x ∈ boundary L)
+    : L 0 ≠ L 1 := by
+  intro hc
+  have hi : ∀ i, L i = L 0 := by
+    intro i
+    fin_cases i <;> simp_all
+  rw [←Set.mem_empty_iff_false x]
+  convert hx
+  convert (boundary_constant (P := L 0)).symm using 2
+  ext i
+  rw [hi i]
+
 
 
 lemma sign_seg_line (L : Segment) (x y : ℝ²) (a : ℝ) :
@@ -2166,8 +2178,12 @@ lemma inward_pointing_vector_exists  {T : Triangle} {x : ℝ²}
 
 lemma seg_inter_open_triangle {T : Triangle} {S : Segment} (hDet : det T ≠ 0)
     (hST : closed_hull S ∩ open_hull T ≠ ∅) : open_hull S ∩ open_hull T ≠ ∅ := by
-
-  sorry
+  rw [Mathlib.Tactic.PushNeg.ne_empty_eq_nonempty] at *
+  have ⟨x, hxS, hxT⟩ := hST
+  by_cases hxO : x ∈ open_hull S
+  · exact ⟨x, hxO, hxT⟩
+  ·
+    sorry
 
 
 
