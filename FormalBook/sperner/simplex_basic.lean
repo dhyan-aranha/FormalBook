@@ -77,6 +77,25 @@ lemma open_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
   (Set.Nonempty.subset_singleton_iff (open_pol_nonempty (Nat.zero_lt_of_ne_zero hn) _)).mp
       (subset_of_subset_of_eq (open_sub_closed _) (closed_hull_constant hn))
 
+lemma closed_hull_zero_dim (f : Fin 0 → ℝ²) : closed_hull f = ∅ := by
+  rw [Set.eq_empty_iff_forall_not_mem]
+  intro x ⟨_,⟨_,h⟩,_⟩
+  simp only [univ_eq_empty, sum_empty, zero_ne_one] at h
+
+lemma open_hull_zero_dim (f : Fin 0 → ℝ²) : open_hull f = ∅ := by
+  rw [←Set.subset_empty_iff]
+  exact subset_of_subset_of_eq (open_sub_closed f) (closed_hull_zero_dim f)
+
+
+
+lemma open_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
+    (ho : open_hull f = {P}) : ∀ i, f i = P :=  by
+  by_contra hc; push_neg at hc
+
+  sorry
+
+
+
 
 
 noncomputable def linear_combination {n : ℕ} (α : Fin n → ℝ) (f : Fin n → ℝ²)

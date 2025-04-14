@@ -69,15 +69,11 @@ lemma open_unit_square_eq : open_hull unit_square = {x | ∀ i, 0 < x i ∧ x i 
 
 lemma element_in_boundary_square {x : ℝ²} (hx : x ∈ boundary unit_square) :
     ∃ i, x i = 0 ∨ x i = 1 := by
-  by_contra hxn; push_neg at hxn
-  have hx₂ := boundary_in_closed hx
-  rw [closed_unit_square_eq] at hx₂
-  apply boundary_not_in_open hx
-  rw [open_unit_square_eq]
-  intro i
-  constructor
-  · exact lt_of_le_of_ne (hx₂ i).1 (hxn i).1.symm
-  · exact lt_of_le_of_ne (hx₂ i).2 (hxn i).2
+  by_contra hc; push_neg at hc
+  rw [boundary, closed_unit_square_eq, open_unit_square_eq, @Set.mem_diff] at hx
+  apply hx.2
+  exact fun i ↦ ⟨lt_of_le_of_ne (hx.1 i).1 (hc i).1.symm, lt_of_le_of_ne (hx.1 i).2 (hc i).2⟩
+
 
 lemma boundary_unit_square_eq : boundary unit_square = { x | (∀ i, 0 ≤ x i ∧ x i ≤ 1) ∧ (∃ i, x i = 0 ∨ x i = 1)} := by
   rw [Set.setOf_and, ←closed_unit_square_eq]
@@ -453,34 +449,26 @@ def square_boundary_big : Fin 4 → Segment := fun
 noncomputable def square_boundary_big_set : Finset Segment :=
    @Finset.biUnion (Fin 4) Segment _ ⊤ (fun i ↦ {square_boundary_big i})
 
+
+-- noncomputable def square_boundary_big_set₂ : Finset Segment :=
+--   Finset.image square_boundary_big (univ : Finset (Fin 4))
+
+
 lemma square_boundary_big_corners : ∀ i, ∀ j, ∃ k,
-    square_boundary_big i j = unit_square k := by
-  intro i j
-  fin_cases i <;> fin_cases j
-  · exact ⟨0,rfl⟩
-  · exact ⟨1,rfl⟩
-  · exact ⟨1,rfl⟩
-  · exact ⟨2,rfl⟩
-  · exact ⟨2,rfl⟩
-  · exact ⟨3,rfl⟩
-  · exact ⟨3,rfl⟩
-  · exact ⟨0,rfl⟩
+    square_boundary_big i j = unit_square k :=
+  fun i j ↦ ⟨i + (if j = 0 then 0 else 1), by fin_cases i <;> fin_cases j <;> rfl⟩
 
 lemma square_boundary_big_injective : square_boundary_big.Injective := by
   intro i j hij
-  have h₀ := congrFun hij 0
-  fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, v] <;>
-    (
-      have g₀ := congrFun h₀ 0
-      have g₁ := congrFun h₀ 1
-      simp_all [v]
-    )
+  have h₀ := congrFun (congrFun hij 0) 0
+  have h₁ := congrFun (congrFun hij 0) 1
+  fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, v]
 
 lemma square_boundary_sides_nonDegen (i : Fin 4) : square_boundary_big i 0 ≠ square_boundary_big i 1 := by
   intro h_contra
   have h₀ := congrFun h_contra 0
   have h₁ := congrFun h_contra 1
-  fin_cases i <;> (simp_all [square_boundary_big])
+  fin_cases i <;> simp_all [square_boundary_big]
 
 
 
@@ -583,14 +571,11 @@ lemma square_boundary_big_inter_seg {S : Segment} {x : ℝ²} {i : Fin 4} (hx : 
 lemma square_boundary_pairwise_inter {i : Fin 4} :
     closed_hull (square_boundary_big (i - 1)) ∩ closed_hull (square_boundary_big i) = {unit_square i} := by
   rw [square_boundary_big_eq, square_boundary_big_eq]
-  ext x
-  rw [Set.mem_singleton_iff]
+  ext x; rw [Set.mem_singleton_iff]
   constructor
-  · intro h
-    ext j
+  · intro _; ext j
     fin_cases i <;> fin_cases j <;> simp_all [square_boundary_big, unit_square]
-  · intro h; rw [h]
-    fin_cases i <;> simp [square_boundary_big, unit_square]
+  · exact fun h ↦ by fin_cases i <;> simp [h, square_boundary_big, unit_square]
 
 
 lemma square_corner_in_boundary {i : Fin 4} :

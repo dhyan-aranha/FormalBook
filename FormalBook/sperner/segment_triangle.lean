@@ -2124,132 +2124,25 @@ lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull 
 
 
 
-lemma filter_aux₁ {n : ℕ} {i : Fin n} : filter (fun x ↦ x = i) univ  = {i} := by
-  ext j
-  simp
-
-lemma filter_aux₂ {n : ℕ} {i : Fin n} : filter (fun x ↦ ¬x = i) univ  = {i}ᶜ := by
-  rw [Finset.filter_not, filter_aux₁]; rfl
-
-lemma filter_aux₃ {n : ℕ} {i x : Fin n} : filter (fun y ↦ x = y) {i} = if i = x then {i} else ∅ := by
-  split <;> ext j
-  · simp only [mem_filter, mem_singleton, and_iff_left_iff_imp]
-    intro h; rw [h]; symm; assumption
-  · simp only [mem_filter, mem_singleton, not_mem_empty, iff_false, not_and]
-    intro h; rw [h]; rename_i h₂; exact fun a ↦ h₂ a.symm
-
-
-lemma filter_aux₄ {n : ℕ} {i x : Fin n} : filter (fun y ↦ ¬x = y) {i} = if i = x then ∅ else {i} := by
-  rw [Finset.filter_not, filter_aux₃]
-  split <;> simp
-
-lemma filter_aux₅ {n : ℕ} {i x : Fin n} : filter (fun y ↦ x = y) {i}ᶜ = if i = x then ∅ else {x} := by
-  split <;> rename_i h <;> ext j
-  · simp [h]
-    exact fun a a_1 ↦ a a_1.symm
-  · simp only [mem_filter, mem_compl, mem_singleton]
-    constructor
-    · exact fun ⟨h1,h2⟩ ↦ h2.symm
-    · intro h1
-      refine ⟨?_, h1.symm⟩
-      intro hi
-      apply h
-      rw [←h1, ←hi]
-
-lemma filter_aux₆ {n : ℕ} {i x : Fin n} : filter (fun y ↦ ¬x = y) {i}ᶜ = {i,x}ᶜ := by
-  rw [Finset.filter_not, filter_aux₅]
-  split
-  · rename_i h; rw [h]; simp
-  · ext j; simp
-
-
-lemma size_comp {n : ℕ} {i : Fin n} : #{i}ᶜ = n-1 := by
-  refine Nat.eq_sub_of_add_eq' ?_
-  convert (card_add_card_compl {i})
-  exact (Fintype.card_fin n).symm
-
-
-lemma open_pol_infinite {n : ℕ} {P : Fin n → ℝ²} (hT : ∃ i j, P i ≠ P j) :
-    (open_hull P).Infinite := by
-  have ⟨i,j,hij⟩ := hT
-  have hn : 1 < n := by
-    by_contra hc
-    interval_cases n
-    · linarith [Fin.pos i]
-    · apply hij
-      rw [subsingleton_fin_one.allEq i j]
-  have ⟨x, hx⟩ := open_pol_nonempty (Fin.pos i) P
-  have hy : ∃ y, y ∈ open_hull P ∧ x ≠ y := by
-    by_contra hc; push_neg at hc
-    have h_all : ∀ i, x = P i := by
-      intro i
-      let co_i : Fin n → (Fin n → ℝ) := fun i ↦ (fun k ↦ if k = i then 2 / (n + 1) else 1 / (n + 1))
-      have h_co_i : ∀ i , (co_i i) ∈ open_simplex n := by
-        intro i
-        refine ⟨?_, ?_⟩
-        ·
-          sorry
-        ·
-          sorry
-      let p_i : Fin n → ℝ² := fun i ↦ ∑ k, (co_i i k) • P k
-      have h_p_i : ∀ i, (p_i i) = x := by
-        intro i; symm
-        apply hc
-        use co_i i, h_co_i i
-      let combo : Fin n → (Fin n → ℝ) := fun i ↦ (fun k ↦ if k = i then n else -1)
-      have hcombi {x : Fin n} : ∑ k, (combo i k) * (co_i k x) = (if x = i then 1 else 0) := by
-        unfold combo co_i
-        simp_rw [ite_mul, sum_ite]
-        simp only [mul_ite, neg_mul, one_mul, sum_ite, sum_const, nsmul_eq_mul, one_div, sum_neg_distrib,
-            filter_aux₁, filter_aux₂, filter_aux₃, filter_aux₄, filter_aux₅, filter_aux₆]
-        split <;> rename_i hxi
-        · simp [hxi, size_comp]
-          field_simp
-          ring_nf
-        · simp [hxi, size_comp]
-          split
-          · tauto
-          · field_simp
-            ring_nf
-            have this : Nat.cast (R := ℝ) (n - 1 - 1) = (Nat.cast (R := ℝ) n) - (2 : ℝ) := by
-              rw [Nat.cast_sub, Nat.cast_sub]
-              ring
-              · linarith
-              · exact Nat.le_sub_one_of_lt hn
-            rw [this]
-            ring_nf
-      have h₁ : P i = ∑ k, (combo i k) • (p_i k) := by
-        unfold p_i
-        simp_rw [smul_sum]
-        rw [@sum_comm]
-        simp_rw [smul_smul, ←sum_smul, hcombi]
-        sorry
-      have h₂ : x = ∑ k, (combo i k) • (p_i k) := by
-        simp_rw [h_p_i, ←sum_smul]
-        convert (one_smul (M := ℝ) (b := x)).symm
-        unfold combo
-        rw [sum_ite]
-        simp only [sum_const, nsmul_eq_mul, sum_neg_distrib, mul_one]
-        sorry
-      rw [h₁, h₂]
-    apply hij
-    rw [←h_all i, ←h_all j]
-  sorry
-
-
 lemma inward_pointing_vector_exists  {T : Triangle} {x : ℝ²}
     (hx : x ∈ closed_hull T) (hT : ¬(∀ i j, T i = T j))
     : ∃ y, x ≠ y ∧ open_hull (to_segment x y) ⊆ open_hull T := by
   have hy : ∃ y, y ∈ open_hull T ∧ x ≠ y := by
     by_contra hc
     push_neg at hc
-    have h_all : ∀ i, x = T i := by
-      intro i
-
-      sorry
+    have h_all : ∀ i, T i = x := by
+      apply open_hull_constant_rev
+      ext y
+      constructor
+      · exact fun hy ↦ id (hc _ hy ).symm
+      · rw [Set.mem_singleton_iff]
+        intro h; rw [h]
+        have ⟨z, hz⟩ := open_pol_nonempty (by linarith) T
+        convert hz
+        exact hc _ hz
     apply hT
     intro i j
-    rw [←h_all i, ←h_all j]
+    rw [h_all i, ←h_all j]
   have ⟨y, hy, hxy⟩ := hy
   use y, hxy
   intro z hz
