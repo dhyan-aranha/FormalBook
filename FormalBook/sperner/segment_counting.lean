@@ -528,7 +528,6 @@ lemma mod_two_mul {a b : ℕ} (h : a % 2 = b % 2) : (2 * a) % 4 = (2 * b) % 4 :=
   exact ⟨c, by simp only [Nat.cast_mul, ←mul_sub, hc]; ring⟩
 
 
-
 lemma sum_two_mod_fun_seg {A : Set ℝ²} {X : Finset ℝ²} {S : Segment}
     (hS : S ∈ avoiding_segment_set X A) {f : Segment → ℕ} (hf₁ : two_mod_function f)
     (hf₂ : symm_fun f):
@@ -2294,12 +2293,18 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
 
 
+
 theorem monsky_rainbow (Δ : Finset Triangle)
     (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
-    (hCovering : is_triangulation Δ)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0)
-    :
-    ∃ T ∈ Δ, isRainbow v T = 1 := by
+    : ∃ T ∈ Δ, isRainbow v T = 1 := by
   have this := rainbow_sum_is_purple_sum v _ hDisjointCover non_degen
-
-  sorry -- easy, follows from above
+  rw [segment_sum_odd v _ hDisjointCover.1 non_degen] at this
+  have hf : rainbow_sum v Δ ≠ 0 := by
+    intro hc
+    rw [hc] at this
+    simp only [mul_zero, Nat.zero_mod, OfNat.zero_ne_ofNat] at this
+  simp_rw [rainbow_sum, isRainbow, ←Finset.card_filter, card_ne_zero] at hf
+  have ⟨T, hT⟩ := hf
+  simp only [mem_filter] at hT
+  exact ⟨T, hT.1, by simp_all only [isRainbow, ne_eq, ↓reduceIte]⟩
