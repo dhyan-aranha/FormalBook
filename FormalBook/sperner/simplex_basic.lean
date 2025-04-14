@@ -56,6 +56,12 @@ lemma closed_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
   · intro hv; rw [hv]
     exact corner_in_closed_hull (i := ⟨0, Nat.zero_lt_of_ne_zero hn⟩)
 
+lemma closed_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
+    (hc : closed_hull f = {P}) : ∀ i, f i = P := by
+  simp_rw [←Set.mem_singleton_iff, ←hc]
+  exact fun _ ↦ corner_in_closed_hull
+
+
 lemma open_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : ∃ x, x ∈ open_hull P := by
   use ∑ i, (1/(n : ℝ)) • P i, fun _ ↦ (1/(n : ℝ))
   exact ⟨⟨fun _ ↦ by simp [hn], by simp; exact (mul_inv_cancel₀ (by simp; linarith))⟩, by simp⟩
@@ -71,14 +77,32 @@ lemma open_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
   (Set.Nonempty.subset_singleton_iff (open_pol_nonempty (Nat.zero_lt_of_ne_zero hn) _)).mp
       (subset_of_subset_of_eq (open_sub_closed _) (closed_hull_constant hn))
 
+lemma closed_hull_zero_dim (f : Fin 0 → ℝ²) : closed_hull f = ∅ := by
+  rw [Set.eq_empty_iff_forall_not_mem]
+  intro x ⟨_,⟨_,h⟩,_⟩
+  simp only [univ_eq_empty, sum_empty, zero_ne_one] at h
+
+lemma open_hull_zero_dim (f : Fin 0 → ℝ²) : open_hull f = ∅ := by
+  rw [←Set.subset_empty_iff]
+  exact subset_of_subset_of_eq (open_sub_closed f) (closed_hull_zero_dim f)
+
+
+
+lemma open_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
+    (ho : open_hull f = {P}) : ∀ i, f i = P :=  by
+  by_contra hc; push_neg at hc
+
+  sorry
+
+
+
 
 
 noncomputable def linear_combination {n : ℕ} (α : Fin n → ℝ) (f : Fin n → ℝ²)
     : ℝ² := ∑ i, α i • f i
 
 lemma linear_co_closed {n : ℕ} {α : Fin n → ℝ} (f : Fin n → ℝ²) (h : α ∈ closed_simplex n) :
-    linear_combination α f ∈ closed_hull f := by
-  sorry
+    linear_combination α f ∈ closed_hull f := ⟨α, h, by rfl⟩
 
 
 
