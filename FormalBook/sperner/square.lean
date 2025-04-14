@@ -472,7 +472,7 @@ lemma boundary_constant_rw {i : Fin 4}
 
 lemma square_boundary_big_eq (i : Fin 4) :
     closed_hull (square_boundary_big i)
-    = {x | 0 ≤ x (boundary_line i) ∧ x (boundary_line i) ≤ 1 ∧ x (boundary_line i + 1) = boundary_constant i} := by
+    = {x | 0 ≤ x (boundary_line i) ∧ x (boundary_line i) ≤ 1 ∧ x (boundary_line i + 1) = bc i} := by
   ext x; constructor
   · intro ⟨_, hα, hαx⟩
     simp_rw [Fin.sum_univ_two, simplex_closed_sub_fin2 hα 1] at hαx
