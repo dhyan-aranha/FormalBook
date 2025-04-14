@@ -2123,7 +2123,6 @@ lemma triangle_direction_sub {T : Triangle} {x : ℝ²} (hx : x ∈ closed_hull 
         fin_cases i <;> fin_cases j <;> (simp_all) <;> module
 
 
-
 lemma inward_pointing_vector_exists  {T : Triangle} {x : ℝ²}
     (hx : x ∈ closed_hull T) (hT : ¬(∀ i j, T i = T j))
     : ∃ y, x ≠ y ∧ open_hull (to_segment x y) ⊆ open_hull T := by
