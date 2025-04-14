@@ -2232,11 +2232,18 @@ lemma split_segment_sum (Δ : Finset Triangle)
       congr
       simp_rw [boundary_indicator, ←Finset.card_filter]
       refine segment_triangle_pairing_boundary Δ hDisjointCover non_degen S ?_ ?_ ?_ ?_
-      ·
-        sorry
+      · apply segment_set_vertex_distinct (X := triangulation_points Δ)
+        refine basic_avoiding_segment_set_sub (A := (triangulation_avoiding_set Δ)) ?_
+        exact mem_of_mem_filter S hS
       · sorry
-      · sorry
-      · sorry
+      · simp only [triangulation_boundary_basic_segments, mem_filter] at hS
+        exact hS.2
+      · intro T hT
+        simp only [triangulation_boundary_basic_segments, mem_filter,
+          triangulation_basic_segments, basic_avoiding_segment_set] at hS
+        intro _
+        refine hS.1.2 ?_ ?_
+        exact triangulation_points_mem hT _
     · rw [mul_sum, sum_congr rfl]
       intro S hS
       rw [mul_comm]
@@ -2244,10 +2251,15 @@ lemma split_segment_sum (Δ : Finset Triangle)
       simp_rw [boundary_indicator, ←Finset.card_filter]
       refine segment_triangle_pairing_int Δ hDisjointCover non_degen S ?_ ?_ ?_
       · sorry
-      · sorry
-      · sorry
-  ·
-    sorry
+      · simp only [triangulation_interior_basic_segments, mem_filter] at hS
+        exact hS.2
+      · intro T hT
+        simp only [triangulation_interior_basic_segments, mem_filter,
+          triangulation_basic_segments, basic_avoiding_segment_set] at hS
+        intro _
+        refine hS.1.2 ?_ ?_
+        exact triangulation_points_mem hT _
+  · sorry
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
