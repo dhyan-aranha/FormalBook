@@ -2204,20 +2204,25 @@ theorem interior_purple_sum (Δ : Finset Triangle) :
 
 
 lemma split_segment_sum (Δ : Finset Triangle) (hCover : is_triangulation Δ) (f : Segment → ℕ)
-    (h : symm_fun f) : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
+    (h : symm_fun f) (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+    : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
     ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
     2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
-  /- rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ ((isPurple v) y))]
+
+  rw [sum_sigma' Δ (fun x ↦ triangle_basic_boundary Δ x) (fun _ y ↦ ((f) y))]
   unfold triangle_basic_boundary
-  rw [triangulation_boundary_union Δ hCover]
+  rw [triangulation_boundary_union Δ hCover non_degen]
   have h : (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
         (triangulation_boundary_basic_segments Δ ∪ triangulation_interior_basic_segments Δ),
-          isPurple x.snd) % 4
+          f x.snd)
         = ((∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_boundary_basic_segments Δ), isPurple x.snd) +
+          (triangulation_boundary_basic_segments Δ), f x.snd) +
           (∑ x ∈ Δ.sigma fun x ↦ filter (fun S ↦ closed_hull S ⊆ boundary x)
-          (triangulation_interior_basic_segments Δ), isPurple x.snd)) % 4
-    := by sorry-/
+          (triangulation_interior_basic_segments Δ), f x.snd))
+    := by sorry
+  rw [h]
+  -- now have to use that triangle_pairing_boundary and triangle_pairing_interior
+
   sorry
 
 
@@ -2231,7 +2236,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
-  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
+  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v) non_degen]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
