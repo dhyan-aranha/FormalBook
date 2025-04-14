@@ -275,6 +275,18 @@ lemma boundary_seg_set {L :Segment} (hL : L 0 ≠ L 1) : boundary L = {L 0, L 1}
     use (1 : Fin 2)
     tauto
 
+lemma boundary_seg_nonempty {L :Segment} {x : ℝ²} (hx : x ∈ boundary L)
+    : L 0 ≠ L 1 := by
+  intro hc
+  have hi : ∀ i, L i = L 0 := by
+    intro i
+    fin_cases i <;> simp_all
+  rw [←Set.mem_empty_iff_false x]
+  convert hx
+  convert (boundary_constant (P := L 0)).symm using 2
+  ext i
+  rw [hi i]
+
 
 
 lemma sign_seg_line (L : Segment) (x y : ℝ²) (a : ℝ) :
@@ -1584,7 +1596,7 @@ lemma seg_par_closed_self {L : Segment} :
   closed_hull L = line_par (L 0) (seg_vec L) '' (Set.Icc 0 1 : Set ℝ) := closed_segment_interval_im
 
 lemma seg_par_open_self {L : Segment} :
-  closed_hull L = line_par (L 0) (seg_vec L) '' (Set.Icc 0 1 : Set ℝ) := closed_segment_interval_im
+  open_hull L = line_par (L 0) (seg_vec L) '' (Set.Ioo 0 1 : Set ℝ) := open_segment_interval_im
 
 
 lemma line_par_scalar_Icc {a b t : ℝ} {v₁ v₂ : ℝ²} (ht : 0 < t):
@@ -2036,7 +2048,8 @@ lemma real_number_bound_aux {n : ℕ} {f g : Fin n → ℝ}
 
 
 
-lemma triangle_open_hull_open {T : Triangle} {hnonDeg : det T ≠ 0} {x y : ℝ²}
+lemma triangle_open_hull_open {T : Triangle} (hnonDeg : det T ≠ 0) {x: ℝ²}
+    (y : ℝ²)
     (hx : x ∈ open_hull T) : ∃ (ε : ℝ), ε > 0 ∧ x + ε • y ∈ open_hull T := by
   by_contra hcontra
   push_neg at hcontra
@@ -2166,8 +2179,45 @@ lemma inward_pointing_vector_exists  {T : Triangle} {x : ℝ²}
 
 lemma seg_inter_open_triangle {T : Triangle} {S : Segment} (hDet : det T ≠ 0)
     (hST : closed_hull S ∩ open_hull T ≠ ∅) : open_hull S ∩ open_hull T ≠ ∅ := by
-
-  sorry
+  rw [Mathlib.Tactic.PushNeg.ne_empty_eq_nonempty] at *
+  have ⟨x, hxS, hxT⟩ := hST
+  by_cases hxO : x ∈ open_hull S
+  · exact ⟨x, hxO, hxT⟩
+  · have hxB : x ∈ boundary S := Set.mem_diff_of_mem hxS hxO
+    have hSn := boundary_seg_nonempty hxB
+    rw [boundary_seg hSn, mem_coe, mem_image] at hxB
+    have ⟨i, temp, hi⟩ := hxB
+    wlog hi0 : i = 0
+    · specialize this (S := reverse_segment S) hDet
+      rw [reverse_segment_closed_hull, reverse_segment_open_hull] at this
+      specialize this hST x hxS hxT hxO ?_ ?_ 0 (mem_univ _) ?_ rfl
+      · use i + 1, by simp
+        convert hi using 1
+        fin_cases i <;> simp [reverse_segment, to_segment]
+      · convert hSn.symm using 1
+      · have hi1 : i = 1 := by fin_cases i <;> simp_all
+        rw [hi1] at hi
+        convert hi using 1
+      · assumption
+    · rw [hi0] at hi
+      rw [←hi] at hxS hxT hxO
+      clear hxB hi0 hi temp i
+      have ⟨ε, hεpos, hε⟩ := triangle_open_hull_open hDet (seg_vec S) hxT
+      have hTε : line_par (S 0) (seg_vec S) '' Set.Icc 0 ε ⊆ open_hull T := by
+        rw [line_par_closed (by linarith)]
+        refine open_hull_convex ?_ hε
+        convert hxT
+        simp only [Fin.isValue, zero_smul, add_zero]
+      apply Set.Nonempty.mono (Set.inter_subset_inter_right (open_hull S) hTε)
+      rw [seg_par_open_self]
+      apply Set.Nonempty.mono (Set.image_inter_subset _ _ _)
+      rw [Set.image_nonempty]
+      use min (1/2) ε
+      refine ⟨⟨?_,?_⟩,⟨?_,?_⟩⟩
+      · exact lt_min (by norm_num) (hεpos)
+      · exact min_lt_of_left_lt (by norm_num)
+      · exact le_min (by norm_num) (le_of_lt hεpos)
+      · exact min_le_right _ _
 
 
 
