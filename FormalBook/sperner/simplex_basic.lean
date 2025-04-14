@@ -39,6 +39,14 @@ def simplex_vertex {n : ℕ} (i : Fin n) : Fin n → ℝ :=
 lemma simplex_vertex_in_simplex {n : ℕ} {i : Fin n} : simplex_vertex i ∈ closed_simplex n := by
   exact ⟨fun j ↦ by by_cases h : i = j <;> simp [simplex_vertex, h], by simp [simplex_vertex]⟩
 
+lemma closed_simplex_zero_empty : closed_simplex 0 = ∅ := by
+  unfold closed_simplex
+  simp only [IsEmpty.forall_iff, univ_eq_empty, sum_empty, zero_ne_one, and_false, Set.setOf_false]
+
+lemma open_simplex_zero_empty : open_simplex 0 = ∅ := by
+  unfold open_simplex
+  simp only [IsEmpty.forall_iff, univ_eq_empty, sum_empty, zero_ne_one, and_false, Set.setOf_false]
+
 @[simp]
 lemma simplex_vertex_image {n : ℕ} {i : Fin n} (f : Fin n → ℝ²) :
     ∑ k, (simplex_vertex i k) • f k = f i := by simp [simplex_vertex]
@@ -90,11 +98,43 @@ lemma open_hull_zero_dim (f : Fin 0 → ℝ²) : open_hull f = ∅ := by
 
 lemma open_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
     (ho : open_hull f = {P}) : ∀ i, f i = P :=  by
-  by_contra hc; push_neg at hc
-
-  sorry
-
-
+  cases' eq_or_ne 0 n with hz hn
+  · intro i
+    subst hz
+    by_contra h
+    unfold open_hull at ho
+    rw [open_simplex_zero_empty] at ho
+    simp only [univ_eq_empty, sum_empty, Set.image_empty] at ho
+    symm at ho
+    exact Set.singleton_ne_empty P ho
+  · by_contra hc; push_neg at hc
+    cases' hc with j hj
+    have hi : ∃ i, f i ≠ f j := by
+      by_contra hi
+      simp only [ne_eq, not_exists, Decidable.not_not] at hi
+      have h_hull : open_hull f = {f j} := by
+        have hf : f = fun x ↦ f j := by
+          ext x
+          rw [hi x]
+        rw [hf]
+        exact open_hull_constant hn.symm
+      simp_all only [Set.singleton_eq_singleton_iff]
+    cases' hi with i hi
+    have hP : P ∈ open_hull f := by
+      simp_all only [ne_eq, Set.mem_singleton_iff]
+    unfold open_hull at hP
+    rw [Set.mem_image] at hP
+    cases' hP with α hα
+    let α' := fun (k : Fin n) ↦ if k ≠ i ∧ k ≠ j then 0 else (
+      if k = i then ((α j) / 2) else -((α j) / 2)
+    )
+    let β := α + α'
+    let Q := ∑ i : Fin n, β i • f i
+    have hQP : Q ≠ P := by
+      sorry
+    have hQ : Q ∈ open_hull f := by
+      sorry
+    tauto_set
 
 
 
@@ -228,5 +268,12 @@ lemma open_closed_hull_minus_boundary {n : ℕ} {P : Fin n → ℝ²} :
 
 lemma boundary_constant {n : ℕ} {P : ℝ²} :
     boundary (fun (_ : Fin n) ↦ P) = ∅ := by
-
-  sorry
+  cases' (ne_or_eq n 0) with hn hz
+  · unfold boundary
+    rw [open_hull_constant hn, closed_hull_constant hn]
+    simp only [sdiff_self, Set.bot_eq_empty]
+  · unfold boundary
+    unfold closed_hull
+    rw [hz]
+    rw [closed_simplex_zero_empty]
+    simp only [univ_eq_empty, sum_empty, Set.image_empty, Set.empty_diff]
