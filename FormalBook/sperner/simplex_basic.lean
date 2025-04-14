@@ -102,8 +102,7 @@ noncomputable def linear_combination {n : ℕ} (α : Fin n → ℝ) (f : Fin n �
     : ℝ² := ∑ i, α i • f i
 
 lemma linear_co_closed {n : ℕ} {α : Fin n → ℝ} (f : Fin n → ℝ²) (h : α ∈ closed_simplex n) :
-    linear_combination α f ∈ closed_hull f := by
-  sorry
+    linear_combination α f ∈ closed_hull f := ⟨α, h, by rfl⟩
 
 
 

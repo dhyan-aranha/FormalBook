@@ -2036,12 +2036,13 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
       simp only [Set.disjoint_iUnion_right]
       intro T' hT'
       by_cases hTT' : T = T'
-      · -- Not so hard
-        sorry
+      · rw [hTT']
+        exact Set.disjoint_of_subset (side_in_boundary (non_degen T' hT') _) (fun _ a ↦ a) boundary_open_disjoint
       · have this := disjoint_opens_implies_disjoint_open_closed (T₁ := T) (T₂ := T') ?_ (non_degen T' hT')
         · exact Set.disjoint_of_subset closed_side_sub' (fun ⦃a⦄ a ↦ a) this
         · -- Here you need the covering stuff.
           -- I don't see it in the assumptions yet, but I think it is necessary.
+
           sorry
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
     intro S L hS hL hSL

@@ -613,6 +613,26 @@ lemma cover_imples_corner_in_triangle
   rw [closed_hull_constant_rev hS 0, closed_hull_constant_rev hS 1]
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 lemma convex_faces  {x y p : ℝ²} (i : Fin 4) (hpiface : p ∈ closed_hull (square_boundary_big i))
 (hp : p ∈ open_hull (to_segment x y)) (hx: x ∈ closed_hull unit_square) (hy: y ∈  closed_hull unit_square) :
 x ∈ closed_hull (square_boundary_big i) ∧ y ∈ closed_hull (square_boundary_big i) := by
