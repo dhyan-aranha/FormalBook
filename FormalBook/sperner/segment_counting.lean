@@ -2213,6 +2213,15 @@ lemma triangle_basic_boundary_indicator_rw {Δ : Finset Triangle} (T : Triangle)
   congr
   simp [boundary_indicator]
 
+lemma open_triangle_segment (Δ : Finset Triangle) (S : Segment)
+    (hS : S ∈ triangulation_basic_segments Δ):
+    ∀ T ∈ Δ, open_hull T ∩ closed_hull S = ∅ := by
+  unfold triangulation_basic_segments triangulation_avoiding_set basic_avoiding_segment_set avoiding_segment_set at hS
+  intro T hT
+  simp only [Set.disjoint_iUnion_right, mem_filter] at hS
+  rw [← Set.disjoint_iff_inter_eq_empty]
+  apply Disjoint.symm
+  exact hS.1.2 T hT
 
 lemma split_segment_sum (Δ : Finset Triangle)
   (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
@@ -2234,7 +2243,10 @@ lemma split_segment_sum (Δ : Finset Triangle)
       refine segment_triangle_pairing_boundary Δ hDisjointCover non_degen S ?_ ?_ ?_ ?_
       ·
         sorry
-      · sorry
+      · have h2 : S ∈ triangulation_basic_segments Δ := by
+          unfold triangulation_boundary_basic_segments at hS
+          exact Finset.filter_subset (fun S ↦ open_hull S ⊆ boundary unit_square) (triangulation_basic_segments Δ) hS
+        exact open_triangle_segment Δ S h2
       · sorry
       · sorry
     · rw [mul_sum, sum_congr rfl]
@@ -2243,13 +2255,16 @@ lemma split_segment_sum (Δ : Finset Triangle)
       congr
       simp_rw [boundary_indicator, ←Finset.card_filter]
       refine segment_triangle_pairing_int Δ hDisjointCover non_degen S ?_ ?_ ?_
+      · have h2 : S ∈ triangulation_basic_segments Δ := by
+          unfold triangulation_interior_basic_segments at hS
+          exact Finset.filter_subset (fun S ↦ open_hull S ⊆ open_hull unit_square) (triangulation_basic_segments Δ) hS
+        exact open_triangle_segment Δ S h2
       · sorry
       · sorry
-      · sorry
-  ·
-    sorry
+  · rw [Finset.disjoint_iff_inter_eq_empty]
+    exact triangulation_boundary_intersection Δ
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ)
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hDisjointCover: is_disjoint_cover (closed_hull unit_square) Δ.toSet)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
@@ -2259,7 +2274,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
-  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
+  rw [split_segment_sum Δ hDisjointCover (isPurple v) (isPurple_symm_function v) non_degen]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
