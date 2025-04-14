@@ -96,47 +96,6 @@ lemma open_hull_zero_dim (f : Fin 0 → ℝ²) : open_hull f = ∅ := by
 
 
 
-lemma open_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
-    (ho : open_hull f = {P}) : ∀ i, f i = P :=  by
-  cases' eq_or_ne 0 n with hz hn
-  · intro i
-    subst hz
-    by_contra h
-    unfold open_hull at ho
-    rw [open_simplex_zero_empty] at ho
-    simp only [univ_eq_empty, sum_empty, Set.image_empty] at ho
-    symm at ho
-    exact Set.singleton_ne_empty P ho
-  · by_contra hc; push_neg at hc
-    cases' hc with j hj
-    have hi : ∃ i, f i ≠ f j := by
-      by_contra hi
-      simp only [ne_eq, not_exists, Decidable.not_not] at hi
-      have h_hull : open_hull f = {f j} := by
-        have hf : f = fun x ↦ f j := by
-          ext x
-          rw [hi x]
-        rw [hf]
-        exact open_hull_constant hn.symm
-      simp_all only [Set.singleton_eq_singleton_iff]
-    cases' hi with i hi
-    have hP : P ∈ open_hull f := by
-      simp_all only [ne_eq, Set.mem_singleton_iff]
-    unfold open_hull at hP
-    rw [Set.mem_image] at hP
-    cases' hP with α hα
-    let α' := fun (k : Fin n) ↦ if k ≠ i ∧ k ≠ j then 0 else (
-      if k = i then ((α j) / 2) else -((α j) / 2)
-    )
-    let β := α + α'
-    let Q := ∑ i : Fin n, β i • f i
-    have hQP : Q ≠ P := by
-      sorry
-    have hQ : Q ∈ open_hull f := by
-      sorry
-    tauto_set
-
-
 
 noncomputable def linear_combination {n : ℕ} (α : Fin n → ℝ) (f : Fin n → ℝ²)
     : ℝ² := ∑ i, α i • f i
@@ -236,7 +195,7 @@ lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : F
     exact hβp
 
 
-lemma closed_hull_open_hull_com {n : ℕ} (P : Fin n → ℝ²) {x y : ℝ²}
+lemma closed_hull_open_hull_com {n : ℕ} {P : Fin n → ℝ²} {x y : ℝ²}
   (hx : x ∈ open_hull P) (hy : y ∈ closed_hull P) : (1/(2:ℝ)) • x + (1/(2:ℝ)) • y ∈ open_hull P := by
   have ⟨α, hα, hαx⟩ := hx
   have ⟨β, hβ, hβy⟩ := hy
@@ -290,3 +249,29 @@ lemma boundary_constant {n : ℕ} {P : ℝ²} :
     rw [hz]
     rw [closed_simplex_zero_empty]
     simp only [univ_eq_empty, sum_empty, Set.image_empty, Set.empty_diff]
+
+
+
+
+lemma open_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
+    (ho : open_hull f = {P}) : ∀ i, f i = P :=  by
+  cases' eq_or_ne 0 n with hz hn
+  · intro i
+    subst hz
+    by_contra h
+    unfold open_hull at ho
+    rw [open_simplex_zero_empty] at ho
+    simp only [univ_eq_empty, sum_empty, Set.image_empty] at ho
+    symm at ho
+    exact Set.singleton_ne_empty P ho
+  · by_contra hc; push_neg at hc
+    have hP : P ∈ open_hull f := by
+      rw [ho, Set.mem_singleton_iff]
+    have ⟨i, hi⟩ := hc
+    have this := closed_hull_open_hull_com hP (corner_in_closed_hull (i := i) (P := f))
+    have bla := (one_smul (M := ℝ) P)
+    rw [ho, Set.mem_singleton_iff, add_comm, ←eq_sub_iff_add_eq] at this
+    nth_rw 1 [←(one_smul (M := ℝ) P), ←sub_smul] at this
+    ring_nf at this
+    apply hi
+    rwa [IsUnit.smul_left_cancel (by norm_num)] at this
