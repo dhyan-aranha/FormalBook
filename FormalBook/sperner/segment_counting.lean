@@ -1947,7 +1947,10 @@ lemma different_points (T : Triangle) (h_det : det T ≠ 0) (i j : Fin 3) (hneq 
 
 set_option maxHeartbeats 10000000 in
 
-lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ Δ, det P ≠ 0): ∀ T ∈ Δ,
+lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}
+    (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+    (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
+    : ∀ T ∈ Δ,
     2 * isRainbow v T % 4 = (∑ (S ∈ triangle_basic_boundary Δ T), isPurple v S) % 4 := by
   intro T hT
   have h : triangle_basic_boundary Δ T =
@@ -2039,9 +2042,7 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle} (non_degen : ∀ P ∈ 
         exact Set.disjoint_of_subset (side_in_boundary (non_degen T' hT') _) (fun _ a ↦ a) boundary_open_disjoint
       · have this := disjoint_opens_implies_disjoint_open_closed (T₁ := T) (T₂ := T') ?_ (non_degen T' hT')
         · exact Set.disjoint_of_subset closed_side_sub' (fun ⦃a⦄ a ↦ a) this
-        · -- Here you need the covering stuff.
-          -- I don't see it in the assumptions yet, but I think it is necessary.
-          sorry
+        · exact hDisjointCover.2 _ hT _ hT' hTT'
   have h2 : ∀ S L, S ∈ (triangle_boundary T) → L ∈ (triangle_boundary T) → S ≠ L → open_hull S ∩ open_hull L = ∅ := by
     intro S L hS hL hSL
     unfold triangle_boundary at hS hL
@@ -2277,7 +2278,7 @@ lemma split_segment_sum (Δ : Finset Triangle)
     exact triangulation_boundary_intersection Δ
 
 theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle)
-   (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
+    (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
@@ -2286,7 +2287,7 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle)
   -/
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
-  rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
+  rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen hDisjointCover) , ←sum_nat_mod]
   rw [split_segment_sum Δ hDisjointCover (isPurple v) non_degen]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
