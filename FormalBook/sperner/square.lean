@@ -459,7 +459,7 @@ lemma square_boundary_sides_nonDegen (i : Fin 4) : square_boundary_big i 0 ≠ s
 
 
 def boundary_line : Fin 4 → Fin 2 := fun | 0 => 0 | 1 => 1 | 2 => 0 | 3 => 1
-def boundary_constant : Fin 4 → ℝ := fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0
+def bc : Fin 4 → ℝ := fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0
 
 @[simp]
 lemma boundary_line_rw {i : Fin 4}
@@ -467,7 +467,7 @@ lemma boundary_line_rw {i : Fin 4}
 
 @[simp]
 lemma boundary_constant_rw {i : Fin 4}
-  : boundary_constant i = (fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0) i := rfl
+  : bc i = (fun | 0 => 0 | 1 => 1 | 2 => 1 | 3 => 0) i := rfl
 
 
 lemma square_boundary_big_eq (i : Fin 4) :
@@ -653,4 +653,3 @@ lemma unit_square_is_convex_open {S : Segment} (hS : closed_hull S ⊆ boundary 
   apply unit_square_is_convex' at hS
   rcases hS with ⟨ i, hS⟩
   exact ⟨ i, open_segment_sub' hS hNondegen⟩
-
