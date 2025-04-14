@@ -2213,11 +2213,19 @@ lemma triangle_basic_boundary_indicator_rw {Δ : Finset Triangle} (T : Triangle)
   congr
   simp [boundary_indicator]
 
+lemma open_triangle_segment (Δ : Finset Triangle) (S : Segment)
+    (hS : S ∈ triangulation_basic_segments Δ):
+    ∀ T ∈ Δ, open_hull T ∩ closed_hull S = ∅ := by
+  unfold triangulation_basic_segments triangulation_avoiding_set basic_avoiding_segment_set avoiding_segment_set at hS
+  intro T hT
+  simp only [Set.disjoint_iUnion_right, mem_filter] at hS
+  rw [← Set.disjoint_iff_inter_eq_empty]
+  apply Disjoint.symm
+  exact hS.1.2 T hT
 
 lemma split_segment_sum (Δ : Finset Triangle)
   (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
- (f : Segment → ℕ)
-    (h : symm_fun f) (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+ (f : Segment → ℕ) (non_degen : ∀ P ∈ Δ, det P ≠ 0)
     : ∑ T ∈ Δ, ∑ (S ∈ triangle_basic_boundary Δ T), f S =
     ∑ (S ∈ triangulation_boundary_basic_segments Δ), f S +
     2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), f S := by
@@ -2235,7 +2243,10 @@ lemma split_segment_sum (Δ : Finset Triangle)
       · apply segment_set_vertex_distinct (X := triangulation_points Δ)
         refine basic_avoiding_segment_set_sub (A := (triangulation_avoiding_set Δ)) ?_
         exact mem_of_mem_filter S hS
-      · sorry
+      · have h2 : S ∈ triangulation_basic_segments Δ := by
+          unfold triangulation_boundary_basic_segments at hS
+          exact Finset.filter_subset (fun S ↦ open_hull S ⊆ boundary unit_square) (triangulation_basic_segments Δ) hS
+        exact open_triangle_segment Δ S h2
       · simp only [triangulation_boundary_basic_segments, mem_filter] at hS
         exact hS.2
       · intro T hT
@@ -2250,7 +2261,10 @@ lemma split_segment_sum (Δ : Finset Triangle)
       congr
       simp_rw [boundary_indicator, ←Finset.card_filter]
       refine segment_triangle_pairing_int Δ hDisjointCover non_degen S ?_ ?_ ?_
-      · sorry
+      · have h2 : S ∈ triangulation_basic_segments Δ := by
+          unfold triangulation_interior_basic_segments at hS
+          exact Finset.filter_subset (fun S ↦ open_hull S ⊆ open_hull unit_square) (triangulation_basic_segments Δ) hS
+        exact open_triangle_segment Δ S h2
       · simp only [triangulation_interior_basic_segments, mem_filter] at hS
         exact hS.2
       · intro T hT
@@ -2259,9 +2273,12 @@ lemma split_segment_sum (Δ : Finset Triangle)
         intro _
         refine hS.1.2 ?_ ?_
         exact triangulation_points_mem hT _
-  · sorry
 
-theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulation Δ)
+  · rw [Finset.disjoint_iff_inter_eq_empty]
+    exact triangulation_boundary_intersection Δ
+
+theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle)
+   (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0) :
     2 * rainbow_sum v Δ % 4 = purple_sum v Δ % 4 := by
   /-
@@ -2271,99 +2288,18 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle) (hCover: is_triangulati
   unfold rainbow_sum purple_sum
   rw [mul_sum, sum_nat_mod]
   rw [sum_congr rfl (rainbow_triangle_purple_sum v non_degen) , ←sum_nat_mod]
-  rw [split_segment_sum Δ hCover (isPurple v) (isPurple_symm_function v)]
+  rw [split_segment_sum Δ hDisjointCover (isPurple v) non_degen]
   have h : (2 * ∑ (S ∈ triangulation_interior_basic_segments Δ), isPurple v S) % 4 = 0 := by
     exact mod_two_mul (interior_purple_sum v Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
 
 
-theorem monsky_rainbow (Δ : Finset Triangle) (hCovering : is_triangulation Δ) :
+theorem monsky_rainbow (Δ : Finset Triangle)
+    (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
+    (hCovering : is_triangulation Δ)
+    (non_degen : ∀ P ∈ Δ, det P ≠ 0)
+    :
     ∃ T ∈ Δ, isRainbow v T = 1 := by
+  have this := rainbow_sum_is_purple_sum v _ hDisjointCover non_degen
+
   sorry -- easy, follows from above
-
-
--- Old stuff from Lenny
-/- section noncomputable
-
-def color : ℝ² → Fin 3 := sorry
-
-def red : Fin 3 := 0
-def blue : Fin 3 := 1
-def green : Fin 3 := 2
-
-lemma no_three_colors_on_a_line (L : Segment) :
-    ∃ i : Fin 3, ∀ P ∈ closed_hull L, color P ≠ i := sorry
-
-lemma color00 : color (v 0 0) = red := sorry
-lemma color01 : color (v 0 1) = blue := sorry
-lemma color10 : color (v 1 0) = green := sorry
-lemma color11 : color (v 1 1) = blue := sorry
-
-
-/-
-  Define incidence relation between segments and triangles
--/
-
-def side (T : Triangle) (i : Fin 3) : Segment :=
-  fun | 0 => T ((i + 1) % 3) | 1 => T ((i - 1) % 3)
-
-def segment_on_side (L : Segment) (T : Triangle)  : Prop :=
-  ∃ i : Fin 3, closed_hull L ⊆ closed_hull (side T i)
-
-
-/-
-  A segment is purple if it runs from 0 to 1 or 1 to 0
--/
-
-def IsPurple (L : Segment) : Prop :=
-  (color (L 0) = red ∧ color (L 1) = blue) ∨ (color (L 0) = blue ∧ color (L 1) = red)
-
-
-/-
-  Parity of number of purple basic segments on a segment
--/
-
-noncomputable def purple_segments (X : SegmentSet) (L : Segment) :=
-  {S ∈ X | IsPurple S ∧ closed_hull S ⊆ closed_hull L}
-
-lemma purple_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : IsPurple L) :
-  (purple_segments X L.val).card % 2 = 1 := sorry
-
-lemma grey_segments_parity (X : SegmentSet) (hX : complete_segment_set X)
-  (L : X) (hL : ¬ IsPurple L) :
-  (purple_segments X L.val).card % 2 = 0 := sorry
-
-
-
-/-
-  Now we assume given a dissection S. Write X for the set of all segments in the dissection
--/
-
-variable (S : Finset Triangle) (hS : is_cover unit_square S)
-
-def X : SegmentSet := sorry
-lemma hX : complete_segment_set X := sorry
-def B := {  L : X | basis_segment X L }
-
-/-
-  For any triangle in the dissection, the number of purple segments on its boundary
-  is odd iff the triangle is rainbow
-  TODO: probably should be 2 mod 4, given that segments are counted with
-  both orientations
--/
-
-def IsRainbow (T : Triangle) : Prop := Function.Surjective (color ∘ T)
-
-lemma purple_odd_iff_rainbow (T : S) :
-  (purple_segments X (side T 0)).card + (purple_segments X (side T 1)).card +
-  (purple_segments X (side T 2)).card % 2 = 1 ↔ IsRainbow T := sorry
-
-
-/-
-  Main goal for our group:
--/
-
-theorem monsky_rainbow  :
-    ∃ T ∈ S, IsRainbow T := sorry
--/
