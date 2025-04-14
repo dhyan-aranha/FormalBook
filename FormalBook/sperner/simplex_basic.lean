@@ -236,6 +236,19 @@ lemma closed_hull_convex {n₁ n₂ : ℕ} {P₁ : Fin n₁ → ℝ²} {P₂ : F
     exact hβp
 
 
+lemma closed_hull_open_hull_com {n : ℕ} (P : Fin n → ℝ²) {x y : ℝ²}
+  (hx : x ∈ open_hull P) (hy : y ∈ closed_hull P) : (1/(2:ℝ)) • x + (1/(2:ℝ)) • y ∈ open_hull P := by
+  have ⟨α, hα, hαx⟩ := hx
+  have ⟨β, hβ, hβy⟩ := hy
+  use fun i ↦ (1/(2 : ℝ)) * α i + (1/(2:ℝ)) * β i
+  refine ⟨⟨?_,?_⟩,?_⟩
+  · intro i
+    linarith [hα.1 i, hβ.1 i]
+  · rw [sum_add_distrib, ←mul_sum,  ←mul_sum, hα.2, hβ.2]
+    ring
+  · simp_rw [add_smul _, sum_add_distrib, mul_smul, ←smul_sum, hαx, hβy]
+
+
 
 /-
   We define the boundary of a polygon as the elements in the closed hull but not
