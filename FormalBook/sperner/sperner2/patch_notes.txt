@@ -1,0 +1,20 @@
+simplex_basic -> simplex
+
+closed_hull -> convex_hull
+open_hull 	-> open_convex_hull
+boundary 	-> hull_boundary
+simplex_vertex_in_simplex -> simplex_vertex_mem_closed_simplex
+corner_in_closed_hull -> corner_in_convex_hull
+simplex_vertex_image -> simplex_vertex_evaluates_to
+corner_in_convex_hull -> vertex_mem_convex_hull
+closed_simplex_zero_empty -> closed_simplex_zero_is_empty
+open_simplex_zero_empty -> open_simplex_zero_is_empty
+closed_hull_constant -> convex_hull_constant_point
+closed_hull_constant_rev -> convex_hull_singleton_implies_constant
+open_sub_closed_simplex -> open_simplex_subset_closed_simplex
+open_sub_closed -> open_convex_hull_subset_convex_hull
+linear_combination -> affine_combo
+
+
+
+segment_triangle -> segment
