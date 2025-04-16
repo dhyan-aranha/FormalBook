@@ -457,11 +457,13 @@ theorem no_odd_rainbow_triangle
   (vhalf: v (1/2) > 1)
   (vodd: ∀ (n : ℕ) (_: Odd n), v (1/n) = 1) :
     ¬ ∃ (n : ℕ) (_: Odd n),
-    |det T| = 2 / n := by
+    |det T| / 2 = 1 / n := by
 
   push_neg
   intro n hodd
-  by_contra h
+  by_contra h₀
+  have h : |det T| = 2 / n := by
+    convert congrArg (HMul.hMul 2) h₀ using 1 <;> field_simp
   have bound : v (det T) ≥ 1 := by
     apply bounded_det_coord_free v T rt
   have val_inv: v (det T ) = v (|det T|) := by

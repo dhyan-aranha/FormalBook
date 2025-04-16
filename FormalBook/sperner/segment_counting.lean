@@ -1955,12 +1955,10 @@ theorem rainbow_sum_is_purple_sum (Δ : Finset Triangle)
     exact mod_two_mul (interior_purple_sum v Δ)
   rw [Nat.add_mod, h, add_zero, Nat.mod_mod]
 
-
-
 theorem monsky_rainbow (Δ : Finset Triangle)
     (hDisjointCover : is_disjoint_cover (closed_hull unit_square) Δ.toSet)
     (non_degen : ∀ P ∈ Δ, det P ≠ 0)
-    : ∃ T ∈ Δ, isRainbow v T = 1 := by
+    : ∃ T ∈ Δ, rainbow_triangle v T := by
   have this := rainbow_sum_is_purple_sum v _ hDisjointCover non_degen
   rw [segment_sum_odd v _ hDisjointCover.1 non_degen] at this
   have hf : rainbow_sum v Δ ≠ 0 := by
@@ -1970,4 +1968,4 @@ theorem monsky_rainbow (Δ : Finset Triangle)
   simp_rw [rainbow_sum, isRainbow, ←Finset.card_filter, card_ne_zero] at hf
   have ⟨T, hT⟩ := hf
   simp only [mem_filter] at hT
-  exact ⟨T, hT.1, by simp_all only [isRainbow, ne_eq, ↓reduceIte]⟩
+  refine ⟨T, hT.1, hT.2⟩

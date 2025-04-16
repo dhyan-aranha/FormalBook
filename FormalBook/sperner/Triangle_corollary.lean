@@ -660,8 +660,9 @@ theorem union_of_edges_zero_vol (S : Finset Triangle) : MeasureTheory.volume ( �
 
 --This theorem shows that whenever you have a cover by triangles, the measure theoretic area of the triangles add up to the measure theoretic area of what they cover
 --This proof is a bit ugly, but these sums and unions are very annoying to work with in my opinion
-theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_cover X S) : MeasureTheory.volume X = ∑  (T ∈  S), MeasureTheory.volume (open_hull T) := by
-  unfold is_cover at hcover
+theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_disjoint_cover X S.toSet)
+    : MeasureTheory.volume X = ∑  (T ∈  S), MeasureTheory.volume (open_hull T) := by
+  unfold is_disjoint_cover at hcover
   rw[hcover.1]
   have h1:  closed_hull  = (fun T ↦  open_hull T ∪ all_edges_triangle_hull T)
   ext T X
@@ -680,13 +681,12 @@ theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_co
     have hd : Pairwise (Function.onFun (MeasureTheory.AEDisjoint MeasureTheory.volume) f)
     · have h6 := hcover.2
       unfold f open_hullT
-      unfold Set.PairwiseDisjoint Set.Pairwise at h6
+      unfold is_disjoint_polygon_set at h6
       unfold Pairwise
 
       intro i j hij
       apply Disjoint.aedisjoint
-      specialize h6 i.2 j.2 (Subtype.coe_ne_coe.mpr hij)
-      rw[Function.onFun_apply] at h6
+      specialize h6 _ i.2 _ j.2 (Subtype.coe_ne_coe.mpr hij)
       exact h6
     erw[MeasureTheory.measure_iUnion₀ hd h, tsum_fintype,]
     simp [f]
@@ -698,11 +698,13 @@ theorem area_equal_sum_cover (X : Set ℝ²)(S : Finset Triangle)(hcover : is_co
     rw[ h4] at h5
     exact h5
 
+
+
 --This theorem is similar to the above but specifically to the unit square (which has an area of 1) and where the measure theoretic area of the triangles replaced by their area in determinant form
 --This proof is even uglier then the previous
-theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover (closed_hull unit_square) S) :  ∑  (T ∈  S), |det T|/2 = 1 := by
+theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_disjoint_cover (closed_hull unit_square) S.toSet) :  ∑  (T ∈  S), |det T|/2 = 1 := by
   rw[← volume_box]
-  rw[area_equal_sum_cover unit_square S hcover]
+  rw[area_equal_sum_cover (closed_hull unit_square) S hcover]
   have h: ∀ T ∈  S, |det T|/2 = (MeasureTheory.volume (open_hull T)).toReal
   intro T _
   rw[volume_open_triangle]
@@ -711,8 +713,11 @@ theorem triangle_det_sum_one (S : Finset Triangle)(hcover : is_cover (closed_hul
   rw[ENNReal.toReal_sum]
   intro a _; rw [volume_open_triangle']; simp
 
+
 --This is the statemet we have been working so hard for: whenever we have a cover of triangles of equal area, this area must be 1/|amount of triangles|
-theorem equal_area_cover_implies_triangle_area_n (S : Finset Triangle)(hcover : is_equal_area_cover (closed_hull unit_square) S) : ∀ T ∈ S, det T = 1/ S.card := by
+theorem equal_area_cover_implies_triangle_area_n (S : Finset Triangle)
+  (hcover : is_equal_area_cover (closed_hull unit_square) S)
+  : ∀ T ∈ S, triangle_area T = 1/ S.card := by
   rcases hcover with ⟨ h1, ⟨ area,h2 ⟩ ⟩
   intro T hT
   have h3 := triangle_det_sum_one S h1

@@ -29,6 +29,15 @@ def is_disjoint_cover {n : ℕ} (X : Set ℝ²) (S : Set (Fin n → ℝ²)) : Pr
 
 
 
+/- For now we use this formula as the definition of the area.-/
+noncomputable def triangle_area (T : Triangle) : ℝ :=
+  abs (det T) / 2
+
+/- -/
+def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
+  is_disjoint_cover X S ∧
+  (∃ (area : ℝ), ∀ T, (T ∈ S) → triangle_area T = area)
+
 
 
 

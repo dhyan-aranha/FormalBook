@@ -15,17 +15,6 @@ open BigOperators
 open Finset
 
 
-/- For now we use this formula as the definition of the area.-/
-noncomputable def triangle_area (T : Triangle) : ℝ :=
-  abs (det T) / 2
-
-/- -/
-def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
-  is_disjoint_cover X S ∧
-  (∃ (area : ℝ), ∀ T, (T ∈ S) → triangle_area T = area)
-
-
-
 /- This rewriting is for convenience. -/
 def disjoint_set {α β : Type} (X : Set α) (f : α → Set β) := ∀ a₁ a₂, a₁ ∈ X → a₂ ∈ X → a₁ ≠ a₂ → Disjoint (f a₁) (f a₂)
 def covers {α β} (X : Set α) (Y : Set β) (f : α → Set β) := Y = ⋃ a ∈ X, f a
