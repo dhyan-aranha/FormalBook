@@ -454,11 +454,13 @@ v (det T) ≥ 1 := by
 theorem no_odd_rainbow_triangle
   (T : Fin 3 → ℝ²)
   (rt : rainbow_triangle v T)
-  (vhalf: v (1/2) > 1)
-  (vodd: ∀ (n : ℕ) (_: Odd n), v (1/n) = 1) :
+  (vhalf: v (1/2) > 1):
     ¬ ∃ (n : ℕ) (_: Odd n),
     |det T| / 2 = 1 / n := by
 
+  have vodd: ∀ (n : ℕ) (_: Odd n), v (1/n) = 1 := by
+    apply odd_valuation
+    · apply vhalf
   push_neg
   intro n hodd
   by_contra h₀

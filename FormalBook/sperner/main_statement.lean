@@ -40,9 +40,6 @@ theorem Monsky (n : ℕ):
           simp only at this
           rw [volume_open_triangle,volume_open_triangle ] at this
           exact this.symm
-        · -- This is open for now: valuation assigns 1 to 1/n for n odd.
-          -- Should be in appendix somewhere.
-          sorry
       · -- Similarly we should have a seperate lemma that says that for any "equal area cover"
         -- of the triangles all determinants are nonzero.
         intro T hTS hcontra

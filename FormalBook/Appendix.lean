@@ -1,3 +1,4 @@
+import Mathlib
 import Mathlib.Tactic
 
 noncomputable section
@@ -650,3 +651,74 @@ theorem valuation_on_reals : ∃(Γ₀ : Type) (_ : LinearOrderedCommGroupWithZe
     have g := valuation_le_one_iff B (1/2)
     rw[← not_iff_not] at g
     rwa[gt_iff_lt, ← not_le, g]
+
+lemma odd_valuation (Γ₀ : Type) (_: LinearOrderedCommGroupWithZero Γ₀) (v : Valuation ℝ Γ₀)
+(vhalf : v (1/2)> 1) : ∀ n : ℕ, Odd n → v (1/n) = 1 := by
+have vhalf' : v (2) < 1 := by
+  rw [Valuation.map_div, Valuation.map_one] at vhalf
+  refine (Valuation.val_lt_one_iff v ?_).mpr ?_
+  . norm_num
+  · simp_all only [map_inv₀, one_div, gt_iff_lt]
+have vind : ∀ (k : ℕ), k ≠ 0 →  v (2* k) < 1:= by
+  intro k
+  induction k
+  · tauto
+  · rename_i k kind
+    intro kpos
+    by_cases kpos' : k = 0
+    · rw [kpos']
+      simp only [zero_add, Nat.cast_one, mul_one]
+      apply vhalf'
+    · apply kind at kpos'
+      simp only [Nat.cast_add, Nat.cast_one, mul_add, mul_one]
+      have : v (2 * ↑k + 2) ≤ max (v (2 * ↑k)) (v 2) := by
+        apply Valuation.map_add
+      have this2 : v (2 * ↑k) ⊔ v 2 < 1 := by
+        have h1 : v (2 * ↑k) < 1 := kpos'
+        have h2 : v 2 < 1 := vhalf'
+        exact max_lt h1 h2
+      exact trans this this2
+have vind' : ∀ k : ℕ, k ≠ 0 →  v (2*k + 1) = 1 := by
+  intro n hn
+  have this : 2*n ≠ 1 := by
+    norm_num
+  have this2 : v (1) = 1 := by
+    rw [Valuation.map_one]
+  rw [Valuation.map_add_of_distinct_val]
+  specialize vind n hn
+  simp_all only [one_div, map_inv₀, gt_iff_lt, ne_eq, mul_eq_one, OfNat.ofNat_ne_one, false_and,
+    not_false_eq_true, map_mul, map_one, sup_eq_right, ge_iff_le]
+  exact le_of_lt vind
+  rw [this2]
+  specialize vind n hn
+  simp_all only [one_div, map_inv₀, gt_iff_lt, ne_eq, mul_eq_one, OfNat.ofNat_ne_one, false_and, not_false_eq_true,
+    map_one, map_mul]
+  apply Aesop.BuiltinRules.not_intro
+  intro a
+  simp_all only [lt_self_iff_false]
+intro n odd
+have odd' : ∃ k, 2 *k + 1 = n := by
+  rw [Odd] at odd
+  rcases odd with ⟨k, eq⟩
+  use k
+  rw [eq]
+rcases odd' with ⟨k, eq⟩
+specialize vind' k
+by_cases kpos : k = 0
+· rw [kpos] at eq
+  simp only [mul_zero, zero_add] at eq
+  simp only [one_div, map_inv₀, inv_eq_one]
+  rw [← eq]
+  rw [Nat.cast_one]
+  apply Valuation.map_one v
+· have kpos_val : v (2 * ↑k + 1) = 1 := vind' kpos
+  rw [eq.symm]
+  have : v (1 / ↑(2 * k + 1)) = v 1 / v (↑(2 * k + 1)) := by
+    apply Valuation.map_div
+  rw [this]
+  have : v (↑(2 * k + 1)) = 1 := by
+    rw [Nat.cast_add, Nat.cast_mul]
+    simp_all only [one_div, map_inv₀, gt_iff_lt, ne_eq, map_mul, not_false_eq_true, imp_self, map_one,
+    Nat.cast_ofNat, Nat.cast_one]
+  rw [this]
+  simp
