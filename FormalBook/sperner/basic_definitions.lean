@@ -41,6 +41,7 @@ def is_equal_area_cover (X : Set ℝ²) (S : Set Triangle) : Prop :=
 
 
 
+
 /- Some theorems involving these definitions. -/
 
 lemma is_cover_sub {n : ℕ} {S : Set (Fin n → ℝ²)} {X : Set ℝ²} (hCover : is_cover X S) :
@@ -72,3 +73,12 @@ lemma cover_mem_side {S : Set Triangle} {X : Set ℝ²} (hCover : is_disjoint_co
   have ⟨i,hi⟩ := el_in_boundary_imp_side (hArea Δ hΔ) hxBoundary ?_
   · exact ⟨Δ,hΔ,i,hi⟩
   · exact fun i ↦ hv i Δ hΔ
+
+
+lemma no_empty_cover {n : ℕ} {S : Finset (Fin n → ℝ²)} {X : Set ℝ²}
+    (hCover : is_cover X S.toSet) (hX : Set.Nonempty X) :
+    S.card > 0 := by
+  by_contra hS
+  apply Set.Nonempty.ne_empty hX
+  rw [hCover]
+  simp [(by simp_all : S = ∅)]

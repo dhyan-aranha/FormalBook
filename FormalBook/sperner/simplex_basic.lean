@@ -7,6 +7,11 @@ open Classical
 open Finset
 
 
+
+
+
+
+
 -- Shorthand for defining an element of ℝ²
 def v (x y : ℝ) : ℝ² := fun | 0 => x | 1 => y
 
@@ -40,12 +45,12 @@ lemma simplex_vertex_in_simplex {n : ℕ} {i : Fin n} : simplex_vertex i ∈ clo
   exact ⟨fun j ↦ by by_cases h : i = j <;> simp [simplex_vertex, h], by simp [simplex_vertex]⟩
 
 lemma closed_simplex_zero_empty : closed_simplex 0 = ∅ := by
-  unfold closed_simplex
-  simp only [IsEmpty.forall_iff, univ_eq_empty, sum_empty, zero_ne_one, and_false, Set.setOf_false]
+  rw [←Set.not_nonempty_iff_eq_empty]
+  exact fun ⟨_,⟨_,hx⟩⟩ ↦ by rw [@Fin.sum_univ_zero] at hx; exact zero_ne_one' _ hx
 
 lemma open_simplex_zero_empty : open_simplex 0 = ∅ := by
-  unfold open_simplex
-  simp only [IsEmpty.forall_iff, univ_eq_empty, sum_empty, zero_ne_one, and_false, Set.setOf_false]
+  rw [←Set.not_nonempty_iff_eq_empty]
+  exact fun ⟨_,⟨_,hx⟩⟩ ↦ by rw [@Fin.sum_univ_zero] at hx; exact zero_ne_one' _ hx
 
 @[simp]
 lemma simplex_vertex_image {n : ℕ} {i : Fin n} (f : Fin n → ℝ²) :
@@ -70,9 +75,10 @@ lemma closed_hull_constant_rev {n : ℕ} {P : ℝ²} {f : Fin n → ℝ²}
   exact fun _ ↦ corner_in_closed_hull
 
 
-lemma open_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : ∃ x, x ∈ open_hull P := by
+lemma open_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : Set.Nonempty (open_hull P) := by
   use ∑ i, (1/(n : ℝ)) • P i, fun _ ↦ (1/(n : ℝ))
   exact ⟨⟨fun _ ↦ by simp [hn], by simp; exact (mul_inv_cancel₀ (by simp; linarith))⟩, by simp⟩
+
 
 lemma open_sub_closed_simplex {n : ℕ} : open_simplex n ⊆ closed_simplex n :=
   fun _ ⟨hαpos, hαsum⟩ ↦ ⟨fun i ↦ by linarith [hαpos i], hαsum⟩
@@ -80,19 +86,19 @@ lemma open_sub_closed_simplex {n : ℕ} : open_simplex n ⊆ closed_simplex n :=
 lemma open_sub_closed {n : ℕ} (P : Fin n → ℝ²) : open_hull P ⊆ closed_hull P :=
   Set.image_mono open_sub_closed_simplex
 
+lemma closed_pol_nonempty {n : ℕ} (hn : 0 < n) (P : Fin n → ℝ²) : Set.Nonempty (closed_hull P) :=
+  Set.Nonempty.mono (open_sub_closed P) (open_pol_nonempty hn P)
+
 lemma open_hull_constant {n : ℕ} {P : ℝ²} (hn : n ≠ 0):
     open_hull (fun (_ : Fin n) ↦ P) = {P} :=
   (Set.Nonempty.subset_singleton_iff (open_pol_nonempty (Nat.zero_lt_of_ne_zero hn) _)).mp
       (subset_of_subset_of_eq (open_sub_closed _) (closed_hull_constant hn))
 
 lemma closed_hull_zero_dim (f : Fin 0 → ℝ²) : closed_hull f = ∅ := by
-  rw [Set.eq_empty_iff_forall_not_mem]
-  intro x ⟨_,⟨_,h⟩,_⟩
-  simp only [univ_eq_empty, sum_empty, zero_ne_one] at h
+  rw [closed_hull, closed_simplex_zero_empty, Set.image_empty]
 
 lemma open_hull_zero_dim (f : Fin 0 → ℝ²) : open_hull f = ∅ := by
-  rw [←Set.subset_empty_iff]
-  exact subset_of_subset_of_eq (open_sub_closed f) (closed_hull_zero_dim f)
+  rw [open_hull, open_simplex_zero_empty, Set.image_empty]
 
 
 
