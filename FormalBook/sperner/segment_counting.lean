@@ -1661,15 +1661,11 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}
         apply open_segment_sub' hi
         unfold basic_avoiding_segment_set avoiding_segment_set segment_set at hS1
         simp_all only [ne_eq, product_eq_sprod, mem_filter, mem_image, mem_product, Prod.exists, Fin.isValue]
-        obtain ⟨left, right⟩ := hS1
-        obtain ⟨left, right_1⟩ := left
-        obtain ⟨w, h⟩ := left
+        obtain ⟨w, h⟩ := hS1.1.1
         obtain ⟨w_1, h⟩ := h
         obtain ⟨left, right_2⟩ := h
-        obtain ⟨left, right_3⟩ := left
-        obtain ⟨left, right_4⟩ := left
         subst right_2
-        exact right_3
+        exact left.2
 
   have h1 : (triangle_boundary T) ⊆ avoiding_segment_set (triangulation_points Δ) (triangulation_avoiding_set Δ) := by
     unfold triangle_boundary avoiding_segment_set
@@ -1723,9 +1719,8 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}
   unfold triangle_boundary
   simp [Set.biUnion_univ]
   rw [Finset.sum_biUnion _, Fin.sum_univ_three]
-  · simp
-    simp [isPurple, Tside]
-    simp [isRainbow, Function.Surjective]
+  · simp only [Fin.isValue, sum_singleton]
+    simp [isPurple, Tside, isRainbow, Function.Surjective]
     rcases color_trichotomy (coloring v (T 0)) with (hc0 | hc0 | hc0) <;>
     rcases color_trichotomy (coloring v (T 1)) with (hc1 | hc1 | hc1) <;>
     rcases color_trichotomy (coloring v (T 2)) with (hc2 | hc2 | hc2) <;>
@@ -1739,9 +1734,13 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}
     all_goals try (have ⟨cR, hR⟩ := h_surj Color.Red)
     all_goals try (have ⟨cB, hB⟩ := h_surj Color.Blue)
     all_goals try (have ⟨cG, hG⟩ := h_surj Color.Green)
-    all_goals try (fin_cases cR <;> simp_all)
-    all_goals try (fin_cases cB <;> simp_all)
-    all_goals try (fin_cases cG <;> simp_all)
+    all_goals try (fin_cases cR <;> simp_all only [Fin.reduceFinMk, Fin.isValue])
+    all_goals try tauto
+    all_goals try (fin_cases cB <;> simp_all only [Fin.reduceFinMk, Fin.isValue])
+    all_goals try tauto
+    all_goals try (fin_cases cG <;> simp_all only [Fin.reduceFinMk, Fin.isValue])
+    all_goals try tauto
+
     all_goals
       refine h_surj ?_
       intro b
@@ -1754,7 +1753,7 @@ lemma rainbow_triangle_purple_sum {Δ : Finset Triangle}
     have h_diff_points01 : T 0 ≠ T 1 := different_points T (non_degen T hT) 0 1 (by decide)
     have h_diff_points02 : T 0 ≠ T 2 := different_points T (non_degen T hT) 0 2 (by decide)
     have h_diff_points12 : T 1 ≠ T 2 := different_points T (non_degen T hT) 1 2 (by decide)
-    simp
+    simp only [disjoint_singleton_right, mem_singleton, ne_eq]
     -- Annoying
     suffices hs : ¬ Tside T j 0 = Tside T i 0
     · by_contra h_contra
